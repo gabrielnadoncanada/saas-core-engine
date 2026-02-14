@@ -1,0 +1,28 @@
+{
+  "name": "saas-core-engine",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "clean": "turbo clean && rimraf node_modules **/node_modules **/.next **/dist",
+
+    "db:migrate": "pnpm --filter @db run migrate",
+    "db:seed": "pnpm --filter @db run seed"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.6.0",
+    "rimraf": "^6.0.0",
+    "@eslint/js": "^9.0.0",
+    "tsx": "^4.0.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-unused-imports": "^4.1.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}

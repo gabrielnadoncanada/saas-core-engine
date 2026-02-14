@@ -1,0 +1,246 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MembershipRole {
+  owner
+  admin
+  member
+}
+
+enum EmailTokenType {
+  magic_login
+  verify_email
+  password_reset
+}
+
+enum OAuthProvider {
+  google
+  github
+}
+
+enum SubscriptionPlan {
+  free
+  pro
+}
+
+enum SubscriptionStatus {
+  inactive
+  trialing
+  active
+  past_due
+  canceled
+  unpaid
+}
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String?   @map("password_hash")
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  lastLoginAt     DateTime? @map("last_login_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  memberships   Membership[]
+  sessions      Session[]
+  oauthAccounts OAuthAccount[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  ip        String?   @map("ip")
+  userAgent String?   @map("user_agent")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  memberships  Membership[]
+  invitations  Invitation[]
+  subscription Subscription?
+
+  @@map("organizations")
+}
+
+model Membership {
+  id             String         @id @default(uuid())
+  userId         String         @map("user_id")
+  organizationId String         @map("organization_id")
+  role           MembershipRole @default(member)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("memberships")
+}
+
+model Invitation {
+  id             String         @id @default(uuid())
+  organizationId String         @map("organization_id")
+  email          String
+  role           MembershipRole @default(member)
+
+  tokenHash  String   @unique @map("token_hash")
+  expiresAt  DateTime @map("expires_at")
+  acceptedAt DateTime? @map("accepted_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+  @@index([expiresAt])
+  @@map("invitations")
+}
+
+model Subscription {
+  id             String             @id @default(uuid())
+  organizationId String             @unique @map("organization_id")
+
+  plan   SubscriptionPlan   @default(free)
+  status SubscriptionStatus @default(inactive)
+
+  stripeCustomerId     String?   @unique @map("stripe_customer_id")
+  stripeSubscriptionId String?   @unique @map("stripe_subscription_id")
+  currentPeriodEnd     DateTime? @map("current_period_end")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model EmailToken {
+  id        String         @id @default(uuid())
+  email     String
+  userId    String?        @map("user_id")
+  type      EmailTokenType
+
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([expiresAt])
+  @@index([type])
+  @@map("email_tokens")
+}
+
+model OAuthAccount {
+  id                String        @id @default(uuid())
+  userId            String        @map("user_id")
+  provider          OAuthProvider
+  providerAccountId String        @map("provider_account_id")
+  email             String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@index([provider])
+  @@map("oauth_accounts")
+}
+
+model OAuthState {
+  id        String        @id @default(uuid())
+  provider  OAuthProvider
+
+  stateHash     String @unique @map("state_hash")
+  codeVerifier  String @map("code_verifier")
+
+  redirectUri String   @map("redirect_uri")
+  expiresAt   DateTime @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([provider])
+  @@index([expiresAt])
+  @@map("oauth_states")
+}
+
+model AIUsage {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  model          String
+  inputTokens    Int
+  outputTokens   Int
+  costUsd        Float
+  createdAt      DateTime @default(now())
+}
+
+model AIRateLimitBucket {
+  id             String   @id @default(cuid())
+  organizationId String
+  windowStart    DateTime
+  count          Int      @default(0)
+
+  @@unique([organizationId, windowStart])
+  @@index([organizationId, windowStart])
+}
+
+model AIAuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+
+  // request
+  model          String
+  plan           String
+  route          String
+  promptChars    Int
+  messageCount   Int
+
+  // response
+  inputTokens    Int
+  outputTokens   Int
+  costUsd        Float
+
+  // outcome
+  status         String   // "ok" | "error" | "blocked"
+  errorCode      String?  // e.g. "quota" | "rpm" | "provider"
+  errorMessage   String?
+
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([userId, createdAt])
+}
