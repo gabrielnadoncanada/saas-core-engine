@@ -1,0 +1,23 @@
+export type AuthErrorCode =
+  | "invalid_credentials"
+  | "email_in_use"
+  | "invalid_token"
+  | "expired_token"
+  | "unauthorized";
+
+export type EmailTokenType =
+  | "magic_login"
+  | "verify_email"
+  | "password_reset";
+
+export type OAuthProvider = "google" | "github";
+
+export interface SessionSummary {
+  id: string;
+  userId: string;
+  createdAt: Date;
+  expiresAt: Date;
+  revokedAt: Date | null;
+  ip: string | null;
+  userAgent: string | null;
+}

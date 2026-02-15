@@ -1,12 +1,14 @@
 import type { Organization } from "@prisma/client";
-import { getDb, type DbTx } from "../tx";
+import { prisma, type DbTx } from "@db";
+
+const db = (tx?: DbTx) => tx ?? prisma;
 
 export class OrgsRepo {
   async create(name: string, tx?: DbTx): Promise<Organization> {
-    return getDb(tx).organization.create({ data: { name } });
+    return db(tx).organization.create({ data: { name } });
   }
 
   async findById(orgId: string, tx?: DbTx): Promise<Organization | null> {
-    return getDb(tx).organization.findUnique({ where: { id: orgId } });
+    return db(tx).organization.findUnique({ where: { id: orgId } });
   }
 }

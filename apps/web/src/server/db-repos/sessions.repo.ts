@@ -1,5 +1,7 @@
 import type { Session } from "@prisma/client";
-import { getDb, type DbTx } from "../tx";
+import { prisma, type DbTx } from "@db";
+
+const db = (tx?: DbTx) => tx ?? prisma;
 
 export class SessionsRepo {
   async create(
@@ -12,7 +14,7 @@ export class SessionsRepo {
     },
     tx?: DbTx,
   ): Promise<Session> {
-    return getDb(tx).session.create({
+    return db(tx).session.create({
       data: {
         userId: params.userId,
         tokenHash: params.tokenHash,
@@ -27,7 +29,7 @@ export class SessionsRepo {
     tokenHash: string,
     tx?: DbTx,
   ): Promise<Session | null> {
-    return getDb(tx).session.findFirst({
+    return db(tx).session.findFirst({
       where: {
         tokenHash,
         revokedAt: null,
@@ -37,21 +39,21 @@ export class SessionsRepo {
   }
 
   async listActiveByUser(userId: string, tx?: DbTx): Promise<Session[]> {
-    return getDb(tx).session.findMany({
+    return db(tx).session.findMany({
       where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
       orderBy: { createdAt: "desc" },
     });
   }
 
   async revokeSession(sessionId: string, tx?: DbTx): Promise<void> {
-    await getDb(tx).session.update({
+    await db(tx).session.update({
       where: { id: sessionId },
       data: { revokedAt: new Date() },
     });
   }
 
   async revokeAllForUser(userId: string, tx?: DbTx): Promise<void> {
-    await getDb(tx).session.updateMany({
+    await db(tx).session.updateMany({
       where: { userId, revokedAt: null },
       data: { revokedAt: new Date() },
     });

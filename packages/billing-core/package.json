@@ -16,8 +16,6 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@contracts": "workspace:*",
-    "@db": "workspace:*",
-    "stripe": "^16.0.0"
+    "@contracts": "workspace:*"
   }
 }

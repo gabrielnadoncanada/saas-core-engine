@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { InviteService } from "@org-core";
-import { env } from "@/server/config/env";
 import { requireUser } from "@/server/auth/require-user";
+import { createInviteService } from "@/server/adapters/core/org-core.adapter";
 
 export async function GET(req: Request) {
   const user = await requireUser();
@@ -13,12 +12,11 @@ export async function GET(req: Request) {
       new URL("/dashboard/team?invite=invalid", req.url),
     );
 
-  const invites = new InviteService();
+  const invites = createInviteService();
 
   try {
     await invites.acceptInvite({
       token,
-      pepper: env.TOKEN_PEPPER,
       acceptUserId: user.userId,
     });
     return NextResponse.redirect(

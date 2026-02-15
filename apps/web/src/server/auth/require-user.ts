@@ -1,8 +1,7 @@
 import "server-only";
 
-import { SessionService } from "@auth-core";
-import { env } from "@/server/config/env";
 import { getSessionTokenFromCookie } from "@/server/adapters/cookies/session-cookie.adapter";
+import { createSessionService } from "@/server/adapters/core/auth-core.adapter";
 
 export type SessionUser = {
   userId: string;
@@ -13,10 +12,9 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const token = getSessionTokenFromCookie();
   if (!token) return null;
 
-  const sessions = new SessionService();
+  const sessions = createSessionService();
   const valid = await sessions.validateSession({
     sessionToken: token,
-    pepper: env.TOKEN_PEPPER,
   });
   if (!valid) return null;
 

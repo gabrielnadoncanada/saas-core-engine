@@ -1,4 +1,3 @@
-import { EmailTokensRepo } from "@db";
 import { hashToken } from "../hashing/token";
 import { randomTokenBase64Url } from "../hashing/random";
 import type {
@@ -7,13 +6,17 @@ import type {
   IssueEmailTokenInput,
   IssueEmailTokenResult,
 } from "./email-token.types";
+import type { EmailTokenRepo } from "../auth.ports";
 
 export class EmailTokenService {
-  constructor(private readonly repo = new EmailTokensRepo()) {}
+  constructor(
+    private readonly repo: EmailTokenRepo,
+    private readonly pepper: string,
+  ) {}
 
   async issue(input: IssueEmailTokenInput): Promise<IssueEmailTokenResult> {
     const token = randomTokenBase64Url(32);
-    const tokenHash = hashToken(token, input.pepper);
+    const tokenHash = hashToken(token, this.pepper);
 
     const now = new Date();
     const expiresAt = new Date(now.getTime() + input.ttlMinutes * 60 * 1000);
@@ -32,7 +35,7 @@ export class EmailTokenService {
   async consume(
     input: ConsumeEmailTokenInput,
   ): Promise<ConsumedEmailToken | null> {
-    const tokenHash = hashToken(input.token, input.pepper);
+    const tokenHash = hashToken(input.token, this.pepper);
     const record = await this.repo.findValidByTokenHash(tokenHash);
     if (!record) return null;
 

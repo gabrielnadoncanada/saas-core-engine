@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { OrgService } from "@org-core";
 import { requireUser } from "@/server/auth/require-user";
+import { createOrgService } from "@/server/adapters/core/org-core.adapter";
 
 type Body = { name: string };
 
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
       { status: 400 },
     );
 
-  const orgs = new OrgService();
+  const orgs = createOrgService();
   const res = await orgs.createOrg({
     ownerUserId: user.userId,
     name: body.name,

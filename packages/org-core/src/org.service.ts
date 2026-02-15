@@ -1,14 +1,20 @@
-import { MembershipsRepo, OrgsRepo, SubscriptionsRepo, withTx } from "@db";
+import type {
+  MembershipsRepo,
+  OrgsRepo,
+  SubscriptionsRepo,
+  TxRunner,
+} from "./org.ports";
 
 export class OrgService {
   constructor(
-    private readonly orgs = new OrgsRepo(),
-    private readonly memberships = new MembershipsRepo(),
-    private readonly subs = new SubscriptionsRepo(),
+    private readonly orgs: OrgsRepo,
+    private readonly memberships: MembershipsRepo,
+    private readonly subs: SubscriptionsRepo,
+    private readonly txRunner: TxRunner,
   ) {}
 
   async createOrg(params: { ownerUserId: string; name: string }) {
-    return withTx(async (tx) => {
+    return this.txRunner.withTx(async (tx) => {
       const org = await this.orgs.create(params.name, tx);
 
       await this.memberships.create(

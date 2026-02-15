@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { SessionService } from "@auth-core";
 import { requireUser } from "@/server/auth/require-user";
+import { createSessionService } from "@/server/adapters/core/auth-core.adapter";
 
 type Body = { sessionId: string };
 
@@ -14,8 +14,7 @@ export async function POST(req: Request) {
       { status: 400 },
     );
 
-  // V1: revoke by id (safe enough). V2: verify session belongs to user in DB.
-  const sessions = new SessionService();
+  const sessions = createSessionService();
   const all = await sessions.listActiveSessions(user.userId);
   const owns = all.some((s) => s.id === body.sessionId);
   if (!owns)

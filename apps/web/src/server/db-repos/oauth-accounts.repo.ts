@@ -1,12 +1,14 @@
 import type { OAuthAccount, OAuthProvider } from "@prisma/client";
-import { getDb, type DbTx } from "../tx";
+import { prisma, type DbTx } from "@db";
+
+const db = (tx?: DbTx) => tx ?? prisma;
 
 export class OAuthAccountsRepo {
   async findByProviderAccount(
     params: { provider: OAuthProvider; providerAccountId: string },
     tx?: DbTx,
   ): Promise<OAuthAccount | null> {
-    return getDb(tx).oAuthAccount.findUnique({
+    return db(tx).oAuthAccount.findUnique({
       where: {
         provider_providerAccountId: {
           provider: params.provider,
@@ -25,7 +27,7 @@ export class OAuthAccountsRepo {
     },
     tx?: DbTx,
   ): Promise<OAuthAccount> {
-    return getDb(tx).oAuthAccount.create({
+    return db(tx).oAuthAccount.create({
       data: {
         userId: params.userId,
         provider: params.provider,
@@ -36,7 +38,7 @@ export class OAuthAccountsRepo {
   }
 
   async listByUser(userId: string, tx?: DbTx): Promise<OAuthAccount[]> {
-    return getDb(tx).oAuthAccount.findMany({
+    return db(tx).oAuthAccount.findMany({
       where: { userId },
       orderBy: { createdAt: "asc" },
     });

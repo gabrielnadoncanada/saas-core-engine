@@ -1,5 +1,7 @@
 import type { EmailToken, EmailTokenType } from "@prisma/client";
-import { getDb, type DbTx } from "../tx";
+import { prisma, type DbTx } from "@db";
+
+const db = (tx?: DbTx) => tx ?? prisma;
 
 export class EmailTokensRepo {
   async create(
@@ -12,7 +14,7 @@ export class EmailTokensRepo {
     },
     tx?: DbTx,
   ): Promise<EmailToken> {
-    return getDb(tx).emailToken.create({
+    return db(tx).emailToken.create({
       data: {
         email: params.email.toLowerCase(),
         userId: params.userId ?? null,
@@ -27,20 +29,20 @@ export class EmailTokensRepo {
     tokenHash: string,
     tx?: DbTx,
   ): Promise<EmailToken | null> {
-    return getDb(tx).emailToken.findFirst({
+    return db(tx).emailToken.findFirst({
       where: { tokenHash, usedAt: null, expiresAt: { gt: new Date() } },
     });
   }
 
   async markUsed(id: string, tx?: DbTx): Promise<void> {
-    await getDb(tx).emailToken.update({
+    await db(tx).emailToken.update({
       where: { id },
       data: { usedAt: new Date() },
     });
   }
 
   async deleteExpired(tx?: DbTx): Promise<number> {
-    const res = await getDb(tx).emailToken.deleteMany({
+    const res = await db(tx).emailToken.deleteMany({
       where: { expiresAt: { lt: new Date() } },
     });
     return res.count;

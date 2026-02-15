@@ -1,11 +1,14 @@
 import "server-only";
 
+import Stripe from "stripe";
 import { prisma } from "@db";
-import { getStripe } from "@billing-core";
 import { env } from "@/server/config/env";
 
 export function stripe() {
-  return getStripe(env.STRIPE_SECRET_KEY);
+  return new Stripe(env.STRIPE_SECRET_KEY, {
+    apiVersion: "2024-06-20",
+    typescript: true,
+  });
 }
 
 export async function ensureStripeCustomerForOrg(params: {

@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import { OAuthStateService } from "@auth-core/src/oauth/state.service";
-import { OAuthLoginFlow, SessionService } from "@auth-core";
 import { env } from "@/server/config/env";
 import { setSessionCookie } from "@/server/adapters/cookies/session-cookie.adapter";
+import {
+  createOAuthLoginFlow,
+  createOAuthStateService,
+  createSessionService,
+} from "@/server/adapters/core/auth-core.adapter";
 
 const googleJwks = createRemoteJWKSet(
   new URL("https://www.googleapis.com/oauth2/v3/certs"),
@@ -70,11 +73,10 @@ export async function GET(req: Request) {
     );
   }
 
-  const stateSvc = new OAuthStateService();
+  const stateSvc = createOAuthStateService();
   const consumed = await stateSvc.consume({
     provider: "google",
     state,
-    pepper: env.TOKEN_PEPPER,
   });
 
   if (!consumed) {
@@ -94,7 +96,7 @@ export async function GET(req: Request) {
     const email = idPayload.email ?? null;
     const emailVerified = Boolean(idPayload.email_verified);
 
-    const oauthFlow = new OAuthLoginFlow();
+    const oauthFlow = createOAuthLoginFlow();
     const linked = await oauthFlow.linkOrCreate({
       provider: "google",
       providerAccountId,
@@ -102,11 +104,10 @@ export async function GET(req: Request) {
       emailVerified,
     });
 
-    const sessions = new SessionService();
+    const sessions = createSessionService();
     const session = await sessions.createSession({
       userId: linked.userId,
       ttlDays: env.SESSION_TTL_DAYS,
-      pepper: env.TOKEN_PEPPER,
       userAgent: req.headers.get("user-agent"),
     });
 

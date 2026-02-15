@@ -1,21 +1,19 @@
-import type { EmailTokenType } from "@prisma/client";
+import type { EmailTokenType } from "@contracts";
 
 export type IssueEmailTokenInput = {
   email: string;
   userId?: string | null;
   type: EmailTokenType;
   ttlMinutes: number;
-  pepper: string;
 };
 
 export type IssueEmailTokenResult = {
-  token: string; // raw token to embed in link
+  token: string;
   expiresAt: Date;
 };
 
 export type ConsumeEmailTokenInput = {
   token: string;
-  pepper: string;
 };
 
 export type ConsumedEmailToken = {

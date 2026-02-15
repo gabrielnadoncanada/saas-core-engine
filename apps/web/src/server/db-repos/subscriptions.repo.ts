@@ -3,7 +3,9 @@ import type {
   SubscriptionPlan,
   SubscriptionStatus,
 } from "@prisma/client";
-import { getDb, type DbTx } from "../tx";
+import { prisma, type DbTx } from "@db";
+
+const db = (tx?: DbTx) => tx ?? prisma;
 
 export class SubscriptionsRepo {
   async upsertOrgSubscription(
@@ -17,7 +19,7 @@ export class SubscriptionsRepo {
     },
     tx?: DbTx,
   ): Promise<Subscription> {
-    return getDb(tx).subscription.upsert({
+    return db(tx).subscription.upsert({
       where: { organizationId: params.organizationId },
       create: {
         organizationId: params.organizationId,
@@ -41,14 +43,14 @@ export class SubscriptionsRepo {
     organizationId: string,
     tx?: DbTx,
   ): Promise<Subscription | null> {
-    return getDb(tx).subscription.findUnique({ where: { organizationId } });
+    return db(tx).subscription.findUnique({ where: { organizationId } });
   }
 
   async findByStripeSubscriptionId(
     stripeSubscriptionId: string,
     tx?: DbTx,
   ): Promise<Subscription | null> {
-    return getDb(tx).subscription.findFirst({
+    return db(tx).subscription.findFirst({
       where: { stripeSubscriptionId },
     });
   }

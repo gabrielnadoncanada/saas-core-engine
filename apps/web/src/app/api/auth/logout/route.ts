@@ -1,21 +1,16 @@
 import { NextResponse } from "next/server";
-import { SessionService } from "@auth-core";
-import { env } from "@/server/config/env";
 import {
   clearSessionCookie,
   getSessionTokenFromCookie,
 } from "@/server/adapters/cookies/session-cookie.adapter";
+import { createSessionService } from "@/server/adapters/core/auth-core.adapter";
 
 export async function POST() {
   const token = getSessionTokenFromCookie();
 
-  // Best-effort revoke (cookie may be missing/invalid)
   if (token) {
-    const sessions = new SessionService();
-    const valid = await sessions.validateSession({
-      sessionToken: token,
-      pepper: env.TOKEN_PEPPER,
-    });
+    const sessions = createSessionService();
+    const valid = await sessions.validateSession({ sessionToken: token });
     if (valid) await sessions.revokeSession(valid.sessionId);
   }
 

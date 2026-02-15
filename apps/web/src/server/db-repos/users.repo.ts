@@ -1,20 +1,22 @@
 import type { User } from "@prisma/client";
-import { getDb, type DbTx } from "../tx";
+import { prisma, type DbTx } from "@db";
+
+const db = (tx?: DbTx) => tx ?? prisma;
 
 export class UsersRepo {
   async findById(userId: string, tx?: DbTx): Promise<User | null> {
-    return getDb(tx).user.findUnique({ where: { id: userId } });
+    return db(tx).user.findUnique({ where: { id: userId } });
   }
 
   async findByEmail(email: string, tx?: DbTx): Promise<User | null> {
-    return getDb(tx).user.findUnique({ where: { email: email.toLowerCase() } });
+    return db(tx).user.findUnique({ where: { email: email.toLowerCase() } });
   }
 
   async create(
     params: { email: string; passwordHash?: string | null },
     tx?: DbTx,
   ): Promise<User> {
-    return getDb(tx).user.create({
+    return db(tx).user.create({
       data: {
         email: params.email.toLowerCase(),
         passwordHash: params.passwordHash ?? null,
@@ -23,7 +25,7 @@ export class UsersRepo {
   }
 
   async markEmailVerified(userId: string, tx?: DbTx): Promise<void> {
-    await getDb(tx).user.update({
+    await db(tx).user.update({
       where: { id: userId },
       data: { emailVerifiedAt: new Date() },
     });
@@ -34,14 +36,14 @@ export class UsersRepo {
     passwordHash: string,
     tx?: DbTx,
   ): Promise<void> {
-    await getDb(tx).user.update({
+    await db(tx).user.update({
       where: { id: userId },
       data: { passwordHash },
     });
   }
 
   async touchLastLogin(userId: string, tx?: DbTx): Promise<void> {
-    await getDb(tx).user.update({
+    await db(tx).user.update({
       where: { id: userId },
       data: { lastLoginAt: new Date() },
     });

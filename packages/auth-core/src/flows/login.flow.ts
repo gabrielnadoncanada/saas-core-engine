@@ -1,8 +1,8 @@
-import { UsersRepo } from "@db";
+import type { UsersRepo } from "../auth.ports";
 import { verifyPassword } from "../hashing/password";
 
 export class LoginFlow {
-  constructor(private readonly users = new UsersRepo()) {}
+  constructor(private readonly users: UsersRepo) {}
 
   async execute(params: { email: string; password: string }) {
     const email = params.email.toLowerCase();

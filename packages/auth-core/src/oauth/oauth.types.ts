@@ -1,4 +1,4 @@
-import type { OAuthProvider } from "@prisma/client";
+import type { OAuthProvider } from "@contracts";
 
 export type OAuthStartResult = {
   provider: OAuthProvider;
@@ -11,5 +11,4 @@ export type OAuthCallbackInput = {
   provider: OAuthProvider;
   code: string;
   state: string;
-  pepper: string;
 };

@@ -1,6 +1,15 @@
 export { hashPassword, verifyPassword } from "./hashing/password";
 export { hashToken } from "./hashing/token";
 
+export type {
+  EmailTokenRepo,
+  OAuthAccountsRepo,
+  OAuthStatesRepo,
+  SessionsRepo,
+  TxRunner,
+  UsersRepo,
+} from "./auth.ports";
+
 export { SessionService } from "./sessions/session.service";
 export type {
   CreateSessionInput,

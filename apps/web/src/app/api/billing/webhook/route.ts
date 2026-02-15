@@ -2,14 +2,15 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { stripe } from "@/server/services/stripe.service";
 import { env } from "@/server/config/env";
-import { SubscriptionSyncService } from "@billing-core";
 import { prisma } from "@db";
+import { createSubscriptionSyncService } from "@/server/adapters/core/billing-core.adapter";
+import { mapStripeSubscriptionToSnapshot } from "@/server/adapters/stripe/stripe-webhook.adapter";
 
 export async function POST(req: Request) {
   const sig = req.headers.get("stripe-signature");
   if (!sig) return NextResponse.json({ ok: false }, { status: 400 });
 
-  const body = await req.text(); // IMPORTANT: raw body for signature verification
+  const body = await req.text();
   const s = stripe();
 
   let event: Stripe.Event;
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
 
-  const sync = new SubscriptionSyncService();
+  const sync = createSubscriptionSyncService();
 
   try {
     switch (event.type) {
@@ -36,7 +37,6 @@ export async function POST(req: Request) {
             : null;
 
         if (organizationId && stripeCustomerId) {
-          // Store customer id if missing
           await prisma.subscription.upsert({
             where: { organizationId },
             create: {
@@ -49,12 +49,11 @@ export async function POST(req: Request) {
           });
         }
 
-        // If session has subscription, fetch it and sync
         if (organizationId && stripeSubscriptionId) {
           const sub = await s.subscriptions.retrieve(stripeSubscriptionId);
-          await sync.syncFromStripeSubscription({
+          await sync.syncFromProviderSubscription({
             organizationId,
-            stripeSubscription: sub,
+            subscription: mapStripeSubscriptionToSnapshot(sub),
             stripeCustomerId,
             proMonthlyPriceId: env.STRIPE_PRICE_PRO_MONTHLY,
           });
@@ -72,9 +71,9 @@ export async function POST(req: Request) {
           typeof sub.customer === "string" ? sub.customer : null;
 
         if (organizationId) {
-          await sync.syncFromStripeSubscription({
+          await sync.syncFromProviderSubscription({
             organizationId,
-            stripeSubscription: sub,
+            subscription: mapStripeSubscriptionToSnapshot(sub),
             stripeCustomerId,
             proMonthlyPriceId: env.STRIPE_PRICE_PRO_MONTHLY,
           });
@@ -89,7 +88,6 @@ export async function POST(req: Request) {
         break;
       }
 
-      // Optional: invoice events (V1 ignore)
       case "invoice.payment_succeeded":
       case "invoice.payment_failed":
       default:

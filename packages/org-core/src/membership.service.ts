@@ -1,12 +1,13 @@
-import { MembershipsRepo } from "@db";
+import type { MembershipRole } from "@contracts";
+import type { MembershipsRepo } from "./org.ports";
 
 export class MembershipService {
-  constructor(private readonly memberships = new MembershipsRepo()) {}
+  constructor(private readonly memberships: MembershipsRepo) {}
 
   async requireOrgRole(params: {
     userId: string;
     organizationId: string;
-    roles: Array<"owner" | "admin" | "member">;
+    roles: MembershipRole[];
   }) {
     const membership = await this.memberships.findUserMembership({
       userId: params.userId,

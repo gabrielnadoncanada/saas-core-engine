@@ -1,4 +1,3 @@
-import { SessionsRepo } from "@db";
 import { hashToken } from "../hashing/token";
 import { randomTokenBase64Url } from "../hashing/random";
 import type {
@@ -7,13 +6,17 @@ import type {
   ValidateSessionInput,
   ValidSession,
 } from "./session.types";
+import type { SessionsRepo } from "../auth.ports";
 
 export class SessionService {
-  constructor(private readonly sessionsRepo = new SessionsRepo()) {}
+  constructor(
+    private readonly sessionsRepo: SessionsRepo,
+    private readonly pepper: string,
+  ) {}
 
   async createSession(input: CreateSessionInput): Promise<CreateSessionResult> {
     const sessionToken = randomTokenBase64Url(32);
-    const tokenHash = hashToken(sessionToken, input.pepper);
+    const tokenHash = hashToken(sessionToken, this.pepper);
 
     const now = new Date();
     const expiresAt = new Date(
@@ -34,7 +37,7 @@ export class SessionService {
   async validateSession(
     input: ValidateSessionInput,
   ): Promise<ValidSession | null> {
-    const tokenHash = hashToken(input.sessionToken, input.pepper);
+    const tokenHash = hashToken(input.sessionToken, this.pepper);
     const session = await this.sessionsRepo.findActiveByTokenHash(tokenHash);
     if (!session) return null;
     return { sessionId: session.id, userId: session.userId };

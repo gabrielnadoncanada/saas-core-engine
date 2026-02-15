@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { PasswordResetFlow, SessionService } from "@auth-core";
 import { env } from "@/server/config/env";
 import { setSessionCookie } from "@/server/adapters/cookies/session-cookie.adapter";
+import {
+  createPasswordResetFlow,
+  createSessionService,
+} from "@/server/adapters/core/auth-core.adapter";
 
 type Body = { token: string; newPassword: string };
 
@@ -15,11 +18,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const flow = new PasswordResetFlow();
+  const flow = createPasswordResetFlow();
   const res = await flow.reset({
     token: body.token,
     newPassword: body.newPassword,
-    pepper: env.TOKEN_PEPPER,
   });
 
   if (!res.ok)
@@ -28,12 +30,10 @@ export async function POST(req: Request) {
       { status: 400 },
     );
 
-  // Auto-login after reset
-  const sessions = new SessionService();
+  const sessions = createSessionService();
   const session = await sessions.createSession({
     userId: res.userId,
     ttlDays: env.SESSION_TTL_DAYS,
-    pepper: env.TOKEN_PEPPER,
     userAgent: req.headers.get("user-agent"),
   });
 

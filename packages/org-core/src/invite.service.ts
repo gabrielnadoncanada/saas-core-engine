@@ -1,24 +1,30 @@
-import { InvitationsRepo, MembershipsRepo, UsersRepo, withTx } from "@db";
-import { randomTokenBase64Url } from "@auth-core/src/hashing/random";
-import { hashToken } from "@auth-core/src/hashing/token";
+import type { InviteRole } from "@contracts";
+import type {
+  InviteToken,
+  InvitationsRepo,
+  MembershipsRepo,
+  TxRunner,
+  UsersRepo,
+} from "./org.ports";
 
 export class InviteService {
   constructor(
-    private readonly invites = new InvitationsRepo(),
-    private readonly users = new UsersRepo(),
-    private readonly memberships = new MembershipsRepo(),
+    private readonly invites: InvitationsRepo,
+    private readonly users: UsersRepo,
+    private readonly memberships: MembershipsRepo,
+    private readonly txRunner: TxRunner,
+    private readonly inviteToken: InviteToken,
   ) {}
 
   async createInvite(params: {
     organizationId: string;
     inviterUserId: string;
     email: string;
-    role: "admin" | "member";
-    pepper: string;
+    role: InviteRole;
     ttlMinutes: number;
   }) {
-    const rawToken = randomTokenBase64Url(32);
-    const tokenHash = hashToken(rawToken, params.pepper);
+    const rawToken = this.inviteToken.randomToken();
+    const tokenHash = this.inviteToken.hashToken(rawToken);
 
     const expiresAt = new Date(Date.now() + params.ttlMinutes * 60 * 1000);
 
@@ -33,18 +39,13 @@ export class InviteService {
     return { inviteId: invite.id, token: rawToken, expiresAt };
   }
 
-  async acceptInvite(params: {
-    token: string;
-    pepper: string;
-    acceptUserId: string;
-  }) {
-    const tokenHash = hashToken(params.token, params.pepper);
+  async acceptInvite(params: { token: string; acceptUserId: string }) {
+    const tokenHash = this.inviteToken.hashToken(params.token);
 
-    return withTx(async (tx) => {
+    return this.txRunner.withTx(async (tx) => {
       const invite = await this.invites.findValidByTokenHash(tokenHash, tx);
       if (!invite) throw new Error("INVALID_INVITE");
 
-      // Ensure accepting user email matches invite email (optional, but recommended)
       const user = await this.users.findById(params.acceptUserId, tx);
       if (!user) throw new Error("UNAUTHORIZED");
 
@@ -52,7 +53,6 @@ export class InviteService {
         throw new Error("INVITE_EMAIL_MISMATCH");
       }
 
-      // Create membership (idempotent)
       const existing = await this.memberships.findUserMembership(
         { userId: user.id, organizationId: invite.organizationId },
         tx,

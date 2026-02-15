@@ -1,5 +1,7 @@
 import type { Invitation, MembershipRole } from "@prisma/client";
-import { getDb, type DbTx } from "../tx";
+import { prisma, type DbTx } from "@db";
+
+const db = (tx?: DbTx) => tx ?? prisma;
 
 export class InvitationsRepo {
   async create(
@@ -12,7 +14,7 @@ export class InvitationsRepo {
     },
     tx?: DbTx,
   ): Promise<Invitation> {
-    return getDb(tx).invitation.create({
+    return db(tx).invitation.create({
       data: {
         organizationId: params.organizationId,
         email: params.email.toLowerCase(),
@@ -27,20 +29,20 @@ export class InvitationsRepo {
     tokenHash: string,
     tx?: DbTx,
   ): Promise<Invitation | null> {
-    return getDb(tx).invitation.findFirst({
+    return db(tx).invitation.findFirst({
       where: { tokenHash, acceptedAt: null, expiresAt: { gt: new Date() } },
     });
   }
 
   async markAccepted(invitationId: string, tx?: DbTx): Promise<void> {
-    await getDb(tx).invitation.update({
+    await db(tx).invitation.update({
       where: { id: invitationId },
       data: { acceptedAt: new Date() },
     });
   }
 
   async listPending(organizationId: string, tx?: DbTx): Promise<Invitation[]> {
-    return getDb(tx).invitation.findMany({
+    return db(tx).invitation.findMany({
       where: {
         organizationId,
         acceptedAt: null,

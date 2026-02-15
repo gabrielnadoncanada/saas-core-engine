@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { OAuthStateService } from "@auth-core/src/oauth/state.service"; // (voir note ci-dessous)
-import { codeChallengeS256 } from "@auth-core/src/oauth/pkce";
+import { codeChallengeS256 } from "@auth-core";
+import { createOAuthStateService } from "@/server/adapters/core/auth-core.adapter";
 import { env } from "@/server/config/env";
 
 function safeRedirectPath(input: string | null): string {
-  // Only allow relative internal redirects
   if (!input) return "/dashboard";
   if (!input.startsWith("/")) return "/dashboard";
   if (input.startsWith("//")) return "/dashboard";
@@ -17,12 +16,11 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const redirect = safeRedirectPath(url.searchParams.get("redirect"));
 
-  const stateSvc = new OAuthStateService();
+  const stateSvc = createOAuthStateService();
   const { state, codeVerifier } = await stateSvc.create({
     provider: "google",
     redirectUri: redirect,
     ttlMinutes: 10,
-    pepper: env.TOKEN_PEPPER,
   });
 
   const codeChallenge = codeChallengeS256(codeVerifier);

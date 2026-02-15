@@ -1,24 +1,25 @@
-import {
-  UsersRepo,
-  OrgsRepo,
+import type {
   MembershipsRepo,
+  OrgsRepo,
   SubscriptionsRepo,
-  withTx,
-} from "@db";
+  TxRunner,
+  UsersRepo,
+} from "../auth.ports";
 import { hashPassword } from "../hashing/password";
 
 export class SignupFlow {
   constructor(
-    private readonly users = new UsersRepo(),
-    private readonly orgs = new OrgsRepo(),
-    private readonly memberships = new MembershipsRepo(),
-    private readonly subs = new SubscriptionsRepo(),
+    private readonly users: UsersRepo,
+    private readonly orgs: OrgsRepo,
+    private readonly memberships: MembershipsRepo,
+    private readonly subs: SubscriptionsRepo,
+    private readonly txRunner: TxRunner,
   ) {}
 
   async execute(params: { email: string; password: string; orgName: string }) {
     const email = params.email.toLowerCase();
 
-    return withTx(async (tx) => {
+    return this.txRunner.withTx(async (tx) => {
       const existing = await this.users.findByEmail(email, tx);
       if (existing) throw new Error("Email already in use");
 
@@ -32,7 +33,11 @@ export class SignupFlow {
       );
 
       await this.subs.upsertOrgSubscription(
-        { organizationId: org.id, plan: "free", status: "inactive" },
+        {
+          organizationId: org.id,
+          plan: "free",
+          status: "inactive",
+        },
         tx,
       );
 

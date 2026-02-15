@@ -8,9 +8,7 @@
     "outDir": "./dist",
 
     "module": "ESNext",
-    "moduleResolution": "Bundler",
-
-    "types": ["node"]
+    "moduleResolution": "Bundler"
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["dist", "node_modules"]

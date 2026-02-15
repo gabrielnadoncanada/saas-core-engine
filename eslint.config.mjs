@@ -129,7 +129,9 @@ export default [
       "no-restricted-imports": [
         "error",
         {
+          paths: ["@db", "@prisma/client"],
           patterns: [
+            "@db",
             "@db/*",
             "@auth-core/*",
             "@billing-core/*",
@@ -167,7 +169,27 @@ export default [
     },
   },
 
-  // 4) Next server-only boundaries: forbid core packages from importing next/*
+  // 4) packages/*-core and contracts must stay infra-agnostic
+  {
+    files: ["packages/*-core/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            { name: "@db", message: "Core packages must not depend on db adapters or Prisma." },
+            { name: "@prisma/client", message: "Core packages must not depend on Prisma." },
+            { name: "next/headers", message: "Core packages must not use Next runtime APIs." },
+            { name: "next/server", message: "Core packages must not use Next runtime APIs." },
+            { name: "next/navigation", message: "Core packages must not use Next runtime APIs." },
+          ],
+          patterns: ["@db/*", "next/*"],
+        },
+      ],
+    },
+  },
+
+  // 5) Next server-only boundaries: forbid packages from importing next/*
   {
     files: ["packages/**/*.{ts,tsx}"],
     rules: {

@@ -1,11 +1,32 @@
-import type Stripe from "stripe";
-import type { SubscriptionStatus } from "@prisma/client";
-import { SubscriptionsRepo } from "@db";
-import { getSubscriptionMainPriceId, planFromPriceId } from "./plans";
+import type {
+  BillingProviderSubscriptionSnapshot,
+  SubscriptionPlan,
+  SubscriptionStatus,
+} from "@contracts";
+import { planFromPriceId } from "./plans";
 
-function mapStripeStatus(
-  status: Stripe.Subscription.Status,
-): SubscriptionStatus {
+export interface SubscriptionsRepo {
+  upsertOrgSubscription(params: {
+    organizationId: string;
+    plan: SubscriptionPlan;
+    status: SubscriptionStatus;
+    stripeCustomerId?: string | null;
+    stripeSubscriptionId?: string | null;
+    currentPeriodEnd?: Date | null;
+  }): Promise<{ id: string }>;
+
+  findByStripeSubscriptionId(
+    stripeSubscriptionId: string,
+  ): Promise<{
+    organizationId: string;
+    plan: SubscriptionPlan;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    currentPeriodEnd: Date | null;
+  } | null>;
+}
+
+function mapProviderStatus(status: string): SubscriptionStatus {
   switch (status) {
     case "active":
       return "active";
@@ -23,20 +44,22 @@ function mapStripeStatus(
 }
 
 export class SubscriptionSyncService {
-  constructor(private readonly subs = new SubscriptionsRepo()) {}
+  constructor(private readonly subs: SubscriptionsRepo) {}
 
-  async syncFromStripeSubscription(params: {
+  async syncFromProviderSubscription(params: {
     organizationId: string;
-    stripeSubscription: Stripe.Subscription;
+    subscription: BillingProviderSubscriptionSnapshot;
     stripeCustomerId: string | null;
     proMonthlyPriceId: string;
   }) {
-    const priceId = getSubscriptionMainPriceId(params.stripeSubscription);
-    const plan = planFromPriceId(priceId, params.proMonthlyPriceId);
+    const plan = planFromPriceId(
+      params.subscription.priceId,
+      params.proMonthlyPriceId,
+    );
 
-    const status = mapStripeStatus(params.stripeSubscription.status);
-    const currentPeriodEnd = params.stripeSubscription.current_period_end
-      ? new Date(params.stripeSubscription.current_period_end * 1000)
+    const status = mapProviderStatus(params.subscription.status);
+    const currentPeriodEnd = params.subscription.currentPeriodEndUnix
+      ? new Date(params.subscription.currentPeriodEndUnix * 1000)
       : null;
 
     await this.subs.upsertOrgSubscription({
@@ -44,7 +67,7 @@ export class SubscriptionSyncService {
       plan,
       status,
       stripeCustomerId: params.stripeCustomerId ?? null,
-      stripeSubscriptionId: params.stripeSubscription.id,
+      stripeSubscriptionId: params.subscription.id,
       currentPeriodEnd,
     });
   }

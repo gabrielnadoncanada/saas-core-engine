@@ -1,5 +1,7 @@
 import type { OAuthProvider, OAuthState } from "@prisma/client";
-import { getDb, type DbTx } from "../tx";
+import { prisma, type DbTx } from "@db";
+
+const db = (tx?: DbTx) => tx ?? prisma;
 
 export class OAuthStatesRepo {
   async create(
@@ -12,24 +14,24 @@ export class OAuthStatesRepo {
     },
     tx?: DbTx,
   ): Promise<OAuthState> {
-    return getDb(tx).oAuthState.create({ data: params });
+    return db(tx).oAuthState.create({ data: params });
   }
 
   async findValidByStateHash(
     stateHash: string,
     tx?: DbTx,
   ): Promise<OAuthState | null> {
-    return getDb(tx).oAuthState.findFirst({
+    return db(tx).oAuthState.findFirst({
       where: { stateHash, expiresAt: { gt: new Date() } },
     });
   }
 
   async deleteById(id: string, tx?: DbTx): Promise<void> {
-    await getDb(tx).oAuthState.delete({ where: { id } });
+    await db(tx).oAuthState.delete({ where: { id } });
   }
 
   async deleteExpired(tx?: DbTx): Promise<number> {
-    const res = await getDb(tx).oAuthState.deleteMany({
+    const res = await db(tx).oAuthState.deleteMany({
       where: { expiresAt: { lt: new Date() } },
     });
     return res.count;

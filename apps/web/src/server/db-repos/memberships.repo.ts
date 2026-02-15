@@ -1,19 +1,21 @@
 import type { Membership, MembershipRole } from "@prisma/client";
-import { getDb, type DbTx } from "../tx";
+import { prisma, type DbTx } from "@db";
+
+const db = (tx?: DbTx) => tx ?? prisma;
 
 export class MembershipsRepo {
   async create(
     params: { userId: string; organizationId: string; role: MembershipRole },
     tx?: DbTx,
   ): Promise<Membership> {
-    return getDb(tx).membership.create({ data: params });
+    return db(tx).membership.create({ data: params });
   }
 
   async findUserMembership(
     params: { userId: string; organizationId: string },
     tx?: DbTx,
   ): Promise<Membership | null> {
-    return getDb(tx).membership.findUnique({
+    return db(tx).membership.findUnique({
       where: {
         userId_organizationId: {
           userId: params.userId,
@@ -24,7 +26,7 @@ export class MembershipsRepo {
   }
 
   async listOrgMembers(organizationId: string, tx?: DbTx) {
-    return getDb(tx).membership.findMany({
+    return db(tx).membership.findMany({
       where: { organizationId },
       include: { user: true },
       orderBy: { createdAt: "asc" },
@@ -36,13 +38,13 @@ export class MembershipsRepo {
     role: MembershipRole,
     tx?: DbTx,
   ): Promise<void> {
-    await getDb(tx).membership.update({
+    await db(tx).membership.update({
       where: { id: membershipId },
       data: { role },
     });
   }
 
   async remove(membershipId: string, tx?: DbTx): Promise<void> {
-    await getDb(tx).membership.delete({ where: { id: membershipId } });
+    await db(tx).membership.delete({ where: { id: membershipId } });
   }
 }

@@ -1,10 +1,10 @@
-import type { OAuthProvider } from "@prisma/client";
-import { OAuthAccountsRepo, UsersRepo } from "@db";
+import type { OAuthProvider } from "@contracts";
+import type { OAuthAccountsRepo, UsersRepo } from "../auth.ports";
 
 export class OAuthLoginFlow {
   constructor(
-    private readonly users = new UsersRepo(),
-    private readonly oauthAccounts = new OAuthAccountsRepo(),
+    private readonly users: UsersRepo,
+    private readonly oauthAccounts: OAuthAccountsRepo,
   ) {}
 
   async linkOrCreate(params: {
@@ -28,7 +28,6 @@ export class OAuthLoginFlow {
     }
 
     if (!user) {
-      // provider without email (rare). You can force fetch primary email or fail.
       throw new Error("OAuth provider did not return an email");
     }
 

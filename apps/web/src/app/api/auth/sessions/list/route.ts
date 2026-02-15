@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { SessionService } from "@auth-core";
 import { requireUser } from "@/server/auth/require-user";
+import { createSessionService } from "@/server/adapters/core/auth-core.adapter";
 
 export async function GET() {
   const user = await requireUser();
-  const sessions = new SessionService();
+  const sessions = createSessionService();
 
   const list = await sessions.listActiveSessions(user.userId);
 

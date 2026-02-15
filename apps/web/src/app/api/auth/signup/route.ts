@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { SignupFlow, SessionService } from "@auth-core";
 import { env } from "@/server/config/env";
 import { setSessionCookie } from "@/server/adapters/cookies/session-cookie.adapter";
+import {
+  createSessionService,
+  createSignupFlow,
+} from "@/server/adapters/core/auth-core.adapter";
 
 type Body = { email: string; password: string; orgName: string };
 
@@ -12,7 +15,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
 
-  const signup = new SignupFlow();
+  const signup = createSignupFlow();
 
   try {
     const { userId, organizationId } = await signup.execute({
@@ -21,11 +24,10 @@ export async function POST(req: Request) {
       orgName: body.orgName,
     });
 
-    const sessions = new SessionService();
+    const sessions = createSessionService();
     const session = await sessions.createSession({
       userId,
       ttlDays: env.SESSION_TTL_DAYS,
-      pepper: env.TOKEN_PEPPER,
     });
 
     setSessionCookie(session);
