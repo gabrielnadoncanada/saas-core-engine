@@ -244,3 +244,49 @@ model AIAuditLog {
   @@index([organizationId, createdAt])
   @@index([userId, createdAt])
 }
+
+model AIPrompt {
+  id             String   @id @default(cuid())
+  organizationId String
+
+  key            String   // e.g. "chat.system"
+  activeVersion  Int      @default(1)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, key])
+  @@index([organizationId, key])
+}
+
+model AIPromptVersion {
+  id          String   @id @default(cuid())
+  promptId    String
+  version     Int
+  content     String
+
+  createdAt   DateTime @default(now())
+  createdById String?
+
+  prompt AIPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@unique([promptId, version])
+  @@index([promptId, version])
+}
+
+model AIToolExecution {
+  id          String   @id @default(cuid())
+  auditLogId  String
+  step        Int
+  toolName    String
+  durationMs  Int
+  status      String   // "ok" | "error"
+  errorMessage String?
+
+  createdAt   DateTime @default(now())
+
+  auditLog AIAuditLog @relation(fields: [auditLogId], references: [id], onDelete: Cascade)
+
+  @@index([auditLogId])
+  @@index([toolName, createdAt])
+}

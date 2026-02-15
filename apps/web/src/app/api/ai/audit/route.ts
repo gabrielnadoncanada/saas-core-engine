@@ -18,12 +18,15 @@ export async function GET(req: Request) {
   );
 
   const rows = await prisma.aIAuditLog.findMany({
-    where: {
-      organizationId: user.organizationId,
-      ...(status ? { status } : {}),
-    },
+    where: { organizationId: user.organizationId, ...(status ? { status } : {}) },
     orderBy: { createdAt: "desc" },
     take: limit,
+    include: {
+      toolExecutions: {
+        orderBy: { step: "asc" },
+        select: { step: true, toolName: true, durationMs: true, status: true, errorMessage: true },
+      },
+    },
   });
 
   // resolve user emails (small N)

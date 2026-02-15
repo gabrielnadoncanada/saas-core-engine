@@ -5,6 +5,8 @@ import { getRequestMeta } from "@/server/ai/ai-audit";
 import { env } from "@/server/config/env";
 import { getSessionUser } from "@/shared/getSessionUser";
 import { enforceAiOrThrow } from "@/server/ai/ai-enforcement";
+import { DEFAULT_PROMPTS } from "@/server/ai/prompts/default-prompts";
+import { getActivePromptContent } from "@/server/ai/prompts/ai-prompts.service";
 
 type Body = {
   messages: { role: "system" | "user" | "assistant"; content: string }[];
@@ -80,8 +82,19 @@ export async function POST(req: Request) {
           null;
 
         try {
+          const systemPrompt = await getActivePromptContent(
+            sessionUser.organizationId,
+            "chat.system",
+            DEFAULT_PROMPTS["chat.system"],
+          );
+
+          const messages = [
+            { role: "system" as const, content: systemPrompt },
+            ...body.messages,
+          ];
+
           const stream = provider.streamEvents({
-            messages: body.messages,
+            messages: messages,
             model,
             userId: sessionUser.id,
             orgId: sessionUser.organizationId,

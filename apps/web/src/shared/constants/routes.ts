@@ -17,5 +17,8 @@ export const routes = {
     settings: "/dashboard/settings",
     aiUsage: "/dashboard/ai-usage",
     aiAudit: "/dashboard/ai-audit",
+    aiPrompts: "/dashboard/ai-prompts",
+    aiStructured: "/dashboard/ai-structured",
+    aiTools: "/dashboard/ai-tools",
   },
 } as const;
