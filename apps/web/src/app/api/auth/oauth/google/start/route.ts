@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { codeChallengeS256 } from "@auth-core";
 import { createOAuthStateService } from "@/server/adapters/core/auth-core.adapter";
 import { env } from "@/server/config/env";
+import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
 
 function safeRedirectPath(input: string | null): string {
   if (!input) return "/dashboard";
@@ -13,6 +14,14 @@ function safeRedirectPath(input: string | null): string {
 }
 
 export async function GET(req: Request) {
+  try {
+    await enforceAuthRateLimit(req, "oauth_start");
+  } catch (e) {
+    if ((e as any).status === 429)
+      return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429 });
+    throw e;
+  }
+
   const url = new URL(req.url);
   const redirect = safeRedirectPath(url.searchParams.get("redirect"));
 

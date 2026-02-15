@@ -5,10 +5,19 @@ import {
   createLoginFlow,
   createSessionService,
 } from "@/server/adapters/core/auth-core.adapter";
+import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
 
 type Body = { email: string; password: string };
 
 export async function POST(req: Request) {
+  try {
+    await enforceAuthRateLimit(req, "login");
+  } catch (e) {
+    if ((e as any).status === 429)
+      return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429 });
+    throw e;
+  }
+
   const body = (await req.json()) as Body;
 
   if (!body?.email || !body?.password) {

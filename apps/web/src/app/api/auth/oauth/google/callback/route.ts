@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { GoogleProvider } from "@auth-core";
 import { env } from "@/server/config/env";
 import { setSessionCookie } from "@/server/adapters/cookies/session-cookie.adapter";
 import {
@@ -8,59 +8,7 @@ import {
   createSessionService,
 } from "@/server/adapters/core/auth-core.adapter";
 
-const googleJwks = createRemoteJWKSet(
-  new URL("https://www.googleapis.com/oauth2/v3/certs"),
-);
-
-type GoogleIdTokenPayload = {
-  sub: string;
-  email?: string;
-  email_verified?: boolean;
-};
-
-async function exchangeCodeForTokens(params: {
-  code: string;
-  codeVerifier: string;
-}) {
-  const res = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      client_id: env.GOOGLE_OAUTH_CLIENT_ID,
-      client_secret: env.GOOGLE_OAUTH_CLIENT_SECRET,
-      redirect_uri: env.GOOGLE_OAUTH_REDIRECT_URI,
-      grant_type: "authorization_code",
-      code: params.code,
-      code_verifier: params.codeVerifier,
-    }),
-  });
-
-  if (!res.ok) throw new Error("Google token exchange failed");
-
-  const json = (await res.json()) as {
-    access_token?: string;
-    id_token?: string;
-    token_type?: string;
-    expires_in?: number;
-    refresh_token?: string;
-    scope?: string;
-  };
-
-  if (!json.id_token) throw new Error("Missing id_token from Google");
-
-  return json;
-}
-
-async function verifyGoogleIdToken(
-  idToken: string,
-): Promise<GoogleIdTokenPayload> {
-  const { payload } = await jwtVerify(idToken, googleJwks, {
-    issuer: ["https://accounts.google.com", "accounts.google.com"],
-    audience: env.GOOGLE_OAUTH_CLIENT_ID,
-  });
-
-  return payload as unknown as GoogleIdTokenPayload;
-}
+const google = new GoogleProvider(env.GOOGLE_OAUTH_CLIENT_ID);
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -86,22 +34,20 @@ export async function GET(req: Request) {
   }
 
   try {
-    const tokens = await exchangeCodeForTokens({
+    const claims = await google.exchangeCode({
       code,
       codeVerifier: consumed.codeVerifier,
+      clientId: env.GOOGLE_OAUTH_CLIENT_ID,
+      clientSecret: env.GOOGLE_OAUTH_CLIENT_SECRET,
+      redirectUri: env.GOOGLE_OAUTH_REDIRECT_URI,
     });
-    const idPayload = await verifyGoogleIdToken(tokens.id_token!);
-
-    const providerAccountId = idPayload.sub;
-    const email = idPayload.email ?? null;
-    const emailVerified = Boolean(idPayload.email_verified);
 
     const oauthFlow = createOAuthLoginFlow();
     const linked = await oauthFlow.linkOrCreate({
       provider: "google",
-      providerAccountId,
-      email,
-      emailVerified,
+      providerAccountId: claims.sub,
+      email: claims.email,
+      emailVerified: claims.emailVerified,
     });
 
     const sessions = createSessionService();

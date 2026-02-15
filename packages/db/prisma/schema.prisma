@@ -218,6 +218,17 @@ model AIRateLimitBucket {
   @@index([organizationId, windowStart])
 }
 
+model AuthRateLimitBucket {
+  id          String   @id @default(cuid())
+  key         String
+  windowStart DateTime @map("window_start")
+  count       Int      @default(0)
+
+  @@unique([key, windowStart])
+  @@index([key, windowStart])
+  @@map("auth_rate_limit_buckets")
+}
+
 model AIAuditLog {
   id             String   @id @default(cuid())
   organizationId String

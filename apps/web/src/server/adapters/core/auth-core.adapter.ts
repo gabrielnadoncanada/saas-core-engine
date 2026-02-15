@@ -7,6 +7,7 @@ import {
   PasswordResetFlow,
   SessionService,
   SignupFlow,
+  VerifyEmailFlow,
 } from "@auth-core";
 import { env } from "@/server/config/env";
 import { EmailTokensRepo } from "@/server/db-repos/email-tokens.repo";
@@ -61,4 +62,8 @@ export function createOAuthStateService() {
 
 export function createOAuthLoginFlow() {
   return new OAuthLoginFlow(new UsersRepo(), new OAuthAccountsRepo());
+}
+
+export function createVerifyEmailFlow() {
+  return new VerifyEmailFlow(createEmailTokenService(), new UsersRepo());
 }

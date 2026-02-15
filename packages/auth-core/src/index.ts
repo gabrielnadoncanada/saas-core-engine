@@ -27,3 +27,9 @@ export { PasswordResetFlow } from "./flows/password-reset.flow";
 export { OAuthLoginFlow } from "./flows/oauth-login.flow";
 export { OAuthStateService } from "./oauth/state.service";
 export { codeChallengeS256 } from "./oauth/pkce";
+export { GoogleProvider } from "./oauth/providers/google";
+export type {
+  GoogleIdTokenClaims,
+  GoogleTokenExchangeParams,
+} from "./oauth/providers/google";
+export { VerifyEmailFlow } from "./flows/verify-email.flow";

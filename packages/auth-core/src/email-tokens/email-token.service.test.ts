@@ -1,0 +1,95 @@
+import { describe, it, expect, vi } from "vitest";
+import { EmailTokenService } from "./email-token.service";
+import type { EmailTokenRepo } from "../auth.ports";
+
+function mockEmailTokenRepo(): EmailTokenRepo {
+  return {
+    create: vi.fn().mockResolvedValue({ id: "et-1" }),
+    findValidByTokenHash: vi.fn().mockResolvedValue(null),
+    markUsed: vi.fn().mockResolvedValue(undefined),
+  };
+}
+
+const PEPPER = "test-pepper-long-enough-for-validation";
+
+describe("EmailTokenService", () => {
+  describe("issue", () => {
+    it("returns a raw token and expiry", async () => {
+      const repo = mockEmailTokenRepo();
+      const svc = new EmailTokenService(repo, PEPPER);
+
+      const result = await svc.issue({
+        email: "test@example.com",
+        type: "magic_login",
+        ttlMinutes: 15,
+      });
+
+      expect(result.token).toBeTruthy();
+      expect(result.expiresAt).toBeInstanceOf(Date);
+      expect(repo.create).toHaveBeenCalledOnce();
+    });
+
+    it("stores a hashed token", async () => {
+      const repo = mockEmailTokenRepo();
+      const svc = new EmailTokenService(repo, PEPPER);
+
+      const result = await svc.issue({
+        email: "a@b.com",
+        type: "password_reset",
+        ttlMinutes: 10,
+      });
+
+      const call = (repo.create as any).mock.calls[0][0];
+      expect(call.tokenHash).not.toBe(result.token);
+      expect(call.tokenHash).toMatch(/^[0-9a-f]{64}$/);
+    });
+
+    it("passes userId and type to repo", async () => {
+      const repo = mockEmailTokenRepo();
+      const svc = new EmailTokenService(repo, PEPPER);
+
+      await svc.issue({
+        email: "a@b.com",
+        userId: "u1",
+        type: "verify_email",
+        ttlMinutes: 60,
+      });
+
+      const call = (repo.create as any).mock.calls[0][0];
+      expect(call.userId).toBe("u1");
+      expect(call.type).toBe("verify_email");
+    });
+  });
+
+  describe("consume", () => {
+    it("returns null when token not found", async () => {
+      const repo = mockEmailTokenRepo();
+      const svc = new EmailTokenService(repo, PEPPER);
+
+      const result = await svc.consume({ token: "invalid" });
+      expect(result).toBeNull();
+      expect(repo.markUsed).not.toHaveBeenCalled();
+    });
+
+    it("returns consumed token and marks it used", async () => {
+      const repo = mockEmailTokenRepo();
+      (repo.findValidByTokenHash as any).mockResolvedValue({
+        id: "et-1",
+        email: "a@b.com",
+        userId: "u1",
+        type: "magic_login",
+      });
+      const svc = new EmailTokenService(repo, PEPPER);
+
+      const result = await svc.consume({ token: "some-token" });
+
+      expect(result).toEqual({
+        id: "et-1",
+        email: "a@b.com",
+        userId: "u1",
+        type: "magic_login",
+      });
+      expect(repo.markUsed).toHaveBeenCalledWith("et-1");
+    });
+  });
+});

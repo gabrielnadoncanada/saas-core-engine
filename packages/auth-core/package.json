@@ -13,11 +13,16 @@
   "scripts": {
     "lint": "eslint src --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run"
   },
   "dependencies": {
     "@contracts": "workspace:*",
+    "@noble/hashes": "^1.6.0",
     "argon2": "^0.41.1",
-    "@noble/hashes": "^1.6.0"
+    "jose": "^6.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.18"
   }
 }
