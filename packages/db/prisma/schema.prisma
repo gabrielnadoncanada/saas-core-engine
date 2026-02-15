@@ -50,6 +50,7 @@ model User {
   memberships   Membership[]
   sessions      Session[]
   oauthAccounts OAuthAccount[]
+  emailTokens   EmailToken[]
 
   @@map("users")
 }
@@ -241,6 +242,8 @@ model AIAuditLog {
 
   createdAt      DateTime @default(now())
 
+  toolExecutions AIToolExecution[]
+
   @@index([organizationId, createdAt])
   @@index([userId, createdAt])
 }
@@ -254,6 +257,8 @@ model AIPrompt {
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  versions       AIPromptVersion[]
 
   @@unique([organizationId, key])
   @@index([organizationId, key])

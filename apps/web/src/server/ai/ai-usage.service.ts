@@ -1,7 +1,8 @@
 import "server-only";
 
 import { prisma } from "@db";
-import { AI_QUOTAS, getMonthRange } from "./ai-quota";
+import { getMonthRange } from "./ai-quota";
+import { AI_POLICY, normalizePlan } from "./ai-policy";
 
 export async function getOrgPlan(orgId: string) {
   const sub = await prisma.subscription.findUnique({
@@ -32,7 +33,7 @@ export async function getOrgMonthlyUsage(orgId: string, at = new Date()) {
 
 export async function enforceQuotaOrThrow(orgId: string) {
   const plan = await getOrgPlan(orgId);
-  const quota = AI_QUOTAS[plan]?.monthlyTokens ?? AI_QUOTAS.free.monthlyTokens;
+  const quota = AI_POLICY[normalizePlan(plan)].monthlyTokens;
 
   const usage = await getOrgMonthlyUsage(orgId);
 

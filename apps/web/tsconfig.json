@@ -9,6 +9,7 @@
 
     "baseUrl": ".",
     "paths": {
+      "@ai-core/*": ["../../packages/ai-core/src/*"],
       "@contracts/*": ["../../packages/contracts/src/*"],
       "@db/*": ["../../packages/db/src/*"],
       "@auth-core/*": ["../../packages/auth-core/src/*"],
@@ -19,6 +20,7 @@
     }
   },
   "references": [
+    { "path": "../../packages/ai-core" },
     { "path": "../../packages/contracts" },
     { "path": "../../packages/db" },
     { "path": "../../packages/auth-core" },

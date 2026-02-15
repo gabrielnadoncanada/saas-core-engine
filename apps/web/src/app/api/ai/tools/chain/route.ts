@@ -39,7 +39,7 @@ const PickSchema = z.discriminatedUnion("action", [
 type Step = {
   step: number;
   pick: any;
-  tool?: { name: string; args: any; result?: any; error?: string };
+  tool?: { name: string; args: any; result?: any; error?: string; durationMs?: number };
   assistant?: { note?: string; partialAnswer?: string };
   usage?: { inputTokens: number; outputTokens: number };
   costUsd?: number;
@@ -163,6 +163,7 @@ export async function POST(req: Request) {
       // Execute tool
       let toolResult: any = null;
       let toolError: string | null = null;
+      let toolDurationMs = 0;
 
       try {
         const exec = await time(async () => {
@@ -177,6 +178,7 @@ export async function POST(req: Request) {
         });
         toolResult = exec.error ? null : exec.value;
         toolError = exec.error;
+        toolDurationMs = exec.durationMs;
       } catch (e) {
         toolError = (e as Error).message;
       }
@@ -186,7 +188,7 @@ export async function POST(req: Request) {
         args: pick.args,
         result: toolResult ?? undefined,
         error: toolError ?? undefined,
-        durationMs: exec.durationMs,
+        durationMs: toolDurationMs,
       };
       step.assistant = { note: pick.note ?? "" };
       steps.push(step);

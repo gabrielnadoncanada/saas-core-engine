@@ -3,7 +3,7 @@ import { prisma } from "@db";
 import { getSessionUser } from "@/shared/getSessionUser";
 import { getMonthRange } from "@/server/ai/ai-quota";
 import { getOrgPlan, getOrgMonthlyUsage } from "@/server/ai/ai-usage.service";
-import { AI_QUOTAS } from "@/server/ai/ai-quota";
+import { AI_POLICY, normalizePlan } from "@/server/ai/ai-policy";
 
 export async function GET() {
   const user = await getSessionUser();
@@ -15,7 +15,9 @@ export async function GET() {
 
   const orgId = user.organizationId;
   const plan = await getOrgPlan(orgId);
-  const quota = AI_QUOTAS[plan]?.monthlyTokens ?? AI_QUOTAS.free.monthlyTokens;
+  const normalizedPlan = normalizePlan(plan);
+  const policyEntry = AI_POLICY[normalizedPlan];
+  const quota = policyEntry.monthlyTokens;
 
   const monthly = await getOrgMonthlyUsage(orgId);
   const { start, end } = getMonthRange();
@@ -73,6 +75,8 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     plan,
+    model: policyEntry.model,
+    rpm: policyEntry.rpm,
     quota,
     monthly,
     daily: Array.from(daily.values()).sort((a, b) => (a.day < b.day ? -1 : 1)),

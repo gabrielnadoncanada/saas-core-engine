@@ -6,7 +6,7 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
-    
+    "setup": "tsx scripts/setup.ts",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "clean": "turbo clean && rimraf node_modules **/node_modules **/.next **/dist",

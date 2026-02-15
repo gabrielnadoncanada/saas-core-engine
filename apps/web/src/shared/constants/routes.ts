@@ -20,5 +20,6 @@ export const routes = {
     aiPrompts: "/dashboard/ai-prompts",
     aiStructured: "/dashboard/ai-structured",
     aiTools: "/dashboard/ai-tools",
+    aiToolsChain: "/dashboard/ai-tools-chain",
   },
 } as const;

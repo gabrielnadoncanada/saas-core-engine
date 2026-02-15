@@ -3,6 +3,7 @@
 const nextConfig = {
   // Important for monorepos (workspace packages)
   transpilePackages: [
+    "@ai-core",
     "@contracts",
     "@db",
     "@auth-core",

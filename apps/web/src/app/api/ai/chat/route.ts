@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { OpenAIProvider } from "@ai-core";
 import { estimateCost } from "@ai-core";
 import { prisma } from "@db";
@@ -8,9 +9,14 @@ import { enforceAiOrThrow } from "@/server/ai/ai-enforcement";
 import { DEFAULT_PROMPTS } from "@/server/ai/prompts/default-prompts";
 import { getActivePromptContent } from "@/server/ai/prompts/ai-prompts.service";
 
-type Body = {
-  messages: { role: "system" | "user" | "assistant"; content: string }[];
-};
+const MessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string(),
+});
+
+const BodySchema = z.object({
+  messages: z.array(MessageSchema).min(1),
+});
 
 function sseJson(data: unknown) {
   return `data: ${JSON.stringify(data)}\n\n`;
@@ -20,9 +26,15 @@ export async function POST(req: Request) {
   const sessionUser = await getSessionUser();
   if (!sessionUser) return new Response("Unauthorized", { status: 401 });
 
-  const body = (await req.json()) as Body;
-  if (!Array.isArray(body?.messages))
+  const raw = await req.json().catch(() => null);
+  const parsed = BodySchema.safeParse(raw);
+  if (!parsed.success)
     return new Response("Invalid body", { status: 400 });
+
+  const body = parsed.data;
+
+  // Extract meta before try-catch so it's available in all scopes
+  const { messageCount, promptChars } = getRequestMeta(body.messages);
 
   let policy: {
     plan: string;
@@ -34,7 +46,6 @@ export async function POST(req: Request) {
     rpmWindowStart: string;
   };
   try {
-    const { messageCount, promptChars } = getRequestMeta(body.messages);
     policy = await enforceAiOrThrow(sessionUser.organizationId);
   } catch (e) {
     const status = (e as any).status ?? 429;
@@ -124,6 +135,12 @@ export async function POST(req: Request) {
           }
 
           if (finalUsage) {
+            const costUsd = estimateCost(
+              model,
+              finalUsage.inputTokens,
+              finalUsage.outputTokens,
+            );
+
             await prisma.aIAuditLog.create({
               data: {
                 organizationId: sessionUser.organizationId,
@@ -135,12 +152,19 @@ export async function POST(req: Request) {
                 messageCount,
                 inputTokens: finalUsage.inputTokens,
                 outputTokens: finalUsage.outputTokens,
-                costUsd: estimateCost(
-                  model,
-                  finalUsage.inputTokens,
-                  finalUsage.outputTokens,
-                ),
+                costUsd,
                 status: "ok",
+              },
+            });
+
+            await prisma.aIUsage.create({
+              data: {
+                userId: sessionUser.id,
+                organizationId: sessionUser.organizationId,
+                model,
+                inputTokens: finalUsage.inputTokens,
+                outputTokens: finalUsage.outputTokens,
+                costUsd,
               },
             });
           }

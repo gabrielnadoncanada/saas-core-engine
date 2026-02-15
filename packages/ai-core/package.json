@@ -1,1 +1,46 @@
 
+{
+  "name": "@ai-core",
+  "version": "1.0.0",
+  "private": false,
+  "description": "AI foundation for SaaS Core Engine (streaming, structured outputs, tool calling, usage metering).",
+  "keywords": [
+    "ai",
+    "openai",
+    "saas",
+    "streaming",
+    "structured-output",
+    "tool-calling"
+  ],
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "openai": "^4.0.0",
+    "zod": "^3.23.0",
+    "zod-to-json-schema": "^3.22.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  }
+}
