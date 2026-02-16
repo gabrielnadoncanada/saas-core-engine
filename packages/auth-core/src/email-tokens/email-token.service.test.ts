@@ -6,7 +6,7 @@ function mockEmailTokenRepo(): EmailTokenRepo {
   return {
     create: vi.fn().mockResolvedValue({ id: "et-1" }),
     findValidByTokenHash: vi.fn().mockResolvedValue(null),
-    markUsed: vi.fn().mockResolvedValue(undefined),
+    markUsedIfUnused: vi.fn().mockResolvedValue(true),
   };
 }
 
@@ -68,7 +68,7 @@ describe("EmailTokenService", () => {
 
       const result = await svc.consume({ token: "invalid" });
       expect(result).toBeNull();
-      expect(repo.markUsed).not.toHaveBeenCalled();
+      expect(repo.markUsedIfUnused).not.toHaveBeenCalled();
     });
 
     it("returns consumed token and marks it used", async () => {
@@ -89,7 +89,23 @@ describe("EmailTokenService", () => {
         userId: "u1",
         type: "magic_login",
       });
-      expect(repo.markUsed).toHaveBeenCalledWith("et-1");
+      expect(repo.markUsedIfUnused).toHaveBeenCalledWith("et-1", undefined);
+    });
+
+    it("returns null when token was already consumed concurrently", async () => {
+      const repo = mockEmailTokenRepo();
+      (repo.findValidByTokenHash as any).mockResolvedValue({
+        id: "et-1",
+        email: "a@b.com",
+        userId: "u1",
+        type: "magic_login",
+      });
+      (repo.markUsedIfUnused as any).mockResolvedValue(false);
+      const svc = new EmailTokenService(repo, PEPPER);
+
+      const result = await svc.consume({ token: "some-token" });
+
+      expect(result).toBeNull();
     });
   });
 });

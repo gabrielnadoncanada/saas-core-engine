@@ -8,6 +8,7 @@ export const orgGetTool: AITool = {
   description: "Get current organization details (name, createdAt).",
   schema: z.object({}),
   async execute(_args, ctx) {
+    z.object({}).parse(_args);
     const org = await prisma.organization.findUnique({
       where: { id: ctx.orgId },
       select: { id: true, name: true, createdAt: true },

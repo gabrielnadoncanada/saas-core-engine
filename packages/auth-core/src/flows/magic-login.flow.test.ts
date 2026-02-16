@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { MagicLoginFlow } from "./magic-login.flow";
 import type { EmailTokenService } from "../email-tokens/email-token.service";
-import type { UsersRepo } from "../auth.ports";
+import type { TxRunner, UsersRepo } from "../auth.ports";
 
 function mockTokens(overrides: Partial<EmailTokenService> = {}): EmailTokenService {
   return {
@@ -23,6 +23,10 @@ function mockUsers(overrides: Partial<UsersRepo> = {}): UsersRepo {
   };
 }
 
+const passThroughTx: TxRunner = {
+  withTx: async <T>(fn: (tx: any) => Promise<T>) => fn({}),
+};
+
 describe("MagicLoginFlow", () => {
   describe("request", () => {
     it("issues a magic_login token", async () => {
@@ -31,7 +35,7 @@ describe("MagicLoginFlow", () => {
         findByEmail: vi.fn().mockResolvedValue({ id: "u1", email: "a@b.com", passwordHash: null }),
       });
 
-      const flow = new MagicLoginFlow(tokens, users);
+      const flow = new MagicLoginFlow(tokens, users, passThroughTx);
       const res = await flow.request({ email: "A@B.com", ttlMinutes: 15 });
 
       expect(res.token).toBe("raw-token");
@@ -43,7 +47,7 @@ describe("MagicLoginFlow", () => {
 
   describe("confirm", () => {
     it("returns ok:false for invalid token", async () => {
-      const flow = new MagicLoginFlow(mockTokens(), mockUsers());
+      const flow = new MagicLoginFlow(mockTokens(), mockUsers(), passThroughTx);
       const res = await flow.confirm({ token: "bad" });
       expect(res.ok).toBe(false);
     });
@@ -58,7 +62,7 @@ describe("MagicLoginFlow", () => {
         }),
       });
 
-      const flow = new MagicLoginFlow(tokens, mockUsers());
+      const flow = new MagicLoginFlow(tokens, mockUsers(), passThroughTx);
       const res = await flow.confirm({ token: "t" });
       expect(res.ok).toBe(false);
     });
@@ -74,14 +78,18 @@ describe("MagicLoginFlow", () => {
         }),
       });
 
-      const flow = new MagicLoginFlow(tokens, users);
+      const flow = new MagicLoginFlow(tokens, users, passThroughTx);
       const res = await flow.confirm({ token: "t" });
 
       expect(res.ok).toBe(true);
-      expect(users.create).toHaveBeenCalledWith({
-        email: "new@b.com",
-        passwordHash: null,
-      });
+      expect(tokens.consume).toHaveBeenCalledWith({ token: "t" }, expect.any(Object));
+      expect(users.create).toHaveBeenCalledWith(
+        {
+          email: "new@b.com",
+          passwordHash: null,
+        },
+        expect.any(Object),
+      );
       expect(users.markEmailVerified).toHaveBeenCalled();
     });
 
@@ -98,11 +106,11 @@ describe("MagicLoginFlow", () => {
         }),
       });
 
-      const flow = new MagicLoginFlow(tokens, users);
+      const flow = new MagicLoginFlow(tokens, users, passThroughTx);
       const res = await flow.confirm({ token: "t" });
 
       expect(res).toEqual({ ok: true, userId: "u1" });
-      expect(users.touchLastLogin).toHaveBeenCalledWith("u1");
+      expect(users.touchLastLogin).toHaveBeenCalledWith("u1", expect.any(Object));
     });
   });
 });

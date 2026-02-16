@@ -1,5 +1,6 @@
 import type { OAuthProvider } from "@contracts";
 import type { OAuthAccountsRepo, UsersRepo } from "../auth.ports";
+import { authErr } from "../errors";
 
 export class OAuthLoginFlow {
   constructor(
@@ -21,14 +22,13 @@ export class OAuthLoginFlow {
     if (existingAccount) return { userId: existingAccount.userId };
 
     const email = params.email?.toLowerCase() ?? null;
-    let user = email ? await this.users.findByEmail(email) : null;
-
-    if (!user && email) {
-      user = await this.users.create({ email, passwordHash: null });
+    if (!email || !params.emailVerified) {
+      throw authErr("unauthorized", "OAuth email is missing or unverified");
     }
+    let user = await this.users.findByEmail(email);
 
     if (!user) {
-      throw new Error("OAuth provider did not return an email");
+      user = await this.users.create({ email, passwordHash: null });
     }
 
     await this.oauthAccounts.create({
@@ -38,9 +38,7 @@ export class OAuthLoginFlow {
       email,
     });
 
-    if (params.emailVerified) {
-      await this.users.markEmailVerified(user.id);
-    }
+    await this.users.markEmailVerified(user.id);
 
     await this.users.touchLastLogin(user.id);
 

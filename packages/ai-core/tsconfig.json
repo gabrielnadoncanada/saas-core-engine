@@ -1,6 +1,8 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "composite": true,
+    "incremental": true,
     "target": "ES2022",
     "lib": ["ES2022"],
     "module": "ESNext",
@@ -12,8 +14,6 @@
     "declaration": true,
     "declarationMap": true,
     "emitDeclarationOnly": false,
-
-    "noEmit": true,
 
     "types": ["node"],
     "verbatimModuleSyntax": true,

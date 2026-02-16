@@ -1,10 +1,11 @@
 import type { EmailTokenService } from "../email-tokens/email-token.service";
-import type { UsersRepo } from "../auth.ports";
+import type { TxRunner, UsersRepo } from "../auth.ports";
 
 export class MagicLoginFlow {
   constructor(
     private readonly tokens: EmailTokenService,
     private readonly users: UsersRepo,
+    private readonly txRunner: TxRunner,
   ) {}
 
   async request(params: { email: string; ttlMinutes: number }) {
@@ -22,23 +23,27 @@ export class MagicLoginFlow {
   }
 
   async confirm(params: { token: string }) {
-    const consumed = await this.tokens.consume({ token: params.token });
-    if (!consumed) return { ok: false as const };
+    return this.txRunner.withTx(async (tx) => {
+      const consumed = await this.tokens.consume({ token: params.token }, tx);
+      if (!consumed) return { ok: false as const };
+      if (consumed.type !== "magic_login") return { ok: false as const };
 
-    if (consumed.type !== "magic_login") return { ok: false as const };
+      let user = consumed.userId ? await this.users.findById(consumed.userId, tx) : null;
 
-    let user = consumed.userId ? await this.users.findById(consumed.userId) : null;
+      if (!user) {
+        user = await this.users.create(
+          {
+            email: consumed.email,
+            passwordHash: null,
+          },
+          tx,
+        );
+      }
 
-    if (!user) {
-      user = await this.users.create({
-        email: consumed.email,
-        passwordHash: null,
-      });
-    }
+      await this.users.markEmailVerified(user.id, tx);
+      await this.users.touchLastLogin(user.id, tx);
 
-    await this.users.markEmailVerified(user.id);
-    await this.users.touchLastLogin(user.id);
-
-    return { ok: true as const, userId: user.id };
+      return { ok: true as const, userId: user.id };
+    });
   }
 }

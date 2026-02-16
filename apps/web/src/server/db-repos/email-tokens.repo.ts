@@ -34,11 +34,12 @@ export class EmailTokensRepo {
     });
   }
 
-  async markUsed(id: string, tx?: DbTx): Promise<void> {
-    await db(tx).emailToken.update({
-      where: { id },
+  async markUsedIfUnused(id: string, tx?: DbTx): Promise<boolean> {
+    const res = await db(tx).emailToken.updateMany({
+      where: { id, usedAt: null, expiresAt: { gt: new Date() } },
       data: { usedAt: new Date() },
     });
+    return res.count === 1;
   }
 
   async deleteExpired(tx?: DbTx): Promise<number> {

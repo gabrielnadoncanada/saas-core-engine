@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       ttlDays: env.SESSION_TTL_DAYS,
     });
 
-    setSessionCookie(session);
+    await setSessionCookie(session);
 
     // Send verification email (fire-and-forget)
     try {

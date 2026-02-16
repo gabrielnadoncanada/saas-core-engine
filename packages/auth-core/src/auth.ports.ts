@@ -16,6 +16,7 @@ export interface SessionRecord {
   id: string;
   userId: string;
   createdAt: Date;
+  lastSeenAt: Date | null;
   expiresAt: Date;
   revokedAt: Date | null;
   ip: string | null;
@@ -69,6 +70,7 @@ export interface SessionsRepo {
   ): Promise<{ id: string }>;
   findActiveByTokenHash(tokenHash: string, tx?: any): Promise<SessionRecord | null>;
   listActiveByUser(userId: string, tx?: any): Promise<SessionRecord[]>;
+  touchLastSeen(sessionId: string, tx?: any): Promise<void>;
   revokeSession(sessionId: string, tx?: any): Promise<void>;
   revokeAllForUser(userId: string, tx?: any): Promise<void>;
 }
@@ -110,7 +112,7 @@ export interface EmailTokenRepo {
     tx?: any,
   ): Promise<{ id: string }>;
   findValidByTokenHash(tokenHash: string, tx?: any): Promise<EmailTokenRecord | null>;
-  markUsed(id: string, tx?: any): Promise<void>;
+  markUsedIfUnused(id: string, tx?: any): Promise<boolean>;
 }
 
 export interface OAuthStatesRepo {
@@ -125,7 +127,7 @@ export interface OAuthStatesRepo {
     tx?: any,
   ): Promise<{ id: string }>;
   findValidByStateHash(stateHash: string, tx?: any): Promise<OAuthStateRecord | null>;
-  deleteById(id: string, tx?: any): Promise<void>;
+  deleteByIdIfExists(id: string, tx?: any): Promise<boolean>;
 }
 
 export interface OAuthAccountsRepo {

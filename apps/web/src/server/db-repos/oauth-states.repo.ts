@@ -26,8 +26,9 @@ export class OAuthStatesRepo {
     });
   }
 
-  async deleteById(id: string, tx?: DbTx): Promise<void> {
-    await db(tx).oAuthState.delete({ where: { id } });
+  async deleteByIdIfExists(id: string, tx?: DbTx): Promise<boolean> {
+    const res = await db(tx).oAuthState.deleteMany({ where: { id } });
+    return res.count === 1;
   }
 
   async deleteExpired(tx?: DbTx): Promise<number> {

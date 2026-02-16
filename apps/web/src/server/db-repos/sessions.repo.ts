@@ -19,6 +19,7 @@ export class SessionsRepo {
         userId: params.userId,
         tokenHash: params.tokenHash,
         expiresAt: params.expiresAt,
+        lastSeenAt: new Date(),
         ip: params.ip ?? null,
         userAgent: params.userAgent ?? null,
       },
@@ -42,6 +43,13 @@ export class SessionsRepo {
     return db(tx).session.findMany({
       where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
       orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async touchLastSeen(sessionId: string, tx?: DbTx): Promise<void> {
+    await db(tx).session.update({
+      where: { id: sessionId },
+      data: { lastSeenAt: new Date() },
     });
   }
 

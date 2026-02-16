@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { GoogleProvider } from "@auth-core";
+import { GoogleProvider, oidcNonceFromCodeVerifier } from "@auth-core";
 import { env } from "@/server/config/env";
 import { setSessionCookie } from "@/server/adapters/cookies/session-cookie.adapter";
 import {
@@ -37,6 +37,7 @@ export async function GET(req: Request) {
     const claims = await google.exchangeCode({
       code,
       codeVerifier: consumed.codeVerifier,
+      expectedNonce: oidcNonceFromCodeVerifier(consumed.codeVerifier),
       clientId: env.GOOGLE_OAUTH_CLIENT_ID,
       clientSecret: env.GOOGLE_OAUTH_CLIENT_SECRET,
       redirectUri: env.GOOGLE_OAUTH_REDIRECT_URI,
@@ -57,7 +58,7 @@ export async function GET(req: Request) {
       userAgent: req.headers.get("user-agent"),
     });
 
-    setSessionCookie(session);
+    await setSessionCookie(session);
 
     return NextResponse.redirect(
       new URL(consumed.redirectUri || "/dashboard", req.url),

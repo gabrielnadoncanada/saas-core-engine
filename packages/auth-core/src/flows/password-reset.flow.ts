@@ -1,6 +1,6 @@
 import type { EmailTokenService } from "../email-tokens/email-token.service";
 import type { SessionService } from "../sessions/session.service";
-import type { UsersRepo } from "../auth.ports";
+import type { TxRunner, UsersRepo } from "../auth.ports";
 import { hashPassword } from "../hashing/password";
 
 export class PasswordResetFlow {
@@ -8,6 +8,7 @@ export class PasswordResetFlow {
     private readonly users: UsersRepo,
     private readonly tokens: EmailTokenService,
     private readonly sessions: SessionService,
+    private readonly txRunner: TxRunner,
   ) {}
 
   async request(params: { email: string; ttlMinutes: number }) {
@@ -33,15 +34,17 @@ export class PasswordResetFlow {
   }
 
   async reset(params: { token: string; newPassword: string }) {
-    const consumed = await this.tokens.consume({ token: params.token });
-    if (!consumed || consumed.type !== "password_reset" || !consumed.userId) {
-      return { ok: false as const };
-    }
+    return this.txRunner.withTx(async (tx) => {
+      const consumed = await this.tokens.consume({ token: params.token }, tx);
+      if (!consumed || consumed.type !== "password_reset" || !consumed.userId) {
+        return { ok: false as const };
+      }
 
-    const passwordHash = await hashPassword(params.newPassword);
-    await this.users.setPasswordHash(consumed.userId, passwordHash);
-    await this.sessions.revokeAllForUser(consumed.userId);
+      const passwordHash = await hashPassword(params.newPassword);
+      await this.users.setPasswordHash(consumed.userId, passwordHash, tx);
+      await this.sessions.revokeAllForUser(consumed.userId, tx);
 
-    return { ok: true as const, userId: consumed.userId };
+      return { ok: true as const, userId: consumed.userId };
+    });
   }
 }

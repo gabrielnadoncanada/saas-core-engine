@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { codeChallengeS256 } from "@auth-core";
+import { codeChallengeS256, oidcNonceFromCodeVerifier } from "@auth-core";
 import { createOAuthStateService } from "@/server/adapters/core/auth-core.adapter";
 import { env } from "@/server/config/env";
 import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
@@ -33,6 +33,7 @@ export async function GET(req: Request) {
   });
 
   const codeChallenge = codeChallengeS256(codeVerifier);
+  const nonce = oidcNonceFromCodeVerifier(codeVerifier);
 
   const authorize = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   authorize.searchParams.set("client_id", env.GOOGLE_OAUTH_CLIENT_ID);
@@ -42,6 +43,7 @@ export async function GET(req: Request) {
   authorize.searchParams.set("state", state);
   authorize.searchParams.set("code_challenge", codeChallenge);
   authorize.searchParams.set("code_challenge_method", "S256");
+  authorize.searchParams.set("nonce", nonce);
   authorize.searchParams.set("prompt", "select_account");
 
   return NextResponse.redirect(authorize.toString());

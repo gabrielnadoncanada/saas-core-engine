@@ -37,6 +37,6 @@ export async function POST(req: Request) {
     userAgent: req.headers.get("user-agent"),
   });
 
-  setSessionCookie(session);
+  await setSessionCookie(session);
   return NextResponse.json({ ok: true });
 }

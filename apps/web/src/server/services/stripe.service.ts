@@ -6,7 +6,7 @@ import { env } from "@/server/config/env";
 
 export function stripe() {
   return new Stripe(env.STRIPE_SECRET_KEY, {
-    apiVersion: "2024-06-20",
+    apiVersion: "2025-08-27.basil",
     typescript: true,
   });
 }

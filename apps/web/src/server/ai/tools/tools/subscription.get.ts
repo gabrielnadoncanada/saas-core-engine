@@ -8,6 +8,7 @@ export const subscriptionGetTool: AITool = {
   description: "Get subscription status and plan for the current organization.",
   schema: z.object({}),
   async execute(_args, ctx) {
+    z.object({}).parse(_args);
     const sub = await prisma.subscription.findUnique({
       where: { organizationId: ctx.orgId },
       select: { plan: true, status: true, currentPeriodEnd: true },

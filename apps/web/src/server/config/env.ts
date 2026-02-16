@@ -22,6 +22,7 @@ const envSchema = z.object({
   SESSION_COOKIE_NAME: z.string().min(1).default("session"),
   SESSION_COOKIE_SECURE: boolFromString.default("false"),
   SESSION_TTL_DAYS: numberFromString.default("30"),
+  SESSION_IDLE_TIMEOUT_MINUTES: numberFromString.default("120"),
   TOKEN_PEPPER: z.string().min(32),
 
   // Database

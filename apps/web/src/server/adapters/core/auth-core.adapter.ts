@@ -23,7 +23,7 @@ import { withTx } from "@db";
 const txRunner = { withTx };
 
 export function createSessionService() {
-  return new SessionService(new SessionsRepo(), env.TOKEN_PEPPER);
+  return new SessionService(new SessionsRepo(), env.TOKEN_PEPPER, txRunner);
 }
 
 export function createEmailTokenService() {
@@ -45,7 +45,7 @@ export function createLoginFlow() {
 }
 
 export function createMagicLoginFlow() {
-  return new MagicLoginFlow(createEmailTokenService(), new UsersRepo());
+  return new MagicLoginFlow(createEmailTokenService(), new UsersRepo(), txRunner);
 }
 
 export function createPasswordResetFlow() {
@@ -53,6 +53,7 @@ export function createPasswordResetFlow() {
     new UsersRepo(),
     createEmailTokenService(),
     createSessionService(),
+    txRunner,
   );
 }
 

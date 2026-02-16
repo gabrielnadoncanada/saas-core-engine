@@ -26,7 +26,7 @@ export async function GET(req: Request) {
     userAgent: req.headers.get("user-agent"),
   });
 
-  setSessionCookie(session);
+  await setSessionCookie(session);
 
   return NextResponse.redirect(new URL("/dashboard", req.url));
 }

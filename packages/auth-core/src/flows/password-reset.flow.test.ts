@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { PasswordResetFlow } from "./password-reset.flow";
 import type { EmailTokenService } from "../email-tokens/email-token.service";
 import type { SessionService } from "../sessions/session.service";
-import type { UsersRepo } from "../auth.ports";
+import type { TxRunner, UsersRepo } from "../auth.ports";
 
 function mockUsers(overrides: Partial<UsersRepo> = {}): UsersRepo {
   return {
@@ -30,6 +30,10 @@ function mockSessions(): SessionService {
   } as unknown as SessionService;
 }
 
+const passThroughTx: TxRunner = {
+  withTx: async <T>(fn: (tx: any) => Promise<T>) => fn({}),
+};
+
 describe("PasswordResetFlow", () => {
   describe("request", () => {
     it("returns ok:true with token for existing user", async () => {
@@ -38,7 +42,7 @@ describe("PasswordResetFlow", () => {
       });
       const tokens = mockTokens();
 
-      const flow = new PasswordResetFlow(users, tokens, mockSessions());
+      const flow = new PasswordResetFlow(users, tokens, mockSessions(), passThroughTx);
       const res = await flow.request({ email: "a@b.com", ttlMinutes: 15 });
 
       expect(res.ok).toBe(true);
@@ -49,7 +53,12 @@ describe("PasswordResetFlow", () => {
     });
 
     it("returns ok:true without token for non-existent user (anti-enumeration)", async () => {
-      const flow = new PasswordResetFlow(mockUsers(), mockTokens(), mockSessions());
+      const flow = new PasswordResetFlow(
+        mockUsers(),
+        mockTokens(),
+        mockSessions(),
+        passThroughTx,
+      );
       const res = await flow.request({ email: "nobody@x.com", ttlMinutes: 15 });
 
       expect(res).toEqual({ ok: true });
@@ -58,7 +67,12 @@ describe("PasswordResetFlow", () => {
 
   describe("reset", () => {
     it("returns ok:false for invalid token", async () => {
-      const flow = new PasswordResetFlow(mockUsers(), mockTokens(), mockSessions());
+      const flow = new PasswordResetFlow(
+        mockUsers(),
+        mockTokens(),
+        mockSessions(),
+        passThroughTx,
+      );
       const res = await flow.reset({ token: "bad", newPassword: "new-password-123" });
       expect(res.ok).toBe(false);
     });
@@ -73,7 +87,12 @@ describe("PasswordResetFlow", () => {
         }),
       });
 
-      const flow = new PasswordResetFlow(mockUsers(), tokens, mockSessions());
+      const flow = new PasswordResetFlow(
+        mockUsers(),
+        tokens,
+        mockSessions(),
+        passThroughTx,
+      );
       const res = await flow.reset({ token: "t", newPassword: "new-password-123" });
       expect(res.ok).toBe(false);
     });
@@ -90,12 +109,13 @@ describe("PasswordResetFlow", () => {
         }),
       });
 
-      const flow = new PasswordResetFlow(users, tokens, sessions);
+      const flow = new PasswordResetFlow(users, tokens, sessions, passThroughTx);
       const res = await flow.reset({ token: "t", newPassword: "new-password-123" });
 
       expect(res).toEqual({ ok: true, userId: "u1" });
-      expect(users.setPasswordHash).toHaveBeenCalledWith("u1", expect.any(String));
-      expect(sessions.revokeAllForUser).toHaveBeenCalledWith("u1");
+      expect(tokens.consume).toHaveBeenCalledWith({ token: "t" }, expect.any(Object));
+      expect(users.setPasswordHash).toHaveBeenCalledWith("u1", expect.any(String), expect.any(Object));
+      expect(sessions.revokeAllForUser).toHaveBeenCalledWith("u1", expect.any(Object));
     });
   });
 });

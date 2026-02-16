@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        const organizationId = session.metadata?.organizationId;
+        const organizationId = session.metadata?.["organizationId"];
         const stripeCustomerId =
           typeof session.customer === "string" ? session.customer : null;
         const stripeSubscriptionId =
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
       case "customer.subscription.created": {
         const sub = event.data.object as Stripe.Subscription;
 
-        const organizationId = sub.metadata?.organizationId;
+        const organizationId = sub.metadata?.["organizationId"];
         const stripeCustomerId =
           typeof sub.customer === "string" ? sub.customer : null;
 

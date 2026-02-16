@@ -26,6 +26,7 @@ const ToolPickSchema = z.object({
   tool: z.string(),
   args: z.record(z.any()).default({}),
 });
+type ToolPick = z.infer<typeof ToolPickSchema>;
 
 export async function POST(req: Request) {
   const user = await getSessionUser();
@@ -106,7 +107,7 @@ export async function POST(req: Request) {
   const { messageCount, promptChars } = getRequestMeta(pickMessages);
 
   try {
-    const pick = await provider.generateStructured({
+    const pick = await provider.generateStructured<typeof ToolPickSchema, ToolPick>({
       messages: pickMessages,
       model,
       temperature: 0,

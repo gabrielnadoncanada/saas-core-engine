@@ -3,6 +3,7 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 export type GoogleTokenExchangeParams = {
   code: string;
   codeVerifier: string;
+  expectedNonce: string;
   clientId: string;
   clientSecret: string;
   redirectUri: string;
@@ -50,11 +51,15 @@ export class GoogleProvider {
       issuer: GOOGLE_ISSUERS,
       audience: this.clientId,
     });
+    const tokenNonce = payload["nonce"];
+    if (tokenNonce !== params.expectedNonce) {
+      throw new Error("Google ID token nonce mismatch");
+    }
 
     return {
       sub: payload.sub as string,
-      email: (payload.email as string) ?? null,
-      emailVerified: Boolean(payload.email_verified),
+      email: (payload["email"] as string | undefined) ?? null,
+      emailVerified: Boolean(payload["email_verified"]),
     };
   }
 }

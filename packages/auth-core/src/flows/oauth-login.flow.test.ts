@@ -74,6 +74,7 @@ describe("OAuthLoginFlow", () => {
       provider: "google",
       providerAccountId: "goog-789",
       email: "A@B.com",
+      emailVerified: true,
     });
 
     expect(res).toEqual({ userId: "u-existing" });
@@ -89,6 +90,19 @@ describe("OAuthLoginFlow", () => {
         provider: "google",
         providerAccountId: "goog-000",
       }),
-    ).rejects.toThrow("OAuth provider did not return an email");
+    ).rejects.toThrow("OAuth email is missing or unverified");
+  });
+
+  it("throws if email is not verified", async () => {
+    const flow = new OAuthLoginFlow(mockUsers(), mockOAuthAccounts());
+
+    await expect(
+      flow.linkOrCreate({
+        provider: "google",
+        providerAccountId: "goog-111",
+        email: "user@example.com",
+        emailVerified: false,
+      }),
+    ).rejects.toThrow("OAuth email is missing or unverified");
   });
 });

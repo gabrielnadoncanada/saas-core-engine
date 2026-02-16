@@ -6,7 +6,7 @@ import {
 import { createSessionService } from "@/server/adapters/core/auth-core.adapter";
 
 export async function POST() {
-  const token = getSessionTokenFromCookie();
+  const token = await getSessionTokenFromCookie();
 
   if (token) {
     const sessions = createSessionService();
@@ -14,6 +14,6 @@ export async function POST() {
     if (valid) await sessions.revokeSession(valid.sessionId);
   }
 
-  clearSessionCookie();
+  await clearSessionCookie();
   return NextResponse.json({ ok: true });
 }

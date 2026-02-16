@@ -5,8 +5,6 @@ import Link from "next/link";
 import { requireUser } from "@/server/auth/require-user";
 import { getDefaultOrgIdForUser } from "@/server/auth/require-org";
 import { routes } from "@/shared/constants/routes";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
-import { Button } from "@/shared/ui/shadcn/button";
 import { MetricsChart } from "@/features/dashboard/ui/metrics-chart";
 import { ActivityFeed } from "@/features/dashboard/ui/activity-feed";
 import { env } from "@/server/config/env";
@@ -62,10 +60,18 @@ export default async function DashboardHomePage() {
       </section>
 
       <div style={grid}>
-        <Card title="Plan" value={(sub?.plan ?? "free").toUpperCase()} hint={`Status: ${sub?.status ?? "inactive"}`} />
-        <Card title="Team members" value={String(teamSize)} hint="Members in your workspace" />
-        <Card title="Security" value="OK" hint="Sessions + reset ready" />
-        <Card title="Integrations" value="Google" hint="OAuth enabled" />
+        <StatCard
+          title="Plan"
+          value={(sub?.plan ?? "free").toUpperCase()}
+          hint={`Status: ${sub?.status ?? "inactive"}`}
+        />
+        <StatCard
+          title="Team members"
+          value={String(teamSize)}
+          hint="Members in your workspace"
+        />
+        <StatCard title="Security" value="OK" hint="Sessions + reset ready" />
+        <StatCard title="Integrations" value="Google" hint="OAuth enabled" />
       </div>
 
       {env.DEMO_MODE ? (
@@ -140,3 +146,17 @@ const btnGhost: React.CSSProperties = {
   fontSize: 13,
   fontWeight: 700,
 };
+
+function StatCard(props: { title: string; value: string; hint: string }) {
+  return (
+    <section style={card}>
+      <div style={{ fontSize: 12, color: "#666" }}>{props.title}</div>
+      <div style={{ marginTop: 6, fontSize: 22, fontWeight: 800 }}>
+        {props.value}
+      </div>
+      <div style={{ marginTop: 6, fontSize: 12, color: "#666" }}>
+        {props.hint}
+      </div>
+    </section>
+  );
+}

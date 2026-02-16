@@ -8,7 +8,7 @@ const KEY = "theme";
 function applyTheme(theme: Theme) {
   const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
   const resolved = theme === "system" ? (prefersDark ? "dark" : "light") : theme;
-  document.documentElement.dataset.theme = resolved;
+  document.documentElement.dataset["theme"] = resolved;
 }
 
 export function ThemeToggle() {

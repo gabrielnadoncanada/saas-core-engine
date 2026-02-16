@@ -1,34 +1,30 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
-    "incremental": true,
-
     "jsx": "preserve",
     "noEmit": true,
 
     "baseUrl": ".",
     "paths": {
+      "@/*": ["src/*"],
+      "@ai-core": ["../../packages/ai-core/src/index.ts"],
       "@ai-core/*": ["../../packages/ai-core/src/*"],
+      "@contracts": ["../../packages/contracts/src/index.ts"],
       "@contracts/*": ["../../packages/contracts/src/*"],
+      "@db": ["../../packages/db/src/index.ts"],
       "@db/*": ["../../packages/db/src/*"],
+      "@auth-core": ["../../packages/auth-core/src/index.ts"],
       "@auth-core/*": ["../../packages/auth-core/src/*"],
+      "@org-core": ["../../packages/org-core/src/index.ts"],
       "@org-core/*": ["../../packages/org-core/src/*"],
+      "@billing-core": ["../../packages/billing-core/src/index.ts"],
       "@billing-core/*": ["../../packages/billing-core/src/*"],
+      "@email": ["../../packages/email/src/index.ts"],
       "@email/*": ["../../packages/email/src/*"],
+      "@ui": ["../../packages/ui/src/index.ts"],
       "@ui/*": ["../../packages/ui/src/*"]
     }
   },
-  "references": [
-    { "path": "../../packages/ai-core" },
-    { "path": "../../packages/contracts" },
-    { "path": "../../packages/db" },
-    { "path": "../../packages/auth-core" },
-    { "path": "../../packages/org-core" },
-    { "path": "../../packages/billing-core" },
-    { "path": "../../packages/email" },
-    { "path": "../../packages/ui" }
-  ],
   "include": [
     "next-env.d.ts",
     "src/**/*.ts",

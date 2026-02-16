@@ -40,7 +40,8 @@ export class OAuthStateService {
     if (!row) return null;
     if (row.provider !== params.provider) return null;
 
-    await this.repo.deleteById(row.id);
+    const deleted = await this.repo.deleteByIdIfExists(row.id);
+    if (!deleted) return null;
 
     return { codeVerifier: row.codeVerifier, redirectUri: row.redirectUri };
   }

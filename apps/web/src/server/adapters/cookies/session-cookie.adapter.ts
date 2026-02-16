@@ -4,8 +4,10 @@ import { cookies } from "next/headers";
 import type { CreateSessionResult } from "@auth-core";
 import { env } from "@/server/config/env";
 
-export function setSessionCookie(result: CreateSessionResult): void {
-  const cookieStore = cookies();
+export async function setSessionCookie(
+  result: CreateSessionResult,
+): Promise<void> {
+  const cookieStore = await cookies();
 
   cookieStore.set(env.SESSION_COOKIE_NAME, result.sessionToken, {
     httpOnly: true,
@@ -16,8 +18,8 @@ export function setSessionCookie(result: CreateSessionResult): void {
   });
 }
 
-export function clearSessionCookie(): void {
-  const cookieStore = cookies();
+export async function clearSessionCookie(): Promise<void> {
+  const cookieStore = await cookies();
 
   cookieStore.set(env.SESSION_COOKIE_NAME, "", {
     httpOnly: true,
@@ -28,8 +30,8 @@ export function clearSessionCookie(): void {
   });
 }
 
-export function getSessionTokenFromCookie(): string | null {
-  const cookieStore = cookies();
+export async function getSessionTokenFromCookie(): Promise<string | null> {
+  const cookieStore = await cookies();
   const token = cookieStore.get(env.SESSION_COOKIE_NAME)?.value ?? null;
   return token && token.length > 0 ? token : null;
 }

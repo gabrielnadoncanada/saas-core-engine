@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { codeChallengeS256 } from "./pkce";
+import { codeChallengeS256, oidcNonceFromCodeVerifier } from "./pkce";
 
 describe("codeChallengeS256", () => {
   it("produces a base64url string", () => {
@@ -24,5 +24,18 @@ describe("codeChallengeS256", () => {
     const verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
     const expected = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM";
     expect(codeChallengeS256(verifier)).toBe(expected);
+  });
+});
+
+describe("oidcNonceFromCodeVerifier", () => {
+  it("is deterministic for a given verifier", () => {
+    const a = oidcNonceFromCodeVerifier("same-verifier");
+    const b = oidcNonceFromCodeVerifier("same-verifier");
+    expect(a).toBe(b);
+  });
+
+  it("returns a base64url-safe value", () => {
+    const nonce = oidcNonceFromCodeVerifier("nonce-verifier");
+    expect(nonce).toMatch(/^[A-Za-z0-9_-]+$/);
   });
 });
