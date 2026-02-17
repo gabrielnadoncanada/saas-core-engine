@@ -4,6 +4,8 @@ import { LoginFlow } from "./login.flow";
 import { hashPassword } from "../hashing/password";
 import type { UsersRepo } from "../auth.ports";
 
+const PEPPER = "test-pepper-long-enough-for-validation";
+
 function mockUsersRepo(overrides: Partial<UsersRepo> = {}): UsersRepo {
   return {
     findById: vi.fn().mockResolvedValue(null),
@@ -27,7 +29,7 @@ describe("LoginFlow", () => {
       }),
     });
 
-    const flow = new LoginFlow(users);
+    const flow = new LoginFlow(users, undefined, PEPPER);
     const res = await flow.execute({ email: "a@b.com", password: "my-password" });
 
     expect(res).toEqual({ ok: true, userId: "u1" });
@@ -44,7 +46,7 @@ describe("LoginFlow", () => {
       }),
     });
 
-    const flow = new LoginFlow(users);
+    const flow = new LoginFlow(users, undefined, PEPPER);
     const res = await flow.execute({ email: "a@b.com", password: "wrong-pw" });
 
     expect(res).toEqual({ ok: false });
@@ -52,7 +54,7 @@ describe("LoginFlow", () => {
 
   it("returns ok:false for non-existent user (anti-enumeration)", async () => {
     const users = mockUsersRepo();
-    const flow = new LoginFlow(users);
+    const flow = new LoginFlow(users, undefined, PEPPER);
 
     const res = await flow.execute({ email: "noone@x.com", password: "whatever" });
     expect(res).toEqual({ ok: false });
@@ -67,7 +69,7 @@ describe("LoginFlow", () => {
       }),
     });
 
-    const flow = new LoginFlow(users);
+    const flow = new LoginFlow(users, undefined, PEPPER);
     const res = await flow.execute({ email: "a@b.com", password: "anything" });
 
     expect(res).toEqual({ ok: false });
@@ -75,7 +77,7 @@ describe("LoginFlow", () => {
 
   it("lowercases email before lookup", async () => {
     const users = mockUsersRepo();
-    const flow = new LoginFlow(users);
+    const flow = new LoginFlow(users, undefined, PEPPER);
 
     await flow.execute({ email: "User@Example.COM", password: "pw" });
     expect(users.findByEmail).toHaveBeenCalledWith("user@example.com");
@@ -96,10 +98,11 @@ describe("LoginFlow", () => {
       }),
     });
 
-    const flow = new LoginFlow(users);
+    const flow = new LoginFlow(users, undefined, PEPPER);
     const res = await flow.execute({ email: "a@b.com", password: "my-password" });
 
     expect(res).toEqual({ ok: true, userId: "u1" });
     expect(users.setPasswordHash).toHaveBeenCalledTimes(1);
   });
 });
+

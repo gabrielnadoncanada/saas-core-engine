@@ -38,7 +38,7 @@ export interface OAuthStateRecord {
   id: string;
   provider: OAuthProvider;
   codeVerifier: string;
-  redirectUri: string;
+  redirectPath: string;
 }
 
 export interface OAuthAccountRecord {
@@ -121,7 +121,7 @@ export interface OAuthStatesRepo {
       provider: OAuthProvider;
       stateHash: string;
       codeVerifier: string;
-      redirectUri: string;
+      redirectPath: string;
       expiresAt: Date;
     },
     tx?: any,

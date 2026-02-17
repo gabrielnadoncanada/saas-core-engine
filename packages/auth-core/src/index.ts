@@ -4,9 +4,16 @@ export {
   passwordNeedsRehash,
   verifyPassword,
 } from "./hashing/password";
-export { hashToken } from "./hashing/token";
+export {
+  hashIdentifier,
+  hashToken,
+  hashTokenCandidates,
+  normalizePepperConfig,
+} from "./hashing/token";
+export type { PepperConfig, PepperInput } from "./hashing/token";
 
 export type {
+  OAuthStateRecord,
   EmailTokenRepo,
   OAuthAccountsRepo,
   OAuthStatesRepo,

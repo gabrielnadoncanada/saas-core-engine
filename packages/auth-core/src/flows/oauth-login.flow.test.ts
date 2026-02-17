@@ -105,4 +105,31 @@ describe("OAuthLoginFlow", () => {
       }),
     ).rejects.toThrow("OAuth email is missing or unverified");
   });
+
+  it("recovers from concurrent user creation with same email", async () => {
+    const users = mockUsers({
+      create: vi.fn().mockRejectedValue({ code: "P2002" }),
+      findByEmail: vi
+        .fn()
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: "u-race", email: "race@example.com", passwordHash: null }),
+    });
+    const accounts = mockOAuthAccounts();
+
+    const flow = new OAuthLoginFlow(users, accounts);
+    const res = await flow.linkOrCreate({
+      provider: "google",
+      providerAccountId: "goog-race",
+      email: "race@example.com",
+      emailVerified: true,
+    });
+
+    expect(res).toEqual({ userId: "u-race" });
+    expect(accounts.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "u-race",
+        providerAccountId: "goog-race",
+      }),
+    );
+  });
 });

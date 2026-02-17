@@ -1,5 +1,6 @@
 import type { EmailTokenService } from "../email-tokens/email-token.service";
 import type { TxRunner, UsersRepo } from "../auth.ports";
+import { isUniqueConstraintViolation } from "../errors";
 
 export class MagicLoginFlow {
   constructor(
@@ -31,13 +32,19 @@ export class MagicLoginFlow {
       let user = consumed.userId ? await this.users.findById(consumed.userId, tx) : null;
 
       if (!user) {
-        user = await this.users.create(
-          {
-            email: consumed.email,
-            passwordHash: null,
-          },
-          tx,
-        );
+        try {
+          user = await this.users.create(
+            {
+              email: consumed.email,
+              passwordHash: null,
+            },
+            tx,
+          );
+        } catch (error) {
+          if (!isUniqueConstraintViolation(error)) throw error;
+          user = await this.users.findByEmail(consumed.email, tx);
+          if (!user) throw error;
+        }
       }
 
       await this.users.markEmailVerified(user.id, tx);

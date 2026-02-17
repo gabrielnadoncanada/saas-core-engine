@@ -1,11 +1,14 @@
 import type { EmailTokenService } from "../email-tokens/email-token.service";
 import type { TxRunner, UsersRepo } from "../auth.ports";
+import type { AuthEventEmitter } from "../events";
+import { noOpAuthEventEmitter } from "../events";
 
 export class VerifyEmailFlow {
   constructor(
     private readonly tokens: EmailTokenService,
     private readonly users: UsersRepo,
     private readonly txRunner?: TxRunner,
+    private readonly events: AuthEventEmitter = noOpAuthEventEmitter,
   ) {}
 
   async request(params: {
@@ -20,6 +23,11 @@ export class VerifyEmailFlow {
       userId: params.userId,
       type: "verify_email",
       ttlMinutes: params.ttlMinutes,
+    });
+    await this.events.emit({
+      type: "auth.verify_email.requested",
+      userId: params.userId,
+      at: new Date(),
     });
 
     return { token: issued.token, expiresAt: issued.expiresAt };

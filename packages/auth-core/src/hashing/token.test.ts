@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { hashToken, sha256Hex } from "./token";
+import { hashIdentifier, hashToken, hashTokenCandidates, sha256Hex } from "./token";
 
 describe("hashToken", () => {
   it("produces a deterministic hex hash", () => {
@@ -33,5 +33,25 @@ describe("hashToken", () => {
 describe("sha256Hex", () => {
   it("returns a 64-char hex string", () => {
     expect(sha256Hex("hello")).toMatch(/^[0-9a-f]{64}$/);
+  });
+});
+
+describe("hashTokenCandidates", () => {
+  it("returns active then legacy hashes", () => {
+    const hashes = hashTokenCandidates("token", {
+      active: "pepper-active-long-enough-32-characters",
+      legacy: ["pepper-legacy-long-enough-32-characters"],
+    });
+    expect(hashes).toHaveLength(2);
+    expect(hashes[0]).not.toBe(hashes[1]);
+  });
+});
+
+describe("hashIdentifier", () => {
+  it("uses active pepper from config", () => {
+    const hash = hashIdentifier("user@example.com", {
+      active: "pepper-active-long-enough-32-characters",
+    });
+    expect(hash).toMatch(/^[0-9a-f]{64}$/);
   });
 });

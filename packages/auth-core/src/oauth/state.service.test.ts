@@ -19,7 +19,7 @@ describe("OAuthStateService", () => {
       id: "st-1",
       provider: "google",
       codeVerifier: "verifier",
-      redirectUri: "/dashboard",
+      redirectPath: "/dashboard",
     });
     (repo.deleteByIdIfExists as any).mockResolvedValue(false);
     const svc = new OAuthStateService(repo, PEPPER);
@@ -27,5 +27,18 @@ describe("OAuthStateService", () => {
     const result = await svc.consume({ provider: "google", state: "state-token" });
 
     expect(result).toBeNull();
+  });
+
+  it("rejects unsafe redirect paths", async () => {
+    const repo = mockRepo();
+    const svc = new OAuthStateService(repo, PEPPER);
+
+    await expect(
+      svc.create({
+        provider: "google",
+        redirectPath: "https://evil.tld",
+        ttlMinutes: 10,
+      }),
+    ).rejects.toThrow("Invalid redirect path");
   });
 });

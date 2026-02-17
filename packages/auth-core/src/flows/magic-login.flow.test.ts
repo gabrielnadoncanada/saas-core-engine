@@ -112,5 +112,29 @@ describe("MagicLoginFlow", () => {
       expect(res).toEqual({ ok: true, userId: "u1" });
       expect(users.touchLastLogin).toHaveBeenCalledWith("u1", expect.any(Object));
     });
+
+    it("recovers from concurrent create unique constraint", async () => {
+      const users = mockUsers({
+        create: vi.fn().mockRejectedValue({ code: "P2002" }),
+        findByEmail: vi.fn().mockResolvedValue({
+          id: "u-race",
+          email: "a@b.com",
+          passwordHash: null,
+        }),
+      });
+      const tokens = mockTokens({
+        consume: vi.fn().mockResolvedValue({
+          id: "et-1",
+          email: "a@b.com",
+          userId: null,
+          type: "magic_login",
+        }),
+      });
+
+      const flow = new MagicLoginFlow(tokens, users, passThroughTx);
+      const res = await flow.confirm({ token: "t" });
+
+      expect(res).toEqual({ ok: true, userId: "u-race" });
+    });
   });
 });

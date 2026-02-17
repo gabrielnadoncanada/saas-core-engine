@@ -1,11 +1,14 @@
 import type { OAuthProvider } from "@contracts";
 import type { OAuthAccountsRepo, UsersRepo } from "../auth.ports";
-import { authErr } from "../errors";
+import { authErr, isUniqueConstraintViolation } from "../errors";
+import type { AuthEventEmitter } from "../events";
+import { noOpAuthEventEmitter } from "../events";
 
 export class OAuthLoginFlow {
   constructor(
     private readonly users: UsersRepo,
     private readonly oauthAccounts: OAuthAccountsRepo,
+    private readonly events: AuthEventEmitter = noOpAuthEventEmitter,
   ) {}
 
   async linkOrCreate(params: {
@@ -28,7 +31,13 @@ export class OAuthLoginFlow {
     let user = await this.users.findByEmail(email);
 
     if (!user) {
-      user = await this.users.create({ email, passwordHash: null });
+      try {
+        user = await this.users.create({ email, passwordHash: null });
+      } catch (error) {
+        if (!isUniqueConstraintViolation(error)) throw error;
+        user = await this.users.findByEmail(email);
+        if (!user) throw error;
+      }
     }
 
     await this.oauthAccounts.create({
@@ -36,6 +45,12 @@ export class OAuthLoginFlow {
       provider: params.provider,
       providerAccountId: params.providerAccountId,
       email,
+    });
+    await this.events.emit({
+      type: "auth.oauth.linked",
+      userId: user.id,
+      provider: params.provider,
+      at: new Date(),
     });
 
     await this.users.markEmailVerified(user.id);

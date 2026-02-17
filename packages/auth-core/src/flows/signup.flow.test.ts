@@ -83,4 +83,15 @@ describe("SignupFlow", () => {
 
     expect(users.findByEmail).toHaveBeenCalledWith("user@example.com", undefined);
   });
+
+  it("maps unique constraint errors to email_in_use", async () => {
+    const users = mockUsersRepo({
+      create: vi.fn().mockRejectedValue({ code: "P2002" }),
+    });
+    const flow = new SignupFlow(users, mockOrgsRepo(), mockMembershipsRepo(), mockSubsRepo(), passThroughTx);
+
+    await expect(
+      flow.execute({ email: "test@example.com", password: "secure-password-123", orgName: "Org" }),
+    ).rejects.toThrow("Email already in use");
+  });
 });

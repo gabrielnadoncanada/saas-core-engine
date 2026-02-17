@@ -1,4 +1,4 @@
-import { hashToken } from "../hashing/token";
+import { hashIdentifier, hashTokenCandidates, type PepperInput } from "../hashing/token";
 import { randomTokenBase64Url } from "../hashing/random";
 import type {
   CreateSessionInput,
@@ -15,7 +15,7 @@ import { noOpAuthEventEmitter } from "../events";
 export class SessionService {
   constructor(
     private readonly sessionsRepo: SessionsRepo,
-    private readonly pepper: string,
+    private readonly pepper: PepperInput,
     private readonly txRunner?: TxRunner,
     private readonly events: AuthEventEmitter = noOpAuthEventEmitter,
   ) {}
@@ -25,7 +25,7 @@ export class SessionService {
     tx?: any,
   ): Promise<CreateSessionResult> {
     const sessionToken = randomTokenBase64Url(32);
-    const tokenHash = hashToken(sessionToken, this.pepper);
+    const tokenHash = hashIdentifier(sessionToken, this.pepper);
 
     const now = new Date();
     const expiresAt = new Date(
@@ -56,8 +56,11 @@ export class SessionService {
   async validateSession(
     input: ValidateSessionInput,
   ): Promise<ValidSession | null> {
-    const tokenHash = hashToken(input.sessionToken, this.pepper);
-    const session = await this.sessionsRepo.findActiveByTokenHash(tokenHash);
+    let session = null;
+    for (const tokenHash of hashTokenCandidates(input.sessionToken, this.pepper)) {
+      session = await this.sessionsRepo.findActiveByTokenHash(tokenHash);
+      if (session) break;
+    }
     if (!session) return null;
     const now = Date.now();
     const lastSeenTs = session.lastSeenAt?.getTime() ?? session.createdAt.getTime();
@@ -81,8 +84,11 @@ export class SessionService {
     input: RotateSessionInput,
   ): Promise<RotateSessionResult | null> {
     const rotate = async (tx?: any): Promise<RotateSessionResult | null> => {
-      const oldTokenHash = hashToken(input.sessionToken, this.pepper);
-      const current = await this.sessionsRepo.findActiveByTokenHash(oldTokenHash, tx);
+      let current = null;
+      for (const tokenHash of hashTokenCandidates(input.sessionToken, this.pepper)) {
+        current = await this.sessionsRepo.findActiveByTokenHash(tokenHash, tx);
+        if (current) break;
+      }
       if (!current) return null;
 
       await this.sessionsRepo.revokeSession(current.id, tx);

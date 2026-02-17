@@ -7,17 +7,18 @@ import {
 } from "../hashing/password";
 import type { AuthEventEmitter } from "../events";
 import { noOpAuthEventEmitter } from "../events";
-import { sha256Hex } from "../hashing/token";
+import { hashIdentifier, type PepperInput } from "../hashing/token";
 
 export class LoginFlow {
   constructor(
     private readonly users: UsersRepo,
     private readonly events: AuthEventEmitter = noOpAuthEventEmitter,
+    private readonly pepper: PepperInput,
   ) {}
 
   async execute(params: { email: string; password: string }) {
     const email = params.email.toLowerCase();
-    const emailHash = sha256Hex(email);
+    const emailHash = hashIdentifier(email, this.pepper);
 
     const user = await this.users.findByEmail(email);
     if (!user || !user.passwordHash) {
