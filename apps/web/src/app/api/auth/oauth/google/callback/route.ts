@@ -61,7 +61,7 @@ export async function GET(req: Request) {
     await setSessionCookie(session);
 
     return NextResponse.redirect(
-      new URL(consumed.redirectUri || "/dashboard", req.url),
+      new URL(consumed.redirectPath || "/dashboard", req.url),
     );
   } catch {
     return NextResponse.redirect(new URL("/login?error=oauth_failed", req.url));

@@ -1,4 +1,5 @@
-import type { OAuthProvider, OAuthState } from "@prisma/client";
+import type { OAuthStateRecord } from "@auth-core";
+import type { OAuthProvider } from "@prisma/client";
 import { prisma, type DbTx } from "@db";
 
 const db = (tx?: DbTx) => tx ?? prisma;
@@ -9,21 +10,37 @@ export class OAuthStatesRepo {
       provider: OAuthProvider;
       stateHash: string;
       codeVerifier: string;
-      redirectUri: string;
+      redirectPath: string;
       expiresAt: Date;
     },
     tx?: DbTx,
-  ): Promise<OAuthState> {
-    return db(tx).oAuthState.create({ data: params });
+  ): Promise<{ id: string }> {
+    return db(tx).oAuthState.create({
+      data: {
+        provider: params.provider,
+        stateHash: params.stateHash,
+        codeVerifier: params.codeVerifier,
+        redirectUri: params.redirectPath,
+        expiresAt: params.expiresAt,
+      },
+      select: { id: true },
+    });
   }
 
   async findValidByStateHash(
     stateHash: string,
     tx?: DbTx,
-  ): Promise<OAuthState | null> {
-    return db(tx).oAuthState.findFirst({
+  ): Promise<OAuthStateRecord | null> {
+    const row = await db(tx).oAuthState.findFirst({
       where: { stateHash, expiresAt: { gt: new Date() } },
     });
+    if (!row) return null;
+    return {
+      id: row.id,
+      provider: row.provider,
+      codeVerifier: row.codeVerifier,
+      redirectPath: row.redirectUri,
+    };
   }
 
   async deleteByIdIfExists(id: string, tx?: DbTx): Promise<boolean> {

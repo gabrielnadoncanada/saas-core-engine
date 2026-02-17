@@ -8,6 +8,7 @@ import {
   SessionService,
   SignupFlow,
   VerifyEmailFlow,
+  type PepperConfig,
 } from "@auth-core";
 import { env } from "@/server/config/env";
 import { EmailTokensRepo } from "@/server/db-repos/email-tokens.repo";
@@ -23,17 +24,33 @@ import { authEventEmitter } from "@/server/logging/auth-event-emitter";
 
 const txRunner = { withTx };
 
+function buildPepperConfig(): PepperConfig {
+  const legacy = (env.TOKEN_PEPPER_LEGACY ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  return {
+    active: env.TOKEN_PEPPER,
+    legacy,
+  };
+}
+
 export function createSessionService() {
   return new SessionService(
     new SessionsRepo(),
-    env.TOKEN_PEPPER,
+    buildPepperConfig(),
     txRunner,
     authEventEmitter,
   );
 }
 
 export function createEmailTokenService() {
-  return new EmailTokenService(new EmailTokensRepo(), env.TOKEN_PEPPER, authEventEmitter);
+  return new EmailTokenService(
+    new EmailTokensRepo(),
+    buildPepperConfig(),
+    authEventEmitter,
+  );
 }
 
 export function createSignupFlow() {
@@ -47,7 +64,7 @@ export function createSignupFlow() {
 }
 
 export function createLoginFlow() {
-  return new LoginFlow(new UsersRepo(), authEventEmitter);
+  return new LoginFlow(new UsersRepo(), authEventEmitter, buildPepperConfig());
 }
 
 export function createMagicLoginFlow() {
@@ -60,17 +77,23 @@ export function createPasswordResetFlow() {
     createEmailTokenService(),
     createSessionService(),
     txRunner,
+    authEventEmitter,
   );
 }
 
 export function createOAuthStateService() {
-  return new OAuthStateService(new OAuthStatesRepo(), env.TOKEN_PEPPER);
+  return new OAuthStateService(new OAuthStatesRepo(), buildPepperConfig());
 }
 
 export function createOAuthLoginFlow() {
-  return new OAuthLoginFlow(new UsersRepo(), new OAuthAccountsRepo());
+  return new OAuthLoginFlow(new UsersRepo(), new OAuthAccountsRepo(), authEventEmitter);
 }
 
 export function createVerifyEmailFlow() {
-  return new VerifyEmailFlow(createEmailTokenService(), new UsersRepo(), txRunner);
+  return new VerifyEmailFlow(
+    createEmailTokenService(),
+    new UsersRepo(),
+    txRunner,
+    authEventEmitter,
+  );
 }
