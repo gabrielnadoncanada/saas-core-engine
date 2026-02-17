@@ -19,15 +19,21 @@ import { SessionsRepo } from "@/server/db-repos/sessions.repo";
 import { SubscriptionsRepo } from "@/server/db-repos/subscriptions.repo";
 import { UsersRepo } from "@/server/db-repos/users.repo";
 import { withTx } from "@db";
+import { authEventEmitter } from "@/server/logging/auth-event-emitter";
 
 const txRunner = { withTx };
 
 export function createSessionService() {
-  return new SessionService(new SessionsRepo(), env.TOKEN_PEPPER, txRunner);
+  return new SessionService(
+    new SessionsRepo(),
+    env.TOKEN_PEPPER,
+    txRunner,
+    authEventEmitter,
+  );
 }
 
 export function createEmailTokenService() {
-  return new EmailTokenService(new EmailTokensRepo(), env.TOKEN_PEPPER);
+  return new EmailTokenService(new EmailTokensRepo(), env.TOKEN_PEPPER, authEventEmitter);
 }
 
 export function createSignupFlow() {
@@ -41,7 +47,7 @@ export function createSignupFlow() {
 }
 
 export function createLoginFlow() {
-  return new LoginFlow(new UsersRepo());
+  return new LoginFlow(new UsersRepo(), authEventEmitter);
 }
 
 export function createMagicLoginFlow() {
@@ -66,5 +72,5 @@ export function createOAuthLoginFlow() {
 }
 
 export function createVerifyEmailFlow() {
-  return new VerifyEmailFlow(createEmailTokenService(), new UsersRepo());
+  return new VerifyEmailFlow(createEmailTokenService(), new UsersRepo(), txRunner);
 }

@@ -6,6 +6,7 @@ import type {
   UsersRepo,
 } from "../auth.ports";
 import { hashPassword } from "../hashing/password";
+import { authErr } from "../errors";
 
 export class SignupFlow {
   constructor(
@@ -21,7 +22,7 @@ export class SignupFlow {
 
     return this.txRunner.withTx(async (tx) => {
       const existing = await this.users.findByEmail(email, tx);
-      if (existing) throw new Error("Email already in use");
+      if (existing) throw authErr("email_in_use", "Email already in use");
 
       const passwordHash = await hashPassword(params.password);
 

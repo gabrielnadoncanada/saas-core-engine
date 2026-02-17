@@ -1,10 +1,11 @@
 import type { EmailTokenService } from "../email-tokens/email-token.service";
-import type { UsersRepo } from "../auth.ports";
+import type { TxRunner, UsersRepo } from "../auth.ports";
 
 export class VerifyEmailFlow {
   constructor(
     private readonly tokens: EmailTokenService,
     private readonly users: UsersRepo,
+    private readonly txRunner?: TxRunner,
   ) {}
 
   async request(params: {
@@ -25,14 +26,21 @@ export class VerifyEmailFlow {
   }
 
   async confirm(params: { token: string }) {
-    const consumed = await this.tokens.consume({ token: params.token });
-    if (!consumed) return { ok: false as const };
+    const confirm = async (tx?: any) => {
+      const consumed = await this.tokens.consume({ token: params.token }, tx);
+      if (!consumed) return { ok: false as const };
 
-    if (consumed.type !== "verify_email") return { ok: false as const };
-    if (!consumed.userId) return { ok: false as const };
+      if (consumed.type !== "verify_email") return { ok: false as const };
+      if (!consumed.userId) return { ok: false as const };
 
-    await this.users.markEmailVerified(consumed.userId);
+      await this.users.markEmailVerified(consumed.userId, tx);
 
-    return { ok: true as const, userId: consumed.userId };
+      return { ok: true as const, userId: consumed.userId };
+    };
+
+    if (this.txRunner) {
+      return this.txRunner.withTx((tx) => confirm(tx));
+    }
+    return confirm();
   }
 }

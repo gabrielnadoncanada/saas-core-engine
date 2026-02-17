@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { AuthCoreError } from "@auth-core";
 import { env } from "@/server/config/env";
 import { setSessionCookie } from "@/server/adapters/cookies/session-cookie.adapter";
 import {
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
   try {
     await enforceAuthRateLimit(req, "login");
   } catch (e) {
-    if ((e as any).status === 429)
+    if (e instanceof AuthCoreError && e.code === "rate_limited")
       return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429 });
     throw e;
   }

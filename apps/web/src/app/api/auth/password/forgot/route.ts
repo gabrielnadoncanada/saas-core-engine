@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { AuthCoreError } from "@auth-core";
 import { getEmailService } from "@/server/services/email.service";
 import { absoluteUrl } from "@/server/services/url.service";
 import { createPasswordResetFlow } from "@/server/adapters/core/auth-core.adapter";
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
   try {
     await enforceAuthRateLimit(req, "password_forgot");
   } catch (e) {
-    if ((e as any).status === 429)
+    if (e instanceof AuthCoreError && e.code === "rate_limited")
       return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429 });
     throw e;
   }

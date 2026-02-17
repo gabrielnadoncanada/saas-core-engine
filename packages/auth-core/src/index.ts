@@ -1,4 +1,9 @@
-export { hashPassword, verifyPassword } from "./hashing/password";
+export {
+  getDummyPasswordHash,
+  hashPassword,
+  passwordNeedsRehash,
+  verifyPassword,
+} from "./hashing/password";
 export { hashToken } from "./hashing/token";
 
 export type {
@@ -37,3 +42,5 @@ export type {
   GoogleTokenExchangeParams,
 } from "./oauth/providers/google";
 export { VerifyEmailFlow } from "./flows/verify-email.flow";
+export { buildAuthRateLimitKey } from "./rate-limit";
+export type { AuthRateLimitRoute } from "./rate-limit";

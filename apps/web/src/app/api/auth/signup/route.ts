@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { AuthCoreError } from "@auth-core";
 import { env } from "@/server/config/env";
 import { setSessionCookie } from "@/server/adapters/cookies/session-cookie.adapter";
 import {
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
   try {
     await enforceAuthRateLimit(req, "signup");
   } catch (e) {
-    if ((e as any).status === 429)
+    if (e instanceof AuthCoreError && e.code === "rate_limited")
       return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429 });
     throw e;
   }
@@ -63,7 +64,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, userId, organizationId });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Signup failed";
-    const status = msg.includes("already in use") ? 409 : 500;
+    const status =
+      e instanceof AuthCoreError && e.code === "email_in_use" ? 409 : 500;
     return NextResponse.json({ ok: false, error: msg }, { status });
   }
 }

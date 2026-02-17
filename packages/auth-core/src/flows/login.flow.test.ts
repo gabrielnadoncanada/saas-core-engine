@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import argon2 from "argon2";
 import { LoginFlow } from "./login.flow";
 import { hashPassword } from "../hashing/password";
 import type { UsersRepo } from "../auth.ports";
@@ -78,5 +79,27 @@ describe("LoginFlow", () => {
 
     await flow.execute({ email: "User@Example.COM", password: "pw" });
     expect(users.findByEmail).toHaveBeenCalledWith("user@example.com");
+  });
+
+  it("upgrades password hash when params are outdated", async () => {
+    const weakHash = await argon2.hash("my-password", {
+      type: argon2.argon2id,
+      memoryCost: 4096,
+      timeCost: 2,
+      parallelism: 1,
+    });
+    const users = mockUsersRepo({
+      findByEmail: vi.fn().mockResolvedValue({
+        id: "u1",
+        email: "a@b.com",
+        passwordHash: weakHash,
+      }),
+    });
+
+    const flow = new LoginFlow(users);
+    const res = await flow.execute({ email: "a@b.com", password: "my-password" });
+
+    expect(res).toEqual({ ok: true, userId: "u1" });
+    expect(users.setPasswordHash).toHaveBeenCalledTimes(1);
   });
 });

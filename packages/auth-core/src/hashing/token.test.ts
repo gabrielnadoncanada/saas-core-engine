@@ -3,7 +3,7 @@ import { hashToken, sha256Hex } from "./token";
 
 describe("hashToken", () => {
   it("produces a deterministic hex hash", () => {
-    const pepper = "test-pepper-long-enough";
+    const pepper = "test-pepper-long-enough-32-characters";
     const h1 = hashToken("my-token", pepper);
     const h2 = hashToken("my-token", pepper);
     expect(h1).toBe(h2);
@@ -11,13 +11,13 @@ describe("hashToken", () => {
   });
 
   it("produces different hashes for different tokens", () => {
-    const pepper = "test-pepper-long-enough";
+    const pepper = "test-pepper-long-enough-32-characters";
     expect(hashToken("token-a", pepper)).not.toBe(hashToken("token-b", pepper));
   });
 
   it("produces different hashes for different peppers", () => {
-    expect(hashToken("same-token", "pepper-aaaa-aaaa")).not.toBe(
-      hashToken("same-token", "pepper-bbbb-bbbb"),
+    expect(hashToken("same-token", "pepper-aaaa-aaaa-aaaa-aaaa-aaaa-aaaa")).not.toBe(
+      hashToken("same-token", "pepper-bbbb-bbbb-bbbb-bbbb-bbbb-bbbb"),
     );
   });
 

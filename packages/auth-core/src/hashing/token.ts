@@ -10,7 +10,7 @@ export function sha256Hex(input: string): string {
 }
 
 export function hashToken(token: string, pepper: string): string {
-  if (!pepper || pepper.length < 16)
+  if (!pepper || pepper.length < 32)
     throw new Error("TOKEN_PEPPER must be set and long enough");
   return sha256Hex(`${token}:${pepper}`);
 }

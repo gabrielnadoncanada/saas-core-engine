@@ -3,7 +3,8 @@ export type AuthErrorCode =
   | "email_in_use"
   | "invalid_token"
   | "expired_token"
-  | "unauthorized";
+  | "unauthorized"
+  | "rate_limited";
 
 export type EmailTokenType =
   | "magic_login"
@@ -16,6 +17,7 @@ export interface SessionSummary {
   id: string;
   userId: string;
   createdAt: Date;
+  lastSeenAt: Date | null;
   expiresAt: Date;
   revokedAt: Date | null;
   ip: string | null;

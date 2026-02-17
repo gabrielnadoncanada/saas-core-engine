@@ -6,6 +6,11 @@ describe("hashPassword", () => {
     await expect(hashPassword("short")).rejects.toThrow("Password too short");
   });
 
+  it("rejects passwords longer than 1024 bytes", async () => {
+    const tooLong = "a".repeat(1025);
+    await expect(hashPassword(tooLong)).rejects.toThrow("Password too long");
+  });
+
   it("produces a hash that can be verified", async () => {
     const hash = await hashPassword("valid-password-123");
     expect(hash).toBeTruthy();

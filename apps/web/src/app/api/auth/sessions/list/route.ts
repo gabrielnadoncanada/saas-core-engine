@@ -13,6 +13,7 @@ export async function GET() {
     sessions: list.map((s) => ({
       id: s.id,
       createdAt: s.createdAt.toISOString(),
+      lastSeenAt: s.lastSeenAt ? s.lastSeenAt.toISOString() : null,
       expiresAt: s.expiresAt.toISOString(),
       revokedAt: s.revokedAt ? s.revokedAt.toISOString() : null,
       userAgent: s.userAgent,

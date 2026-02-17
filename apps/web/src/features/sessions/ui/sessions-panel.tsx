@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 type SessionRow = {
   id: string;
   createdAt: string;
+  lastSeenAt: string | null;
   expiresAt: string;
   revokedAt: string | null;
   userAgent: string | null;
@@ -78,6 +79,7 @@ export function SessionsPanel() {
             <thead>
               <tr>
                 <th style={th}>Created</th>
+                <th style={th}>Last seen</th>
                 <th style={th}>Expires</th>
                 <th style={th}>IP</th>
                 <th style={th}>User Agent</th>
@@ -88,6 +90,7 @@ export function SessionsPanel() {
               {rows.map((s) => (
                 <tr key={s.id}>
                   <td style={td}>{new Date(s.createdAt).toLocaleString()}</td>
+                  <td style={td}>{s.lastSeenAt ? new Date(s.lastSeenAt).toLocaleString() : "-"}</td>
                   <td style={td}>{new Date(s.expiresAt).toLocaleString()}</td>
                   <td style={td}>{s.ip ?? "—"}</td>
                   <td style={{ ...td, maxWidth: 420 }}>

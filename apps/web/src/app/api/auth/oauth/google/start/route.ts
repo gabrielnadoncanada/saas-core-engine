@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { codeChallengeS256, oidcNonceFromCodeVerifier } from "@auth-core";
+import { AuthCoreError, codeChallengeS256, oidcNonceFromCodeVerifier } from "@auth-core";
 import { createOAuthStateService } from "@/server/adapters/core/auth-core.adapter";
 import { env } from "@/server/config/env";
 import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
@@ -17,7 +17,7 @@ export async function GET(req: Request) {
   try {
     await enforceAuthRateLimit(req, "oauth_start");
   } catch (e) {
-    if ((e as any).status === 429)
+    if (e instanceof AuthCoreError && e.code === "rate_limited")
       return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429 });
     throw e;
   }

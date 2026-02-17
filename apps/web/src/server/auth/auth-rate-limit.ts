@@ -1,5 +1,6 @@
 import "server-only";
 
+import { authErr, buildAuthRateLimitKey, type AuthRateLimitRoute } from "@auth-core";
 import { prisma } from "@db";
 import { env } from "@/server/config/env";
 
@@ -14,22 +15,14 @@ function extractIp(req: Request): string {
   return "127.0.0.1";
 }
 
-export type RateLimitRoute =
-  | "login"
-  | "signup"
-  | "magic_request"
-  | "password_forgot"
-  | "oauth_start"
-  | "verify_email_request";
-
 export async function enforceAuthRateLimit(
   req: Request,
-  route: RateLimitRoute,
+  route: AuthRateLimitRoute,
 ): Promise<void> {
   if (!env.RATE_LIMIT_ENABLED) return;
 
   const ip = extractIp(req);
-  const key = `${ip}:${route}`;
+  const key = buildAuthRateLimitKey({ ip, route });
   const ws = windowStart(env.RATE_LIMIT_WINDOW_SECONDS);
 
   const bucket = await (prisma as any).authRateLimitBucket.upsert({
@@ -40,9 +33,6 @@ export async function enforceAuthRateLimit(
   });
 
   if (bucket.count > env.RATE_LIMIT_MAX_REQUESTS) {
-    const err = new Error("Too many requests. Please try again later.");
-    // @ts-expect-error attach status for route handler
-    err.status = 429;
-    throw err;
+    throw authErr("rate_limited", "Too many requests. Please try again later.");
   }
 }

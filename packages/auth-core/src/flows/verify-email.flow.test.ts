@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { VerifyEmailFlow } from "./verify-email.flow";
 import type { EmailTokenService } from "../email-tokens/email-token.service";
-import type { UsersRepo } from "../auth.ports";
+import type { TxRunner, UsersRepo } from "../auth.ports";
 
 function mockTokens(overrides: Partial<EmailTokenService> = {}): EmailTokenService {
   return {
@@ -91,7 +91,30 @@ describe("VerifyEmailFlow", () => {
       const res = await flow.confirm({ token: "t" });
 
       expect(res).toEqual({ ok: true, userId: "u1" });
-      expect(users.markEmailVerified).toHaveBeenCalledWith("u1");
+      expect(users.markEmailVerified).toHaveBeenCalledWith("u1", undefined);
+    });
+
+    it("uses transaction when txRunner is provided", async () => {
+      const users = mockUsers();
+      const tokens = mockTokens({
+        consume: vi.fn().mockResolvedValue({
+          id: "et-1",
+          email: "a@b.com",
+          userId: "u1",
+          type: "verify_email",
+        }),
+      });
+      const txRunner: TxRunner = {
+        withTx: vi.fn((fn) => fn({ tx: true })) as TxRunner["withTx"],
+      };
+
+      const flow = new VerifyEmailFlow(tokens, users, txRunner);
+      const res = await flow.confirm({ token: "t" });
+
+      expect(res).toEqual({ ok: true, userId: "u1" });
+      expect(txRunner.withTx).toHaveBeenCalledTimes(1);
+      expect(tokens.consume).toHaveBeenCalledWith({ token: "t" }, { tx: true });
+      expect(users.markEmailVerified).toHaveBeenCalledWith("u1", { tx: true });
     });
   });
 });
