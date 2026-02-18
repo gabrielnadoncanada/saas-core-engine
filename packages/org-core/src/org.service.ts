@@ -61,4 +61,8 @@ export class OrgService<TTx = unknown> {
       return { organizationId: params.organizationId };
     });
   }
+
+  async listUserOrganizations(userId: string) {
+    return this.memberships.listUserOrganizations(userId);
+  }
 }

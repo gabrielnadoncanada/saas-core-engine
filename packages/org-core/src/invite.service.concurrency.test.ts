@@ -93,6 +93,7 @@ describe("InviteService concurrency", () => {
       updateRole: async () => {},
       remove: async () => {},
       listOrgMembers: async () => [],
+      listUserOrganizations: async () => [],
     };
 
     const svc = new InviteService(

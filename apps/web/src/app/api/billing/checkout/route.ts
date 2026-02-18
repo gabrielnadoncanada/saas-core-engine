@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@db";
 import { env } from "@/server/config/env";
 import { requireUser } from "@/server/auth/require-user";
 import { getDefaultOrgIdForUser } from "@/server/auth/require-org";
-import {
-  ensureStripeCustomerForOrg,
-  stripe,
-} from "@/server/services/stripe.service";
+import { createBillingSessionService } from "@/server/adapters/core/billing-core.adapter";
 
 type Body = { plan: "pro" };
 
@@ -25,28 +21,12 @@ export async function POST(req: Request) {
   if (!organizationId)
     return NextResponse.json({ ok: false, error: "No org" }, { status: 400 });
 
-  const org = await prisma.organization.findUnique({
-    where: { id: organizationId },
-  });
-
-  const customerId = await ensureStripeCustomerForOrg({
+  const billing = createBillingSessionService();
+  const session = await billing.createCheckoutSession({
     organizationId,
-    orgName: org?.name ?? null,
-  });
-
-  const s = stripe();
-
-  const session = await s.checkout.sessions.create({
-    mode: "subscription",
-    customer: customerId,
-    line_items: [{ price: env.STRIPE_PRICE_PRO_MONTHLY, quantity: 1 }],
-    success_url: env.STRIPE_SUCCESS_URL,
-    cancel_url: env.STRIPE_CANCEL_URL,
-    allow_promotion_codes: true,
-    subscription_data: {
-      metadata: { organizationId },
-    },
-    metadata: { organizationId },
+    priceId: env.STRIPE_PRICE_PRO_MONTHLY,
+    successUrl: env.STRIPE_SUCCESS_URL,
+    cancelUrl: env.STRIPE_CANCEL_URL,
   });
 
   return NextResponse.json({ ok: true, url: session.url });

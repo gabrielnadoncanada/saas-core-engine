@@ -5,9 +5,11 @@ import {
   OAuthLoginFlow,
   OAuthStateService,
   PasswordResetFlow,
+  SessionContextService,
   SessionService,
   SignupFlow,
   VerifyEmailFlow,
+  VerifyEmailRequestFlow,
 } from "@auth-core";
 import { env } from "@/server/config/env";
 import { EmailTokensRepo } from "@/server/db-repos/email-tokens.repo";
@@ -82,5 +84,17 @@ export function createVerifyEmailFlow() {
     new UsersRepo(),
     txRunner,
     authEventEmitter,
+  );
+}
+
+export function createVerifyEmailRequestFlow() {
+  return new VerifyEmailRequestFlow(new UsersRepo(), createVerifyEmailFlow());
+}
+
+export function createSessionContextService() {
+  return new SessionContextService(
+    createSessionService(),
+    new UsersRepo(),
+    new MembershipsRepo(),
   );
 }

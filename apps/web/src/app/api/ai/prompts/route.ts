@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/shared/getSessionUser";
+import { getSessionUser } from "@/server/auth/require-user";
 import { DEFAULT_PROMPTS } from "@/server/ai/prompts/default-prompts";
-import {
-  ensurePrompt,
-  listPromptVersions,
-  createPromptVersion,
-} from "@/server/ai/prompts/ai-prompts.service";
+import { createAIPromptsService } from "@/server/adapters/core/ai-core.adapter";
 
 export async function GET(req: Request) {
   const user = await getSessionUser();
@@ -25,8 +21,9 @@ export async function GET(req: Request) {
     });
   }
 
-  await ensurePrompt(user.organizationId, key, DEFAULT_PROMPTS[key]);
-  const data = await listPromptVersions(user.organizationId, key);
+  const prompts = createAIPromptsService();
+  await prompts.ensurePrompt(user.organizationId, key, DEFAULT_PROMPTS[key]);
+  const data = await prompts.listPromptVersions(user.organizationId, key);
 
   return NextResponse.json({ ok: true, key, ...data });
 }
@@ -55,7 +52,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const result = await createPromptVersion(
+  const result = await createAIPromptsService().createPromptVersion(
     user.organizationId,
     key,
     body.content,

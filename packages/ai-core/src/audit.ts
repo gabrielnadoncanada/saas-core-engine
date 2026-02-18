@@ -1,5 +1,3 @@
-import "server-only";
-
 export function getRequestMeta(
   messages: Array<{ role: string; content: string }>,
 ) {
@@ -10,3 +8,4 @@ export function getRequestMeta(
   );
   return { messageCount, promptChars };
 }
+

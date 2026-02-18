@@ -2,12 +2,14 @@ import { z } from "zod";
 import { OpenAIProvider, estimateCost } from "@ai-core";
 import { prisma } from "@db";
 
-import { getSessionUser } from "@/shared/getSessionUser";
+import { getSessionUser } from "@/server/auth/require-user";
 import { env } from "@/server/config/env";
-import { enforceAiOrThrow } from "@/server/ai/ai-enforcement";
+import {
+  createAIEnforcementService,
+  createAIPromptsService,
+} from "@/server/adapters/core/ai-core.adapter";
 
 import { DEFAULT_PROMPTS } from "@/server/ai/prompts/default-prompts";
-import { getActivePromptContent } from "@/server/ai/prompts/ai-prompts.service";
 
 import { buildToolRegistry } from "@/server/ai/tools";
 import { executeTool } from "@ai-core";
@@ -61,7 +63,9 @@ export async function POST(req: Request) {
 
   let policy: { plan: string; model: string };
   try {
-    const p = await enforceAiOrThrow(user.organizationId);
+    const p = await createAIEnforcementService().enforceAiOrThrow(
+      user.organizationId,
+    );
     policy = { plan: p.plan, model: p.model };
   } catch (e) {
     const status = (e as any).status ?? 429;
@@ -97,7 +101,7 @@ export async function POST(req: Request) {
   const provider = new OpenAIProvider(env.OPENAI_API_KEY);
   const model = policy.model;
 
-  const systemPrompt = await getActivePromptContent(
+  const systemPrompt = await createAIPromptsService().getActivePromptContent(
     user.organizationId,
     "chat.system",
     DEFAULT_PROMPTS["chat.system"],

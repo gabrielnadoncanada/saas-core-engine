@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
+import { AI_POLICY, getMonthRange, normalizePlan } from "@ai-core";
 import { prisma } from "@db";
-import { getSessionUser } from "@/shared/getSessionUser";
-import { getMonthRange } from "@/server/ai/ai-quota";
-import { getOrgPlan, getOrgMonthlyUsage } from "@/server/ai/ai-usage.service";
-import { AI_POLICY, normalizePlan } from "@/server/ai/ai-policy";
+import { getSessionUser } from "@/server/auth/require-user";
+import { createAIUsageService } from "@/server/adapters/core/ai-core.adapter";
 
 export async function GET() {
   const user = await getSessionUser();
@@ -14,12 +13,13 @@ export async function GET() {
     );
 
   const orgId = user.organizationId;
-  const plan = await getOrgPlan(orgId);
+  const usageService = createAIUsageService();
+  const plan = await usageService.getOrgPlan(orgId);
   const normalizedPlan = normalizePlan(plan);
   const policyEntry = AI_POLICY[normalizedPlan];
   const quota = policyEntry.monthlyTokens;
 
-  const monthly = await getOrgMonthlyUsage(orgId);
+  const monthly = await usageService.getOrgMonthlyUsage(orgId);
   const { start, end } = getMonthRange();
 
   // Daily aggregation (tokens + cost)

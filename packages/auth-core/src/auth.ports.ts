@@ -10,6 +10,7 @@ export interface UserRecord {
   id: string;
   email: string;
   passwordHash: string | null;
+  emailVerifiedAt?: Date | null;
 }
 
 export interface SessionRecord {

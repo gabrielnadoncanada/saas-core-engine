@@ -45,6 +45,39 @@ export class MembershipsRepo {
     return db(tx).membership.findUnique({ where: { id: membershipId } });
   }
 
+  async hasMembership(
+    params: { userId: string; organizationId: string },
+    tx?: DbTx,
+  ): Promise<boolean> {
+    const row = await this.findUserMembership(params, tx);
+    return Boolean(row);
+  }
+
+  async findFirstOrganizationIdByUser(
+    userId: string,
+    tx?: DbTx,
+  ): Promise<string | null> {
+    const row = await db(tx).membership.findFirst({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+      select: { organizationId: true },
+    });
+    return row?.organizationId ?? null;
+  }
+
+  async listUserOrganizations(userId: string, tx?: DbTx) {
+    const memberships = await db(tx).membership.findMany({
+      where: { userId },
+      include: { organization: true },
+      orderBy: { createdAt: "asc" },
+    });
+    return memberships.map((membership) => ({
+      organizationId: membership.organizationId,
+      name: membership.organization.name,
+      role: membership.role,
+    }));
+  }
+
   async countByRole(
     params: { organizationId: string; role: MembershipRole },
     tx?: DbTx,

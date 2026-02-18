@@ -19,6 +19,7 @@ function mockMembershipsRepo(): MembershipsRepo {
     updateRole: vi.fn(),
     remove: vi.fn(),
     listOrgMembers: vi.fn(),
+    listUserOrganizations: vi.fn(),
   };
 }
 

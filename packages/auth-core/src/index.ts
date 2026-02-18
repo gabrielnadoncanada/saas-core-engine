@@ -47,5 +47,13 @@ export type {
   GoogleTokenExchangeParams,
 } from "./oauth/providers/google";
 export { VerifyEmailFlow } from "./flows/verify-email.flow";
+export { VerifyEmailRequestFlow } from "./flows/verify-email-request.flow";
 export { buildAuthRateLimitKey } from "./rate-limit";
 export type { AuthRateLimitRoute } from "./rate-limit";
+export type {
+  ResolveSessionContextParams,
+  SessionContextMembershipsRepo,
+  SessionContextResult,
+  SessionContextUsersRepo,
+} from "./session-context/session-context.service";
+export { SessionContextService } from "./session-context/session-context.service";

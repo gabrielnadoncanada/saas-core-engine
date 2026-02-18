@@ -26,6 +26,7 @@ describe("OrgService", () => {
       updateRole: vi.fn(),
       remove: vi.fn(),
       listOrgMembers: vi.fn(),
+      listUserOrganizations: vi.fn(),
     };
     const subs: SubscriptionsRepo = {
       upsertOrgSubscription: vi.fn().mockResolvedValue({ id: "s1" }),
@@ -63,6 +64,7 @@ describe("OrgService", () => {
       updateRole: vi.fn(),
       remove: vi.fn(),
       listOrgMembers: vi.fn(),
+      listUserOrganizations: vi.fn(),
     };
     const subs: SubscriptionsRepo = {
       upsertOrgSubscription: vi.fn(),

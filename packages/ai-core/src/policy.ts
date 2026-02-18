@@ -1,7 +1,7 @@
 export const AI_POLICY = {
   free: {
     model: "gpt-4o-mini",
-    rpm: 10, // requests per minute per org
+    rpm: 10,
     monthlyTokens: 50_000,
   },
   pro: {
@@ -14,6 +14,6 @@ export const AI_POLICY = {
 export type PlanKey = keyof typeof AI_POLICY;
 
 export function normalizePlan(plan: string): PlanKey {
-  if (plan === "pro") return "pro";
-  return "free";
+  return plan === "pro" ? "pro" : "free";
 }
+

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@db";
-import { getSessionUser } from "@/shared/getSessionUser";
+import { getSessionUser } from "@/server/auth/require-user";
 
 export async function GET(req: Request) {
   const user = await getSessionUser();

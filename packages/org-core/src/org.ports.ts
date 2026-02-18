@@ -34,6 +34,10 @@ export interface MembershipsRepo<TTx = unknown> {
     organizationId: string,
     tx?: TTx,
   ): Promise<Array<MembershipSummary & { user: { email: string } }>>;
+  listUserOrganizations(
+    userId: string,
+    tx?: TTx,
+  ): Promise<Array<{ organizationId: string; name: string; role: MembershipRole }>>;
 }
 
 export interface SubscriptionsRepo<TTx = unknown> {

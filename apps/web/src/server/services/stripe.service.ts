@@ -1,7 +1,7 @@
 import "server-only";
 
 import Stripe from "stripe";
-import { prisma } from "@db";
+import type { BillingProvider } from "@billing-core";
 import { env } from "@/server/config/env";
 
 export function stripe() {
@@ -11,34 +11,51 @@ export function stripe() {
   });
 }
 
-export async function ensureStripeCustomerForOrg(params: {
-  organizationId: string;
-  orgName?: string | null;
-}) {
-  const existing = await prisma.subscription.findUnique({
-    where: { organizationId: params.organizationId },
-  });
+export class StripeBillingProvider implements BillingProvider {
+  async createCustomer(params: {
+    organizationId: string;
+    orgName?: string | null;
+  }): Promise<{ customerId: string }> {
+    const s = stripe();
+    const customer = await s.customers.create({
+      name: params.orgName ?? undefined,
+      metadata: { organizationId: params.organizationId },
+    });
+    return { customerId: customer.id };
+  }
 
-  if (existing?.stripeCustomerId) return existing.stripeCustomerId;
+  async createCheckoutSession(params: {
+    customerId: string;
+    organizationId: string;
+    priceId: string;
+    successUrl: string;
+    cancelUrl: string;
+  }): Promise<{ url: string | null }> {
+    const s = stripe();
+    const session = await s.checkout.sessions.create({
+      mode: "subscription",
+      customer: params.customerId,
+      line_items: [{ price: params.priceId, quantity: 1 }],
+      success_url: params.successUrl,
+      cancel_url: params.cancelUrl,
+      allow_promotion_codes: true,
+      subscription_data: {
+        metadata: { organizationId: params.organizationId },
+      },
+      metadata: { organizationId: params.organizationId },
+    });
+    return { url: session.url };
+  }
 
-  const s = stripe();
-  const customer = await s.customers.create({
-    name: params.orgName ?? undefined,
-    metadata: { organizationId: params.organizationId },
-  });
-
-  await prisma.subscription.upsert({
-    where: { organizationId: params.organizationId },
-    create: {
-      organizationId: params.organizationId,
-      plan: "free",
-      status: "inactive",
-      stripeCustomerId: customer.id,
-    },
-    update: {
-      stripeCustomerId: customer.id,
-    },
-  });
-
-  return customer.id;
+  async createPortalSession(params: {
+    customerId: string;
+    returnUrl: string;
+  }): Promise<{ url: string }> {
+    const s = stripe();
+    const portal = await s.billingPortal.sessions.create({
+      customer: params.customerId,
+      return_url: params.returnUrl,
+    });
+    return { url: portal.url };
+  }
 }

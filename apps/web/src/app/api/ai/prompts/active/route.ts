@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/shared/getSessionUser";
+import { getSessionUser } from "@/server/auth/require-user";
 import { DEFAULT_PROMPTS } from "@/server/ai/prompts/default-prompts";
-import { setActivePromptVersion } from "@/server/ai/prompts/ai-prompts.service";
+import { createAIPromptsService } from "@/server/adapters/core/ai-core.adapter";
 
 export async function POST(req: Request) {
   const user = await getSessionUser();
@@ -27,7 +27,11 @@ export async function POST(req: Request) {
     );
   }
 
-  await setActivePromptVersion(user.organizationId, key, body.version);
+  await createAIPromptsService().setActivePromptVersion(
+    user.organizationId,
+    key,
+    body.version,
+  );
 
   return NextResponse.json({ ok: true });
 }
