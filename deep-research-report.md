@@ -1,39 +1,43 @@
 # Audit production-ready de `packages/org-core` dans `gabrielnadoncanada/saas-core-engine`
 
-## Résumé exécutif
+## Résumé exécutif, verdict et score de maturité
 
-J’ai audité `packages/org-core` et tout ce qui l’entoure (docs produit, DB Prisma, adapter Next, routes org et intégration billing). Le package couvre un **MVP org/teams** (création d’org en transaction avec membership owner + subscription initiale, invitations à durée limitée par token haché, acceptation en transaction) et s’aligne partiellement sur la vision “SaaS B2B production-ready en <7 jours”. Toutefois, il y a une **non-conformité majeure au PRD**: la fonctionnalité **Switch org** est marquée “✅” dans le PRD, mais l’endpoint `/api/org/switch` est explicitement **non implémenté** (“Not implemented in V1”). De plus, l’implémentation autorise déjà de facto des états **multi-org par user** (création d’org illimitée, acceptation d’invites), sans mécanisme de sélection d’org active, ce qui crée des incohérences UX/produit et des risques d’ops. Finalement, `@org-core` n’a **aucun script de tests**, ce qui signifie très probablement que `turbo test` ne l’exécute pas en CI, et qu’on ne peut pas qualifier “prod-ready” sans filet. Verdict: **prod-ready = non** à ce stade.
+`org-core` implémente déjà un **noyau multi-tenant solide** et majoritairement conforme à la Vision/PRD V1: création d’organisation en transaction avec création de membership owner, abonnement “free/inactive” initial, mécanisme “active organization” côté user, switch d’org (avec vérification membership), invitations sécurisées (token brut jamais stocké, hash unique en DB, TTL borné), acceptation d’invite transactionnelle avec upsert de membership et protection contre races, RBAC (owner/admin/member) avec règles “dernier owner” et transfert d’ownership, ainsi qu’un **audit trail** via `OrgAuditLog`. Les facteurs qui empêchent encore de conclure “production-ready” sont surtout **opérationnels et DX**: naming/casing des docs (vos fichiers sont `prd.md` et `vision.md`, pas `PRD.md`/`Vision.md`), la logique d’“org active” est **par utilisateur** (impact transverse sur toutes les sessions, alors que le PRD parle “par session/user context”), l’e-mail d’invitation réutilise une méthode `sendVerifyEmail` (ambigu et risqué UX), l’absence d’API/UI d’admin d’équipe (changer rôle/retirer membre/transférer ownership) malgré les services core existants, et une couverture de tests essentiellement unitaire (peu ou pas de tests d’intégration DB, de races réelles, ou d’E2E). Verdict: **prod-ready = non**, mais vous êtes proche.
 
 **État prod-ready:** **non**  
-**Score maturité (0–100): 66 / 100**  
-Critères utilisés (pondération qualitative): alignement PRD/Vision (20), invariants multi-tenant + access control (25), intégrité DB/transactions (20), DX/abstractions (10), tests & CI/CD (25).
+**Score maturité (0–100): 78 / 100**
 
-## Étapes effectuées, fichiers lus et heuristiques
+Critères (pondération et score):
+- Alignement PRD/Vision (20): 16/20 (docs présentes mais casing; features présentes, “per session” ambigu)
+- Fonctionnalité & invariants org-core (25): 21/25 (core complet, manque API/UI d’admin)
+- DB integrity & transactions (15): 14/15 (contraintes + tx + upserts)
+- Sécurité & contrôle d’accès + audit (15): 13/15 (checks au bon endroit + audit log; reste idempotence invite UX)
+- Tests (15): 9/15 (bons unit tests; manque intégration/race/e2e)
+- CI/CD & release (10): 5/10 (scripts ok; scans/workflows/changelog **non spécifiés**)
 
-### Connecteurs activés
+## Démarche, périmètre, limites
 
-GitHub (liste complète fournie: `github`).
+### Étapes effectuées (api_tool GitHub)
 
-### Appels GitHub effectués via `api_tool` (résumé)
+J’ai commencé par le connecteur GitHub (seul connecteur activé), puis j’ai:
+- utilisé `api_tool` (GitHub) en **search** pour localiser `packages/org-core` et `creation__docs`,
+- utilisé `api_tool` (GitHub) en **fetch** pour lire:
+  - `creation__docs/prd.md` et `creation__docs/vision.md`,
+  - les fichiers source clés de `packages/org-core/src/*`,
+  - les routes Next.js concernées (`apps/web/src/app/api/org/*`),
+  - l’adapter `apps/web/src/server/adapters/core/org-core.adapter.ts`,
+  - le schéma Prisma `packages/db/prisma/schema.prisma`,
+  - le tx runner `packages/db/src/tx.ts`,
+  - les repos DB utilisés par `org-core` côté app (`apps/web/src/server/db-repos/*`),
+  - les tests unitaires `packages/org-core/src/*.test.ts`,
+  - et le flow billing webhook (pour le diagramme “billing hook → revoke”).
 
-J’ai utilisé le connecteur GitHub via `api_tool` avec les catégories suivantes, dans l’ordre:
-- `search_installed_repositories_v2` (validation du dépôt installé et de la branche par défaut).
-- `fetch_file` (tentatives initiales sur `creation__docs/PRD.md` et `creation__docs/Vision.md`, retournant 404 car les fichiers sont en minuscules).
-- `fetch` (lecture du contenu exact des fichiers via URLs `github.com/.../raw/...`):
-  - docs `creation__docs/prd.md`, `creation__docs/vision.md`
-  - code `packages/org-core/src/*`
-  - schéma Prisma `packages/db/prisma/schema.prisma` et tx runner `packages/db/src/tx.ts`
-  - repos Prisma côté app `apps/web/src/server/db-repos/*`
-  - adapter org-core `apps/web/src/server/adapters/core/org-core.adapter.ts`
-  - routes org `apps/web/src/app/api/org/*`
-  - page team `apps/web/src/app/(app)/dashboard/team/page.tsx`
-  - scripts racines `package.json`, `turbo.json`.
+### Fichiers analysés (paths exacts)
 
-### Fichiers lus (paths exacts)
-
-Docs produit (demandés dans `creation__docs`):
+Docs:
 - `creation__docs/prd.md`
-- `creation__docs/vision.md`
+- `creation__docs/vision.md`  
+Note: les noms attendus dans ta consigne (`PRD.md`, `Vision.md`) n’existent pas; ce sont des variantes **en minuscules**.
 
 Org-core:
 - `packages/org-core/package.json`
@@ -42,243 +46,240 @@ Org-core:
 - `packages/org-core/src/org.service.ts`
 - `packages/org-core/src/membership.service.ts`
 - `packages/org-core/src/invite.service.ts`
+- `packages/org-core/src/errors.ts`
+- `packages/org-core/src/org.service.test.ts`
+- `packages/org-core/src/invite.service.test.ts`
+- `packages/org-core/src/membership.service.test.ts`
 
-DB & transactions:
-- `packages/db/prisma/schema.prisma`
-- `packages/db/src/tx.ts`
-
-Adapteurs & app (pour vérifier l’“end-to-end reality”):
+App/adapters/DB:
 - `apps/web/src/server/adapters/core/org-core.adapter.ts`
+- `apps/web/src/app/api/org/create/route.ts`
+- `apps/web/src/app/api/org/invite/route.ts`
+- `apps/web/src/app/api/org/invite/accept/route.ts`
+- `apps/web/src/app/api/org/switch/route.ts`
+- `apps/web/src/server/auth/require-org.ts`
+- `apps/web/src/server/auth/require-user.ts`
+- `apps/web/src/server/auth/org-error-response.ts`
+- `apps/web/src/server/services/org-audit.service.ts`
 - `apps/web/src/server/db-repos/orgs.repo.ts`
 - `apps/web/src/server/db-repos/memberships.repo.ts`
 - `apps/web/src/server/db-repos/invitations.repo.ts`
 - `apps/web/src/server/db-repos/subscriptions.repo.ts`
 - `apps/web/src/server/db-repos/users.repo.ts`
-- `apps/web/src/server/auth/require-org.ts`
-- `apps/web/src/app/api/org/create/route.ts`
-- `apps/web/src/app/api/org/invite/route.ts`
-- `apps/web/src/app/api/org/invite/accept/route.ts`
-- `apps/web/src/app/api/org/switch/route.ts`
-- `apps/web/src/app/(app)/dashboard/team/page.tsx`
+- `packages/db/src/tx.ts`
+- `packages/db/prisma/schema.prisma`
 
-Billing (pour le flow “subscription create → webhook sync → revoke” demandé):
+Billing (pour le flow demandé):
+- `apps/web/src/app/api/billing/webhook/route.ts`
 - `packages/billing-core/src/subscription/subscription.sync.ts`
-- `packages/billing-core/src/subscription/plans.ts`
-- `packages/contracts/src/billing.ts`
 
-Contrats org:
-- `packages/contracts/src/org.ts`
+### Limites et note sur les citations repo
 
-### Heuristiques utilisées
+Je ne peux pas produire de citations “`filecite`” sur le contenu GitHub dans cet environnement (l’outil de citations internes n’est pas connecté au repo). J’ai donc appuyé toutes les constatations “repo” sur **chemins exacts + extraits**. Pour les recommandations normatives, j’ai utilisé des sources officielles (OWASP, Stripe) avec citations web.
 
-J’ai évalué:
-- l’**alignement strict** PRD/Vision vs implémentation (features “✅” vs endpoints/services réellement présents),
-- les invariants multi-tenant (org active, membership, isolation) et la **centralisation des checks** d’autorisations (risque “checks dispersés”),
-- l’intégrité DB (contraintes `@unique`, `@@unique`, index, relations) et l’usage du `TxRunner`,
-- l’idempotence/race conditions (invites acceptées en parallèle, créations concurrentes),
-- la capacité à être opérée en prod (erreurs typées, logs/audit, tests/CI).
+## Analyse par dimension
 
-Limite importante: je ne fournis pas de citations “filecite” (outil indisponible ici pour GitHub). J’appuie donc les constats repo par **chemins + extraits** issus du connecteur GitHub. Les recommandations normatives (OWASP/Stripe) sont citées via sources web.
+### Alignement produit vs PRD/Vision
 
-## Alignement produit vs PRD/Vision
+**PRD et Vision demandent clairement**:
+- multi-tenant avec memberships multi-org et une org active “par session/user context” (`creation__docs/prd.md` & `creation__docs/vision.md`),
+- create org, switch org, invite, accept, rôles fixes owner/admin/member, isolation server-side.
 
-### Ce que le PRD et la Vision exigent
+**Implémentation observée**:
+- Create org: `OrgService.createOrg()` crée org + membership owner + subscription free/inactive + `users.setActiveOrganization(...)` *dans une transaction* (`packages/org-core/src/org.service.ts`).
+- Switch org: route `POST /api/org/switch` valide membership et met à jour `user.activeOrganizationId` (`apps/web/src/app/api/org/switch/route.ts`).
+- “Active org”: `requireUser()` reconstruit `organizationId` à partir de `user.activeOrganizationId`, vérifie que le user est bien membre de cette org, sinon fallback sur la première membership (`apps/web/src/server/auth/require-user.ts`).
+- Invite/accept: token brut généré en adapter, hashé via `hashToken` (auth-core) avec `TOKEN_PEPPER`, stockage en DB avec `@unique token_hash`, acceptation transactionnelle (`packages/org-core/src/invite.service.ts`, `apps/web/.../org-core.adapter.ts`, `schema.prisma`).
 
-Le PRD V1 stipule explicitement le scope “Organization & Multi-Tenancy” incluant **Create org**, **Switch org**, **Invite**, **Accept invite**, rôles fixes owner/admin/member et isolement serveur. Il affirme aussi “Default org auto-created at signup”. (Source: `creation__docs/prd.md`, sections 4.2 et 6.)
+**Écarts notables**:
+- **Casing des docs**: `creation__docs/prd.md` et `creation__docs/vision.md` (minuscules) alors que vous référencez souvent “PRD/Vision” comme si c’était standard. Sur Linux/CI, ce détail casse rapidement scripts, linking, automations.
+- **“per session/user context”**: dans les faits, `activeOrganizationId` est stocké sur le **User** (et non la Session). Donc un switch org affecte toutes les sessions actives de cet utilisateur (au prochain accès). Si votre interprétation produit de “per session” est stricte, c’est un gap.
 
-La Vision renforce la même direction: “Create organization”, “Switch organization”, “Invite members”, “Role assignment”, “Org-scoped data isolation”, et positionne ces modules comme fondamentaux. (Source: `creation__docs/vision.md`, sections Multi-tenant / RBAC / Billing.)
+### Fonctionnalité org-core: création, management, rôles/permissions, idempotence, subscriptions
 
-### Écarts critiques observés
+**Création org & subscription**  
+`OrgService.createOrg` est transactionnel et établit l’état minimal SaaS: org, membership owner, subscription free inactive, org active (`packages/org-core/src/org.service.ts`). C’est aligné PRD (une subscription org-based; free/pro).
 
-Le PRD marque **Switch org ✅**, mais l’endpoint correspondant renvoie 501 avec un commentaire “V1: not implemented (single org default)” dans `apps/web/src/app/api/org/switch/route.ts`. C’est une contradiction produit/implémentation.
+**Invitations**  
+`InviteService.createInvite` fait l’autorisation *dans le core* (owner/admin uniquement), génère token brut (via port), stocke hash unique, clamp TTL (min 60 min, max 7 jours), retourne token brut pour mail (`packages/org-core/src/invite.service.ts`). Ça respecte l’esprit OWASP “checks au bon endroit” et “validate permissions on every request”. citeturn6search0
 
-Deuxième tension: le PRD dit “Multi-org per user (V2)”, mais le schéma Prisma autorise clairement plusieurs `Membership` par `User` (unicité seulement sur `[userId, organizationId]`), `OrgService.createOrg` ne limite pas le nombre d’orgs par user, et `InviteService.acceptInvite` peut ajouter une membership à un autre org. Résultat: **multi-org techniquement possible**, mais **non sélectionnable** (puisque `getDefaultOrgIdForUser()` retourne le premier membership par `createdAt`). 
+`InviteService.acceptInvite` est transactionnel, vérifie:
+- invite valide (hash + expiresAt + acceptedAt null via repo),
+- user authentifié,
+- email match strict (case-insensitive),
+- membership upsert (idempotence partielle),
+- marque l’invite acceptée “if pending” (updateMany conditionnel),
+- active org basculée vers l’org acceptée (`packages/org-core/src/invite.service.ts`).
 
-Ce conflit n’est pas juste “documentation”: il crée un état où:
-- un user peut accepter une invite vers une 2e org,
-- mais l’app continue de le “scoper” à sa première org,
-- et `/api/org/switch` est non implémenté → l’utilisateur est coincé.
+**RBAC / rôles / admin d’équipe**  
+`MembershipService` est plus mature qu’un “MVP”: il implémente `changeMemberRole`, `removeMember`, `transferOwnership`, avec des protections:
+- admin ne peut agir que sur des `member`,
+- blocage de la démotion/suppression du **dernier owner**,
+- transfert d’ownership owner-only (`packages/org-core/src/membership.service.ts`).
 
-## Audit technique par dimension
+**Ce qui manque côté produit**: malgré le core, aucune route/UI d’admin d’équipe ne consomme ces méthodes (la page Team liste seulement). Donc la promesse Vision “Role assignment” est **partiellement livrée** (core oui, produit non).
 
-### Fonctionnalités `org-core`
+**Constraint “unique org per user”**  
+Ta demande mentionne “unique org per user”, mais le PRD/Vision disent explicitement multi-org memberships. Dans le repo, la contrainte effective est plutôt: **unicité membership (userId, organizationId)** via `@@unique([userId, organizationId])` (`schema.prisma`). Donc “unique org per user” est **non requis** et contredirait votre vision multi-tenant telle qu’écrite (à moins d’un pivot produit).
 
-Ce que `@org-core` expose réellement (`packages/org-core/src/index.ts`):
-- `OrgService.createOrg()` (tx) qui crée org + membership owner + subscription free inactive (`packages/org-core/src/org.service.ts`).
-- `MembershipService.requireOrgRole()` et `listOrgMembers()` (`packages/org-core/src/membership.service.ts`).
-- `InviteService.createInvite()`, `acceptInvite()` (tx) et `listPendingInvites()` (`packages/org-core/src/invite.service.ts`).
+### DB integrity & transactions (Prisma + TxRunner)
 
-Ce qui manque par rapport aux besoins “team management” réalistes:
-- opérations admin (changer rôle, retirer membre, transférer ownership),
-- invariant “dernier owner” (ne pas se locked-out),
-- org management (rename/delete),
-- switch org (absent côté core; et endpoint non implémenté côté app).
+- Contrainte d’unicité membership: `Membership @@unique([userId, organizationId])` (`schema.prisma`).
+- Contrainte d’unicité invite: `Invitation tokenHash @unique` (`schema.prisma`).
+- Contrainte subscription: `Subscription organizationId @unique` + ids Stripe uniques (`schema.prisma`).
+- Patterns atomiques: `markAcceptedIfPending` via `updateMany(where acceptedAt: null)` (`apps/web/src/server/db-repos/invitations.repo.ts`).
+- TxRunner standard: `withTx(fn) => prisma.$transaction(...)` (`packages/db/src/tx.ts`).
 
-### DB integrity & transactions
+Globalement, l’intégrité DB est bonne et les opérations critiques sont transactionnelles au core (create org, accept invite, membership admin).
 
-Points forts:
-- `Membership` a `@@unique([userId, organizationId])`: robustesse contre doublons.
-- `Invitation.tokenHash` est `@unique`: un token hash correspond à une seule invite.
-- `Subscription.organizationId` est `@unique`: 1 subscription par org.
-- `OrgService.createOrg` et `InviteService.acceptInvite` sont transactionnels via `TxRunner` (dans core) et `withTx` Prisma (dans db).  
+### Security & access control, audit logs
 
-Le `tx runner` global est simple et correct: `prisma.$transaction((tx) => fn(tx))` (`packages/db/src/tx.ts`).
+OWASP insiste sur: “deny by default”, “validate permissions on every request”, “verify checks are performed in the right location”, et tester l’autorisation. citeturn6search0  
+Sur ce point, votre design s’améliore car `InviteService.createInvite` valide l’autorisation au niveau core (pas uniquement dans la route).
 
-Angle mort principal: **race conditions** sur accept invite. Le flow fait “check existing membership puis create membership”. Deux acceptations simultanées du même token peuvent toutes deux voir “existing = null” et une des transactions va échouer sur l’unicité `[userId, organizationId]`. Ce n’est pas une faille de sécurité, mais c’est un bug UX/ops (l’utilisateur peut voir “failed” tout en étant effectivement membre).
+**Audit logs**  
+Vous avez un modèle DB `OrgAuditLog` (`schema.prisma`) et un service `logOrgAudit()` appelé dans routes create/invite/accept/switch (`apps/web/src/server/services/org-audit.service.ts`, routes org). C’est entièrement aligné avec OWASP Logging qui recommande de loguer notamment les **authorization failures** et événements de sécurité pertinents. citeturn7search0
 
-### Security & access control
+**Angle mort**: les actions “role changed / member removed / ownership transferred” sont prévues dans les types d’audit (`OrgAuditAction`), mais comme les routes correspondantes ne semblent pas exposées, ces logs ne seront jamais émis en prod.
 
-Le check de rôle est fourni par `MembershipService.requireOrgRole`, mais il lance `new Error("FORBIDDEN")` (pas d’erreur typée) et, surtout, le check “owner/admin pour inviter” est fait **dans la route** `apps/web/src/app/api/org/invite/route.ts`, pas dans `InviteService.createInvite()`.
+### DX/abstractions (ports/adapters/interfaces)
 
-OWASP recommande explicitement de **valider les permissions à chaque requête** et de vérifier que les checks sont effectués “au bon endroit” (sinon un seul endpoint oublié suffit à ouvrir l’accès), et de tester l’autorisation. citeturn4search0
+- `org-core` dépend seulement de `@contracts` (bonne discipline), et les accès DB passent via ports (`packages/org-core/src/org.ports.ts`).
+- Mais les ports déclarent `tx?: any` plutôt que `DbTx` typé; ça fait perdre de la sécurité de type et peut masquer des bugs d’intégration. Recommandation: generic type paramétré `TxRunner<TTx>` + ports `tx?: TTx`.
+- L’`InviteToken` est propre: génération + hashing injectés, et l’adapter utilise `randomBytes(...).toString("base64url")` (excellent). Toutefois, l’adapter dépend de `hashToken` (auth-core) et d’un secret env `TOKEN_PEPPER`: la gouvernance (rotation, minimum) est dans `env` (hors périmètre org-core → mais important).
 
-Conséquence immédiate dans votre architecture “core + adapters”: si un futur adapter (cron/admin route/CLI) appelle `InviteService.createInvite()` sans appliquer `requireOrgRole`, il peut créer des invites sans autorisation.
+### Tests (unit, intégration, races, e2e)
 
-Aucun audit log org n’existe (ni table dédiée). OWASP recommande de loguer au minimum les échecs de contrôle d’accès (authorization failures) et d’autres événements de sécurité. citeturn4search2
+**Présent**: tests unitaires vitest dans org-core:
+- `org.service.test.ts` vérifie org + subscription + active org.
+- `invite.service.test.ts` couvre denial inviter non admin/owner, clamp TTL, accept invite, etc.
+- `membership.service.test.ts` couvre forbidden, last owner, admin limitations, transfert ownership.
 
-### DX/abstractions
+**Manquant** (important pour “prod-ready”):
+- tests d’intégration DB (Prisma + Postgres) pour prouver les propriétés “unique + upsert + updateMany conditionnel” sous concurrence réelle,
+- tests de race (2 acceptations simultanées, 2 changements de rôles en conflit),
+- tests E2E routes (create org → invite → accept → switch → listing members).
 
-`org.ports.ts` définit des ports minimaux (OrgsRepo, MembershipsRepo, InvitationsRepo, SubscriptionsRepo, UsersRepo, TxRunner, InviteToken). C’est bien pour garder `@org-core` agnostique. Toutefois:
-- les signatures utilisent `tx?: any` partout: perte de type-safety et propagation d’`any`.
-- `InviteService.createInvite` accepte `inviterUserId` mais ne l’utilise pas → signe clair d’un check manquant.
+### CI/CD & release readiness
 
-Côté app, l’adapter `org-core.adapter.ts` crée un token base64url 32 bytes et le hash avec `hashToken(rawToken, env.TOKEN_PEPPER)` (bonne réutilisation du hashing auth) et injecte `withTx` comme `TxRunner`.
+Le monorepo a des scripts `turbo lint/typecheck/test/build` (`package.json`, `turbo.json`) et `@org-core` a `test: vitest run` (`packages/org-core/package.json`), donc il est exécutable en pipeline. Mais:
+- Workflows GitHub Actions, scans (SAST/deps), changelog/release notes: **non spécifiés** (non trouvés/confirmables dans ce contexte).
 
-### Tests, CI/CD & release
+## Tableau des manquants/risques et correctifs proposés
 
-Le racine exécute `turbo test` via le script `test` (`package.json`, `turbo.json`). Or `packages/org-core/package.json` ne déclare aucun script `test`. Cela rend très probable que `@org-core` n’est **pas testé en CI**.
-
-Les workflows GitHub Actions, scans deps/SAST et changelog ne sont pas confirmés dans ce contexte → **non spécifié**.
-
-## Tableau des manquants/risques et corrections proposées
-
-| Composant/fichier (path) | Problème précis | Impact (sécurité/UX/ops) | Priorité | Effort | Patch suggéré (pseudo/snippet) | Tests à ajouter |
+| Composant / fichier (path) | Problème précis | Impact (sécurité/UX/ops) | Priorité | Effort | Patch suggéré (snippet/pseudo) | Tests à ajouter |
 |---|---|---|---|---|---|---|
-| `creation__docs/prd.md` + `creation__docs/vision.md` | Contradiction produit: “Switch org ✅” mais “Multi-org per user (V2)” alors que le système autorise multi-org sans switch | UX/produit/ops | P0 | Petit | Clarifier la règle V1: **Option A** “single-org strict” (bloquer création/acception supplémentaires) ou **Option B** “multi-org + switch V1” (implémenter switch et org active) | Test doc (CI): PRD/Vision contiennent invariants explicités |
-| `apps/web/src/app/api/org/switch/route.ts` + `apps/web/src/server/auth/require-org.ts` | Switch org non implémenté; `getDefaultOrgIdForUser()` retourne le 1er membership | UX/produit | P0 | Moyen | **Option B recommandée**: ajouter `activeOrganizationId` (User ou Session), implémenter `POST /api/org/switch` qui vérifie membership puis update préférences; modifier `getDefaultOrgIdForUser` → `getActiveOrgIdForUser` | E2E: user 2 orgs → switch change orgId utilisé; intégration: refuse switch si pas membre |
-| `packages/org-core/package.json` | Aucun script `test` → `turbo test` ne couvre pas org-core | ops/qualité | P0 | Petit | Ajouter `vitest` + scripts: `"test":"vitest run"`, `"test:watch":"vitest"`; config TypeScript | CI: `pnpm -r test` exécute org-core |
-| `packages/org-core/src/membership.service.ts` | `requireOrgRole` lance `Error("FORBIDDEN")`, pas de `OrgCoreError` basé sur `OrgErrorCode` | ops/DX | P1 | Petit | Créer `OrgCoreError` (code: `OrgErrorCode`) et remplacer les throws: `throw orgErr("forbidden", ...)` | Unit: role mismatch → error.code = forbidden; route mappe 403 |
-| `packages/org-core/src/invite.service.ts` | `createInvite` ne fait **aucun check** d’accès; seul le handler route le fait | sécurité/ops | P1 | Moyen | Dans `createInvite`, vérifier le rôle de `inviterUserId` via `memberships.findUserMembership` et exiger owner/admin. OWASP: valider permissions sur chaque requête et au bon endroit. citeturn4search0 | Unit: member → forbidden; admin → ok |
-| `packages/org-core/src/invite.service.ts` + `apps/web/src/server/db-repos/invitations.repo.ts` | TTL invites non borné (param), et route fixe 3 jours; politique non documentée | UX/sécurité | P2 | Petit | `ttlMinutes = clamp(ttlMinutes, min=60, max=60*24*7)` (ou policy par config) | Unit: clamp TTL trop grand |
-| `packages/org-core/src/invite.service.ts` + `apps/web/src/server/db-repos/memberships.repo.ts` | Race acceptInvite: double accept concurrent → possible erreur unicité membership | UX/ops | P1 | Moyen | Ajouter port `ensureMembership(...)` (upsert Prisma sur `userId_organizationId`) ou catch duplicat et continuer; rendre `markAccepted` conditionnel | Intégration DB: 2 accepts simultanés → 1 succès + 1 succès/idempotent (ou 1 succès + 1 invalid sans 500) |
-| `packages/org-core/src/invite.service.ts` | Codes d’erreur internes `"INVALID_INVITE"`, `"UNAUTHORIZED"` etc: pas alignés sur `OrgErrorCode` contracts | DX/UX | P1 | Petit | Remplacer par `OrgCoreError` codes: `invalid_invite`, `invite_email_mismatch`, `unauthorized` | Unit: mapping codes; route redirect utilise codes stables |
-| `packages/org-core/src/org.service.ts` | Absence de règle “unique org par user” (si V1 single-org) ou absence de support multi-org (si V1 switch) | produit/UX | P0 | Moyen | **Option A**: dans `createOrg`, refuser si user a déjà une membership (`memberships.findFirstOrgForUser`). **Option B**: autoriser, mais exiger switch fonctionnel et UI de sélection | Intégration: createOrg 2x (A) refus; (B) crée 2 orgs et switch ok |
-| `packages/org-core/src/index.ts` + services | Absence primitives admin: `changeRole`, `removeMember`, `transferOwnership`, “dernier owner” | sécurité/UX | P1 | Important | Ajouter `MembershipAdminService` ou étendre `MembershipService` avec opérations RBAC + invariants | Unit: empêcher retirer dernier owner; empêcher member changer rôle |
-| `apps/web/src/app/(app)/dashboard/team/page.tsx` | Page Team bypass `org-core`: requêtes Prisma directes, pas d’API industrialisée, pas de guards centralisés | ops/DX | P2 | Moyen | Remplacer par appels `MembershipService.listOrgMembers` et `InviteService.listPendingInvites` (server actions / route) | E2E: team page affiche membres/invites via services |
-| `schema.prisma` | Pas de table d’audit org (invites, role change, member removed) | ops/sécurité | P2 | Important | Ajouter `OrgAuditLog` (orgId, actorUserId, action, targetId, metadata JSON, createdAt) et émettre des events. OWASP recommande de loguer authz failures et autres événements. citeturn4search2 | Intégration: audit rows créées; index orgId/createdAt |
-| Billing integration (`packages/billing-core/src/subscription/subscription.sync.ts`) | Webhooks: ordering non garanti + retries; dépend fortement de l’idempotence côté webhook handler | ops/fiabilité | P1 | Moyen | Dans endpoint webhook: vérifier signature + traiter duplicates/out of order, persister `event.id` (idempotency store). Stripe documente retries et ordering non garanti. citeturn4search1 | Intégration: même event reçu 2x → DB inchangée; ordering inversé → état final correct |
-| CI/CD | Workflows GitHub Actions, scans deps/SAST, changelog: non spécifié | ops/supply-chain | P2 | Moyen | Ajouter `lint/typecheck/test` + scans vuln (OSV/Dependabot/CodeQL). Non spécifié ici. | CI gate PR |
+| `creation__docs/prd.md`, `creation__docs/vision.md` | **Casing** différent de la consigne “PRD.md/Vision.md” → risque de scripts/docs brisés sur FS case-sensitive | ops/DX | P0 | Petit | Renommer vers `PRD.md` et `Vision.md` (ou dupliquer) + mettre à jour liens internes | Test CI “docs presence” (lint docs) |
+| `apps/web/src/server/auth/require-user.ts`, `apps/web/src/app/api/org/switch/route.ts` | “Active org” stockée sur **User** → switch affecte toutes sessions; PRD/Vision parlent “per session/user context” (ambigu) | UX/produit | P1 | Moyen/Important | Option: ajouter `activeOrganizationId` à `Session` et faire switch “par session”; ou clarifier PRD: “par user (global)” | Intégration: 2 sessions simultanées changent org indépendamment (si option session) |
+| `packages/auth-core/src/flows/signup.flow.ts` + adapter | Signup crée org+membership+sub mais ne set pas `activeOrganizationId` (1 update DB implicit plus tard via fallback) | ops/UX | P2 | Petit-Moyen | Ajouter `setActiveOrganization` au port `UsersRepo` auth-core OU appeler `prisma.user.update(activeOrganizationId)` côté route signup après tx | Test intégration: après signup, requireUser ne fait pas d’update correctif |
+| `apps/web/src/app/api/org/invite/route.ts` | Email d’invite utilise `mail.sendVerifyEmail` (mauvaise sémantique/template) | UX | P0 | Petit | Ajouter `sendOrgInvite(email, acceptUrl, orgName, inviter)` dans email service; remplacer appel | E2E: invite génère email “invite” et non “verify” |
+| `packages/org-core/src/invite.service.ts` | Accept invite non idempotent UX: 2e clic après acceptation → `invalid_invite` (car `findValidByTokenHash` filtre `acceptedAt`) | UX | P2 | Moyen | Option: ajouter `acceptedByUserId` à `Invitation` + accepter idempotent si même user; ou au moins permettre redirect “already accepted” dans route | Race test: double accept → 1 accepted, 1 already_accepted |
+| `apps/web/src/app/(app)/dashboard/team/*` | UI Team n’expose pas admin actions (role change/remove/transfer), alors que core le supporte | UX/produit | P1 | Moyen | Ajouter routes: `/api/org/members/role`, `/api/org/members/remove`, `/api/org/ownership/transfer` consommant `MembershipService.*` + UI actions | E2E: owner change role; admin remove member; last owner protection |
+| `apps/web/src/server/services/org-audit.service.ts` + routes à créer | Audit actions existe (`OrgAuditAction`) mais actions admin non loguées (routes manquantes) | ops/sécurité | P1 | Petit-Moyen | Dans nouvelles routes admin, appeler `logOrgAudit` avec outcome success/forbidden/error | Intégration: log row créée sur role change/remove/transfer |
+| `packages/org-core/src/org.ports.ts` | Ports utilisent `tx?: any` → perte de type-safety, risque d’erreurs silencieuses | DX/maintenabilité | P2 | Moyen | Introduire generics: `TxRunner<TTx>`, et `tx?: TTx` dans ports + adapter `DbTx` | Typecheck: compilation échoue si tx incorrect |
+| `apps/web/src/app/api/org/switch/route.ts` | Switch org bypass `org-core` (Prisma direct) → duplication de logique (membership check) | ops/DX | P2 | Moyen | Ajouter `OrgContextService.switchActiveOrg(userId, orgId)` dans `org-core` (port UsersRepo + MembershipsRepo), et l’utiliser dans route | Unit service + E2E route |
+| `packages/org-core/src/*.test.ts` | Couverture surtout unitaire; peu de preuves “DB-level” (unique constraints, updateMany atomic, races) | ops/fiabilité | P1 | Important | Ajouter suite tests intégration (Testcontainers Postgres) pour: invite accept concurrence, ensureMembership upsert, last owner, switch + membership | Intégration: 2 accepts simultanés; 2 role changes concurrent |
+| `apps/web/src/app/api/billing/webhook/route.ts` | Webhooks: vous faites déjà signature+idempotence+ordering; mais rotation de secret Stripe (multi-secret 24h) non gérée | ops/sécurité | P2 | Petit | Support multi secrets: essayer `STRIPE_WEBHOOK_SECRET_ACTIVE` puis `..._LEGACY[]`. Stripe recommande rolling secrets et support multi secrets temporairement. citeturn6search1 | Test: webhook signé avec secret legacy accepté pendant période |
+| CI/CD (repo) | Workflows GH Actions, scans deps/SAST, changelog: **non spécifié** | ops/supply-chain | P2 | Moyen | Ajouter Actions: `pnpm lint typecheck test`, scans deps (OSV), CodeQL; changelog (Changesets) | CI gate PR + release pipeline |
 
-## Diagrammes mermaid des flows critiques
+## Diagrammes de flux critiques
 
 ```mermaid
 flowchart TD
-  subgraph Create_Org_to_Invite_to_Accept_to_Role
-    A[POST /api/org/create] --> B[OrgService.createOrg tx]
+  subgraph CreateOrg_Invite_Accept_RoleAssign
+    A[POST /api/org/create] --> B[OrgService.createOrg (tx)]
     B --> C[organization.create]
-    C --> D[membership.create owner]
-    D --> E[subscription.upsert free/inactive]
-    E --> F[Org prête]
+    C --> D[membership.create role=owner]
+    D --> E[subscription.upsert plan=free status=inactive]
+    E --> F[users.setActiveOrganization]
+    F --> G[Org created]
 
-    F --> G[POST /api/org/invite]
-    G --> H[requireOrgRole owner/admin]
+    G --> H[POST /api/org/invite]
     H --> I[InviteService.createInvite]
-    I --> J[invitation.create tokenHash/expiresAt]
-    J --> K[Email: lien accept?token=...]
+    I --> J[check inviter role owner/admin]
+    J --> K[randomToken + hashToken]
+    K --> L[invitations.create tokenHash unique + expiresAt]
+    L --> M[Email: accept URL]
 
-    K --> L[GET /api/org/invite/accept?token=...]
-    L --> M[InviteService.acceptInvite tx]
-    M --> N[invitation.findValidByTokenHash]
-    N --> O[user.email == invite.email]
-    O --> P[ensureMembership upsert]
-    P --> Q[invitation.markAccepted]
-    Q --> R[Redirect /dashboard/team?invite=accepted]
+    M --> N[GET /api/org/invite/accept?token=...]
+    N --> O[InviteService.acceptInvite (tx)]
+    O --> P[invitation.findValidByTokenHash acceptedAt=null expiresAt>now]
+    P --> Q[user.email matches invite.email]
+    Q --> R[memberships.ensureMembership upsert]
+    R --> S[invitations.markAcceptedIfPending]
+    S --> T[users.setActiveOrganization]
+    T --> U[Redirect /dashboard/team?invite=accepted]
 
-    R --> S[Role assign/change]
-    S --> T[Non exposé dans org-core (à ajouter)]
+    U --> V[Role assign/remove/transfer]
+    V --> W[MembershipService.changeMemberRole/removeMember/transferOwnership (tx)]
   end
 ```
 
 ```mermaid
 flowchart TD
-  subgraph Subscription_Create_to_Hook_to_Revoke
-    A[Org créée] --> B[subscription.upsert free/inactive]
-    C[Stripe checkout] --> D[Stripe emits events]
-    D --> E[Webhook endpoint]
-    E --> F[Verify signature + tolerate retries/duplicates]
-    F --> G[SubscriptionSyncService.syncFromProviderSubscription]
-    G --> H[subscription.upsert plan/status/currentPeriodEnd]
-    I[Stripe subscription deleted] --> E
-    E --> J[SubscriptionSyncService.markCanceled]
-    J --> K[subscription.upsert status=canceled]
-    K --> L[App gating: revoke access on cancel]
+  subgraph Subscription_Create_Webhook_Revoke
+    A[Org created] --> B[subscription.upsert free/inactive]
+    C[Stripe Checkout] --> D[Stripe emits webhook events]
+    D --> E[POST /api/billing/webhook]
+    E --> F[Verify Stripe signature on raw body]
+    F --> G[Insert billingWebhookEvent (unique eventId) -> dedupe]
+    G --> H[Ordering guard via billingSubscriptionCursor]
+    H --> I[SubscriptionSyncService.syncFromProviderSubscription]
+    I --> J[subscriptions.upsert plan/status/currentPeriodEnd]
+    K[Stripe subscription deleted] --> E
+    E --> L[SubscriptionSyncService.markCanceled]
+    L --> M[subscriptions.upsert status=canceled]
+    M --> N[App gating: revoke features on cancel]
   end
 ```
 
-## Checklist minimale priorisée pour passer “prod”
+Stripe insiste sur la vérification de signature sur le **raw body**, la tolérance anti-replay, la nécessité de répondre **rapidement 2xx**, et le fait que les retries génèrent une nouvelle signature/timestamp. citeturn6search1
 
-### Bloqueurs à régler avant lancement commercial
+## Checklist minimale priorisée pour prod et exemples de tests
 
-Je recommande de trancher ces points **avant** de mettre “production-ready” dans le marketing.
+### Checklist priorisée
 
-D’abord, décider le modèle V1:
-- **Option A: Single-org strict (V1)**  
-  Implémenter “unique org per user” au niveau service (et possiblement DB), refuser `createOrg` si une membership existe, refuser accept d’invites si already member elsewhere, et retirer “Switch org ✅” du PRD.
-- **Option B: Multi-org + switch (V1) — cohérent avec “Switch org ✅”**  
-  Ajouter une org active (User ou Session) + endpoint switch fonctionnel + UI; `require-org.ts` doit retourner l’org active, pas “la plus vieille”.
+**P0**
+- Normaliser le casing et les références docs (`creation__docs/PRD.md`, `creation__docs/Vision.md`) pour éviter de casser l’automatisation.
+- Corriger l’e-mail d’invite (ne pas utiliser `sendVerifyEmail` pour une invite org).
+- S’assurer que toutes les routes sensibles (invite, switch, futurs endpoints admin) loguent les outcomes (success/forbidden/error). OWASP recommande un logging cohérent et notamment des échecs d’autorisation. citeturn7search0
 
-Ensuite, sécuriser le core:
-- Déplacer le check owner/admin dans `InviteService.createInvite` (pas seulement dans la route). OWASP insiste sur le fait qu’un seul check manqué suffit; permissions doivent être validées à chaque requête et au bon endroit. citeturn4search0  
-- Standardiser les erreurs Org via `OrgCoreError` et `OrgErrorCode` (403, 401, 400), et arrêter de jeter des strings.
+**P1**
+- Exposer (routes + UI) les actions d’admin d’équipe déjà présentes dans `MembershipService` (role change, remove, transfer) et loguer via `OrgAuditLog`.
+- Ajouter tests d’intégration DB + tests de course/race pour invitations et admin actions.
+- Expliciter dans PRD/Vision si “org active” est **par user** (global) ou **par session** (isolé), et aligner l’implémentation.
 
-Enfin, rendre la qualité vérifiable:
-- Ajouter `vitest` + script `test` dans `packages/org-core` et des tests unitaires minimaux.
-- Ajouter au moins un test d’intégration DB pour la race “accept invite en parallèle” (ou garantir un upsert).
+**P2**
+- Optimiser signup: set `activeOrganizationId` dès la création (réduit n+1 et write correctif au premier `requireUser()`).
+- Factoriser `switch org` dans un service `org-core` (réduit duplication et drift).
+- Support multi webhook secrets Stripe pour rotations plus fluides. citeturn6search1
+- Améliorer idempotence UX “accept invite” (optionnel selon votre UX cible).
 
-### Durcissements ops (fortement recommandés)
+### Exemples de tests à ajouter
 
-- Ajouter audit logs d’actions org sensibles (invites, role changes, removals) et loguer les failures d’autorisation; OWASP Logging recommande explicitement de loguer les authorization failures. citeturn4search2  
-- Pour billing: dans le handler webhook, traiter retries/duplicates/out-of-order; Stripe documente retries automatiques sur des jours et ordering non garanti. citeturn4search1  
+**Unit (org-core)**
+- `InviteService.acceptInvite`: cas `markAcceptedIfPending=false` (invite déjà acceptée) → comportement attendu (soit erreur, soit idempotent).
+- `MembershipService`: tests supplémentaires sur admin vs owner (admin ne peut pas demote owner, etc.) – vous en avez déjà une partie.
 
-## Exemples de tests à ajouter
+**Intégration DB (Prisma + Postgres test)**
+- Double accept simultané du même token: `Promise.all([accept(), accept()])` → 1 accepted, 1 “already accepted/invalid” mais **pas de 500**.
+- Contrainte `Invitation.tokenHash @unique`: création de 2 invites identiques (forcer collision) doit échouer proprement.
+- “last owner” sur données réelles: tenter de remove/demote dernier owner doit être bloqué.
 
-### Unit tests `@org-core` (Vitest)
+**Race conditions**
+- Deux owners qui font `transferOwnership` en parallèle (ou owner + admin actions) → vérifier invariants finaux (au moins un owner présent).
+- Switch org pendant removal membership → `requireUser` doit retomber sur fallback membership sans loop/500.
 
-- `OrgService.createOrg`:
-  - “crée org + membership owner + subscription” et retourne `organizationId`.
-  - “rollback” si `memberships.create` throw (tester avec TxRunner fake qui simule l’échec).
-- `MembershipService.requireOrgRole`:
-  - membership absente → `OrgCoreError(forbidden)`.
-  - role insuffisant → `OrgCoreError(forbidden)`.
-- `InviteService.createInvite` (après patch authz):
-  - inviter member → forbidden
-  - inviter admin/owner → ok, token brut retourné et `expiresAt` cohérent.
-- `InviteService.acceptInvite`:
-  - token invalide → `invalid_invite`
-  - email mismatch → `invite_email_mismatch`
-  - membership déjà existante → acceptation idempotente (selon design).
+**E2E (routes Next)**
+- create org → invite → accept → switch org → page team montre bons membres et l’org active.
+- endpoints admin (une fois ajoutés) → role change/removal/transfer + audit log row créé.
 
-### Tests d’intégration DB (Prisma + Postgres de test)
+## CI/CD & release readiness
 
-- Contrainte `@@unique([userId, organizationId])`:
-  - 2 `ensureMembership` en parallèle → 1 membership finale, aucun 500.
-- Accept invite en concurrence:
-  - 2 accepts simultanés du même token → un seul “consomme” l’invite; l’autre devient idempotent ou invalid (mais jamais un crash).
-- Subscription uniqueness:
-  - `subscription.upsert` sous charge → 1 subscription par org (constraint `organizationId @unique`).
+- `pnpm test` exécute `turbo test`, et `@org-core` a un script `test` (vitest), donc l’outillage interne est prêt pour la CI (`package.json`, `turbo.json`, `packages/org-core/package.json`).
+- Scans sécurité, SAST/dep-check, changelog/release notes: **non spécifiés**. En pratique, pour vendre un “starter kit production-grade”, je considérerais au minimum:
+  - pipeline GitHub Actions (lint/typecheck/test),
+  - scan deps (OSV/Dependabot),
+  - et une stratégie de release (Changesets ou changelog manuel).
 
-### Tests e2e routes (Next)
-
-- `POST /api/org/create`:
-  - renvoie ok true, crée org + membership + subscription.
-- `POST /api/org/invite`:
-  - owner/admin seulement, renvoie ok true, invitation visible ensuite.
-- `GET /api/org/invite/accept`:
-  - crée membership et redirect accepte.
-- `POST /api/org/switch` (si option B):
-  - refuse si pas membre; accepte sinon; `require-org` reflète le changement.
-
-### Tests webhook billing (si vous avez l’endpoint)
-
-- Même `event.id` envoyé deux fois → DB inchangée (idempotence).
-- Events out-of-order → état final correct (Stripe ne garantit pas l’ordre). citeturn4search1
+OWASP rappelle que des défauts d’autorisation et des manques de logging/test sont des causes fréquentes d’incidents; votre base est bonne, mais la preuve “prod” vient surtout des tests d’intégration et des contrôles systématiques. citeturn6search0turn7search0

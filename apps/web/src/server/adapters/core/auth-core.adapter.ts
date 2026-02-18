@@ -8,7 +8,6 @@ import {
   SessionService,
   SignupFlow,
   VerifyEmailFlow,
-  type PepperConfig,
 } from "@auth-core";
 import { env } from "@/server/config/env";
 import { EmailTokensRepo } from "@/server/db-repos/email-tokens.repo";
@@ -24,22 +23,10 @@ import { authEventEmitter } from "@/server/logging/auth-event-emitter";
 
 const txRunner = { withTx };
 
-function buildPepperConfig(): PepperConfig {
-  const legacy = (env.TOKEN_PEPPER_LEGACY ?? "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
-
-  return {
-    active: env.TOKEN_PEPPER,
-    legacy,
-  };
-}
-
 export function createSessionService() {
   return new SessionService(
     new SessionsRepo(),
-    buildPepperConfig(),
+    env.TOKEN_PEPPER,
     txRunner,
     authEventEmitter,
   );
@@ -48,7 +35,7 @@ export function createSessionService() {
 export function createEmailTokenService() {
   return new EmailTokenService(
     new EmailTokensRepo(),
-    buildPepperConfig(),
+    env.TOKEN_PEPPER,
     authEventEmitter,
   );
 }
@@ -64,7 +51,7 @@ export function createSignupFlow() {
 }
 
 export function createLoginFlow() {
-  return new LoginFlow(new UsersRepo(), authEventEmitter, buildPepperConfig());
+  return new LoginFlow(new UsersRepo(), authEventEmitter, env.TOKEN_PEPPER);
 }
 
 export function createMagicLoginFlow() {
@@ -82,7 +69,7 @@ export function createPasswordResetFlow() {
 }
 
 export function createOAuthStateService() {
-  return new OAuthStateService(new OAuthStatesRepo(), buildPepperConfig());
+  return new OAuthStateService(new OAuthStatesRepo(), env.TOKEN_PEPPER);
 }
 
 export function createOAuthLoginFlow() {

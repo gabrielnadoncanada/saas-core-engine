@@ -5,14 +5,15 @@ import type {
   TxRunner,
   UsersRepo,
 } from "./org.ports";
+import { orgErr } from "./errors";
 
-export class OrgService {
+export class OrgService<TTx = unknown> {
   constructor(
-    private readonly orgs: OrgsRepo,
-    private readonly memberships: MembershipsRepo,
-    private readonly subs: SubscriptionsRepo,
-    private readonly users: UsersRepo,
-    private readonly txRunner: TxRunner,
+    private readonly orgs: OrgsRepo<TTx>,
+    private readonly memberships: MembershipsRepo<TTx>,
+    private readonly subs: SubscriptionsRepo<TTx>,
+    private readonly users: UsersRepo<TTx>,
+    private readonly txRunner: TxRunner<TTx>,
   ) {}
 
   async createOrg(params: { ownerUserId: string; name: string }) {
@@ -31,6 +32,33 @@ export class OrgService {
       await this.users.setActiveOrganization(params.ownerUserId, org.id, tx);
 
       return { organizationId: org.id };
+    });
+  }
+
+  async switchActiveOrganization(params: {
+    userId: string;
+    organizationId: string;
+  }) {
+    return this.txRunner.withTx(async (tx) => {
+      const membership = await this.memberships.findUserMembership(
+        {
+          userId: params.userId,
+          organizationId: params.organizationId,
+        },
+        tx,
+      );
+
+      if (!membership) {
+        throw orgErr("forbidden", "User is not a member of this organization");
+      }
+
+      await this.users.setActiveOrganization(
+        params.userId,
+        params.organizationId,
+        tx,
+      );
+
+      return { organizationId: params.organizationId };
     });
   }
 }

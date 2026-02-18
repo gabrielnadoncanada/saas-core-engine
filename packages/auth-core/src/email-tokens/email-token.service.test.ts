@@ -122,26 +122,5 @@ describe("EmailTokenService", () => {
 
       expect(result).toBeNull();
     });
-
-    it("accepts legacy pepper tokens during rotation", async () => {
-      const repo = mockEmailTokenRepo();
-      (repo.findValidByTokenHash as any)
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce({
-          id: "et-1",
-          email: "a@b.com",
-          userId: "u1",
-          type: "magic_login",
-        });
-      const svc = new EmailTokenService(repo, {
-        active: "pepper-active-long-enough-32-characters",
-        legacy: ["pepper-legacy-long-enough-32-characters"],
-      });
-
-      const result = await svc.consume({ token: "some-token" });
-
-      expect(result?.id).toBe("et-1");
-      expect(repo.findValidByTokenHash).toHaveBeenCalledTimes(2);
-    });
   });
 });

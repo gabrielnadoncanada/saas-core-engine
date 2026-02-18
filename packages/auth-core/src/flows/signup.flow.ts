@@ -46,6 +46,7 @@ export class SignupFlow {
         },
         tx,
       );
+      await this.users.setActiveOrganization(user.id, org.id, tx);
 
       return { userId: user.id, organizationId: org.id };
     });

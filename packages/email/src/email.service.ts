@@ -1,5 +1,6 @@
 import type { EmailProvider } from "./provider.types";
 import { magicLinkEmail } from "./templates/magic-link";
+import { orgInviteEmail } from "./templates/org-invite";
 import { resetPasswordEmail } from "./templates/reset-password";
 import { verifyEmailEmail } from "./templates/verify-email";
 
@@ -29,6 +30,21 @@ export class EmailService {
     const { subject, html } = verifyEmailEmail({
       appName: this.config.appName,
       url,
+    });
+    await this.provider.send({ to, from: this.config.from, subject, html });
+  }
+
+  async sendOrgInvite(
+    to: string,
+    url: string,
+    organizationName?: string,
+    inviterName?: string,
+  ): Promise<void> {
+    const { subject, html } = orgInviteEmail({
+      appName: this.config.appName,
+      url,
+      organizationName,
+      inviterName,
     });
     await this.provider.send({ to, from: this.config.from, subject, html });
   }

@@ -8,12 +8,12 @@ import type {
   UsersRepo,
 } from "./org.ports";
 
-export class InviteService {
+export class InviteService<TTx = unknown> {
   constructor(
-    private readonly invites: InvitationsRepo,
-    private readonly users: UsersRepo,
-    private readonly memberships: MembershipsRepo,
-    private readonly txRunner: TxRunner,
+    private readonly invites: InvitationsRepo<TTx>,
+    private readonly users: UsersRepo<TTx>,
+    private readonly memberships: MembershipsRepo<TTx>,
+    private readonly txRunner: TxRunner<TTx>,
     private readonly inviteToken: InviteToken,
   ) {}
 
@@ -53,11 +53,15 @@ export class InviteService {
     const tokenHash = this.inviteToken.hashToken(params.token);
 
     return this.txRunner.withTx(async (tx) => {
-      const invite = await this.invites.findValidByTokenHash(tokenHash, tx);
-      if (!invite) throw orgErr("invalid_invite", "Invite is invalid or expired");
-
       const user = await this.users.findById(params.acceptUserId, tx);
       if (!user) throw orgErr("unauthorized", "User is not authenticated");
+
+      const invite =
+        (await this.invites.findValidByTokenHash(tokenHash, tx)) ??
+        (await this.invites.findByTokenHash(tokenHash, tx));
+      if (!invite || invite.expiresAt <= new Date()) {
+        throw orgErr("invalid_invite", "Invite is invalid or expired");
+      }
 
       if (user.email.toLowerCase() !== invite.email.toLowerCase()) {
         throw orgErr(
@@ -78,6 +82,8 @@ export class InviteService {
         if (!isUniqueConstraintViolation(error)) throw error;
       }
 
+      // If another concurrent request already accepted this invite, this remains
+      // idempotent and succeeds for the same authenticated email.
       await this.invites.markAcceptedIfPending(invite.id, tx);
       await this.users.setActiveOrganization(user.id, invite.organizationId, tx);
 

@@ -2,10 +2,10 @@ import type { MembershipRole } from "@contracts";
 import { orgErr } from "./errors";
 import type { MembershipsRepo, TxRunner } from "./org.ports";
 
-export class MembershipService {
+export class MembershipService<TTx = unknown> {
   constructor(
-    private readonly memberships: MembershipsRepo,
-    private readonly txRunner: TxRunner,
+    private readonly memberships: MembershipsRepo<TTx>,
+    private readonly txRunner: TxRunner<TTx>,
   ) {}
 
   async requireOrgRole(params: {

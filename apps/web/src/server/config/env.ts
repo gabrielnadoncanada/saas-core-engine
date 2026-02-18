@@ -37,7 +37,6 @@ const envSchema = z
     SESSION_TTL_DAYS: boundedNumberFromString(1, 365, "30"),
     SESSION_IDLE_TIMEOUT_MINUTES: boundedNumberFromString(5, 24 * 60, "120"),
     TOKEN_PEPPER: z.string().min(32),
-    TOKEN_PEPPER_LEGACY: z.string().default(""),
 
     // Database
     DATABASE_URL: z.string().min(1),

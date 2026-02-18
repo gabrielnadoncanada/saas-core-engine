@@ -34,6 +34,12 @@ export class InvitationsRepo {
     });
   }
 
+  async findByTokenHash(tokenHash: string, tx?: DbTx): Promise<Invitation | null> {
+    return db(tx).invitation.findUnique({
+      where: { tokenHash },
+    });
+  }
+
   async markAcceptedIfPending(invitationId: string, tx?: DbTx): Promise<boolean> {
     const result = await db(tx).invitation.updateMany({
       where: { id: invitationId, acceptedAt: null },

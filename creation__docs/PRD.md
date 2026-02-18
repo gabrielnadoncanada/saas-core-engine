@@ -106,7 +106,7 @@ V1 doit être lean, mais complet sur les fondamentaux SaaS.
 ### Model
 
 - Every user can belong to multiple organizations
-- One active organization is selected per session/user context
+- One active organization is selected per user (global across sessions)
 - Default org auto-created at signup
 
 ### Features

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shouldIgnoreOutOfOrderEvent } from "./webhook-ordering";
+import { shouldIgnoreOutOfOrderEvent } from "@billing-core";
 
 describe("shouldIgnoreOutOfOrderEvent", () => {
   it("returns false when there is no cursor", () => {

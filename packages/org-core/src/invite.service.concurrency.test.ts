@@ -59,6 +59,10 @@ describe("InviteService concurrency", () => {
         await barrier.wait(2);
         return inviteRecord.acceptedAt ? null : inviteRecord;
       },
+      findByTokenHash: async (tokenHash) => {
+        if (tokenHash !== "hash:token") return null;
+        return inviteRecord;
+      },
       markAcceptedIfPending: async () => {
         if (inviteRecord.acceptedAt) return false;
         inviteRecord.acceptedAt = new Date();

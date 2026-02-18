@@ -65,7 +65,7 @@ Permettre à un développeur de lancer un SaaS B2B production-ready en moins de 
 
 - Create organization
 - Switch organization
-- Multi-organization membership with active-org switcher
+- Multi-organization membership with active-org switcher (active org is user-level)
 - Invite members
 - Role assignment
 - Org-scoped data isolation

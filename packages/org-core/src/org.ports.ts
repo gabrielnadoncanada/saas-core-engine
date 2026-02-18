@@ -6,37 +6,37 @@ import type {
   SubscriptionStatus,
 } from "@contracts";
 
-export interface OrgsRepo {
-  create(name: string, tx?: any): Promise<{ id: string }>;
+export interface OrgsRepo<TTx = unknown> {
+  create(name: string, tx?: TTx): Promise<{ id: string }>;
 }
 
-export interface MembershipsRepo {
+export interface MembershipsRepo<TTx = unknown> {
   create(
     params: { userId: string; organizationId: string; role: MembershipRole },
-    tx?: any,
+    tx?: TTx,
   ): Promise<{ id: string }>;
   findUserMembership(
     params: { userId: string; organizationId: string },
-    tx?: any,
+    tx?: TTx,
   ): Promise<MembershipSummary | null>;
   ensureMembership(
     params: { userId: string; organizationId: string; role: MembershipRole },
-    tx?: any,
+    tx?: TTx,
   ): Promise<{ id: string }>;
-  findById(membershipId: string, tx?: any): Promise<MembershipSummary | null>;
+  findById(membershipId: string, tx?: TTx): Promise<MembershipSummary | null>;
   countByRole(
     params: { organizationId: string; role: MembershipRole },
-    tx?: any,
+    tx?: TTx,
   ): Promise<number>;
-  updateRole(membershipId: string, role: MembershipRole, tx?: any): Promise<void>;
-  remove(membershipId: string, tx?: any): Promise<void>;
+  updateRole(membershipId: string, role: MembershipRole, tx?: TTx): Promise<void>;
+  remove(membershipId: string, tx?: TTx): Promise<void>;
   listOrgMembers(
     organizationId: string,
-    tx?: any,
+    tx?: TTx,
   ): Promise<Array<MembershipSummary & { user: { email: string } }>>;
 }
 
-export interface SubscriptionsRepo {
+export interface SubscriptionsRepo<TTx = unknown> {
   upsertOrgSubscription(
     params: {
       organizationId: string;
@@ -46,11 +46,11 @@ export interface SubscriptionsRepo {
       stripeSubscriptionId?: string | null;
       currentPeriodEnd?: Date | null;
     },
-    tx?: any,
+    tx?: TTx,
   ): Promise<{ id: string }>;
 }
 
-export interface InvitationsRepo {
+export interface InvitationsRepo<TTx = unknown> {
   create(
     params: {
       organizationId: string;
@@ -59,27 +59,28 @@ export interface InvitationsRepo {
       tokenHash: string;
       expiresAt: Date;
     },
-    tx?: any,
+    tx?: TTx,
   ): Promise<InvitationSummary>;
   findValidByTokenHash(
     tokenHash: string,
-    tx?: any,
+    tx?: TTx,
   ): Promise<InvitationSummary | null>;
-  markAcceptedIfPending(invitationId: string, tx?: any): Promise<boolean>;
-  listPending(organizationId: string, tx?: any): Promise<InvitationSummary[]>;
+  findByTokenHash(tokenHash: string, tx?: TTx): Promise<InvitationSummary | null>;
+  markAcceptedIfPending(invitationId: string, tx?: TTx): Promise<boolean>;
+  listPending(organizationId: string, tx?: TTx): Promise<InvitationSummary[]>;
 }
 
-export interface UsersRepo {
-  findById(userId: string, tx?: any): Promise<{ id: string; email: string } | null>;
+export interface UsersRepo<TTx = unknown> {
+  findById(userId: string, tx?: TTx): Promise<{ id: string; email: string } | null>;
   setActiveOrganization(
     userId: string,
     organizationId: string,
-    tx?: any,
+    tx?: TTx,
   ): Promise<void>;
 }
 
-export interface TxRunner {
-  withTx<T>(fn: (tx: any) => Promise<T>): Promise<T>;
+export interface TxRunner<TTx = unknown> {
+  withTx<T>(fn: (tx: TTx) => Promise<T>): Promise<T>;
 }
 
 export interface InviteToken {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@db";
 import { OrgCoreError } from "@org-core";
 import { requireUser } from "@/server/auth/require-user";
 import { getDefaultOrgIdForUser } from "@/server/auth/require-org";
@@ -41,8 +42,12 @@ export async function POST(req: Request) {
     const acceptUrl = absoluteUrl(
       `/api/org/invite/accept?token=${encodeURIComponent(issued.token)}`,
     );
+    const organization = await prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { name: true },
+    });
     const mail = getEmailService();
-    await mail.sendVerifyEmail(email, acceptUrl);
+    await mail.sendOrgInvite(email, acceptUrl, organization?.name ?? undefined);
 
     await logOrgAudit({
       organizationId: orgId,

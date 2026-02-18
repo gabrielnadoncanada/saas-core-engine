@@ -19,6 +19,7 @@ function mockUsers(): UsersRepo {
     markEmailVerified: vi.fn().mockResolvedValue(undefined),
     setPasswordHash: vi.fn(),
     touchLastLogin: vi.fn(),
+    setActiveOrganization: vi.fn().mockResolvedValue(undefined),
   };
 }
 

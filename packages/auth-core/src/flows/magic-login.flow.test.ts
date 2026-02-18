@@ -19,6 +19,7 @@ function mockUsers(overrides: Partial<UsersRepo> = {}): UsersRepo {
     markEmailVerified: vi.fn(),
     setPasswordHash: vi.fn(),
     touchLastLogin: vi.fn(),
+    setActiveOrganization: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }

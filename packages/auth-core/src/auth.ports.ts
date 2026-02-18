@@ -55,6 +55,11 @@ export interface UsersRepo {
   markEmailVerified(userId: string, tx?: any): Promise<void>;
   setPasswordHash(userId: string, passwordHash: string, tx?: any): Promise<void>;
   touchLastLogin(userId: string, tx?: any): Promise<void>;
+  setActiveOrganization(
+    userId: string,
+    organizationId: string,
+    tx?: any,
+  ): Promise<void>;
 }
 
 export interface SessionsRepo {

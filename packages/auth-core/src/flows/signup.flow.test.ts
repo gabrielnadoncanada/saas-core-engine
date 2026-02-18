@@ -16,6 +16,7 @@ function mockUsersRepo(overrides: Partial<UsersRepo> = {}): UsersRepo {
     markEmailVerified: vi.fn(),
     setPasswordHash: vi.fn(),
     touchLastLogin: vi.fn(),
+    setActiveOrganization: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }
@@ -59,6 +60,11 @@ describe("SignupFlow", () => {
     );
     expect(subs.upsertOrgSubscription).toHaveBeenCalledWith(
       { organizationId: "org-1", plan: "free", status: "inactive" },
+      undefined,
+    );
+    expect(users.setActiveOrganization).toHaveBeenCalledWith(
+      "u1",
+      "org-1",
       undefined,
     );
   });

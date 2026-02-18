@@ -7,10 +7,8 @@ export {
 export {
   hashIdentifier,
   hashToken,
-  hashTokenCandidates,
-  normalizePepperConfig,
 } from "./hashing/token";
-export type { PepperConfig, PepperInput } from "./hashing/token";
+export type { PepperInput } from "./hashing/token";
 
 export type {
   OAuthStateRecord,

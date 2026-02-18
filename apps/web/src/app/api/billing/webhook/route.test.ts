@@ -12,6 +12,9 @@ const subscriptionUpsert = vi.fn();
 const syncFromProviderSubscription = vi.fn();
 const markCanceled = vi.fn();
 const mapStripeSubscriptionToSnapshot = vi.fn();
+const orchestratorBegin = vi.fn();
+const orchestratorComplete = vi.fn();
+const orchestratorFail = vi.fn();
 
 vi.mock("@/server/services/stripe.service", () => ({
   stripe: () => ({
@@ -52,6 +55,11 @@ vi.mock("@/server/adapters/core/billing-core.adapter", () => ({
     syncFromProviderSubscription,
     markCanceled,
   }),
+  createStripeWebhookOrchestrator: () => ({
+    begin: orchestratorBegin,
+    complete: orchestratorComplete,
+    fail: orchestratorFail,
+  }),
 }));
 
 vi.mock("@/server/adapters/stripe/stripe-webhook.adapter", () => ({
@@ -74,6 +82,9 @@ describe("POST /api/billing/webhook", () => {
       priceId: "price_pro",
       currentPeriodEndUnix: 1_700_000_000,
     });
+    orchestratorBegin.mockResolvedValue("process");
+    orchestratorComplete.mockResolvedValue(undefined);
+    orchestratorFail.mockResolvedValue(undefined);
     retrieveSubscription.mockResolvedValue({
       id: "sub_1",
       status: "active",
@@ -89,7 +100,7 @@ describe("POST /api/billing/webhook", () => {
       created: 1_700_000_000,
       data: { object: {} },
     });
-    billingWebhookEventCreate.mockRejectedValueOnce({ code: "P2002" });
+    orchestratorBegin.mockResolvedValueOnce("duplicate");
 
     const { POST } = await import("./route");
     const req = new Request("http://localhost/api/billing/webhook", {
@@ -120,11 +131,7 @@ describe("POST /api/billing/webhook", () => {
       },
     });
 
-    billingCursorFindUnique.mockResolvedValue({
-      lastEventId: "evt_new",
-      lastEventType: "customer.subscription.updated",
-      lastEventCreatedAt: new Date(1_700_000_000 * 1000),
-    });
+    orchestratorBegin.mockResolvedValueOnce("ignored");
 
     const { POST } = await import("./route");
     const req = new Request("http://localhost/api/billing/webhook", {
@@ -139,6 +146,6 @@ describe("POST /api/billing/webhook", () => {
     expect(res.status).toBe(200);
     expect(json.ignored).toBe(true);
     expect(syncFromProviderSubscription).not.toHaveBeenCalled();
-    expect(billingWebhookEventUpdate).toHaveBeenCalled();
   });
+
 });
