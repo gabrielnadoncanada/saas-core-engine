@@ -13,6 +13,8 @@ export const routes = {
     dashboard: "/dashboard",
     billing: "/dashboard/billing",
     team: "/dashboard/team",
+    roles: "/dashboard/roles",
+    audit: "/dashboard/audit",
     sessions: "/dashboard/sessions",
     settings: "/dashboard/settings",
     aiUsage: "/dashboard/ai-usage",

@@ -35,7 +35,14 @@ export async function POST(req: Request) {
             organizationId: orgCtx.organizationId,
             actorUserId: orgCtx.userId,
             action: "org.switched",
-            metadata: {},
+            metadata: orgCtx.impersonation
+              ? {
+                  impersonation: {
+                    actorUserId: orgCtx.impersonation.actorUserId,
+                    targetUserId: orgCtx.impersonation.targetUserId,
+                  },
+                }
+              : {},
           });
 
           return NextResponse.json({ ok: true, organizationId: switched.organizationId });

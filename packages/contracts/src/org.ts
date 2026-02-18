@@ -34,6 +34,30 @@ export const orgMemberRoleChangeBodySchema = z.object({
   role: inviteRoleSchema,
 });
 
+export const orgRoleCreateBodySchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  description: z.string().trim().max(240).optional(),
+});
+
+export const orgRolePermissionsBodySchema = z.object({
+  permissions: z
+    .array(
+      z.object({
+        action: z.string().trim().min(3).max(120),
+        resource: z.string().trim().min(2).max(120),
+      }),
+    )
+    .max(200),
+});
+
+export const orgMembershipRolesBodySchema = z.object({
+  roleIds: z.array(z.string().trim().min(1)).max(50),
+});
+
+export const orgImpersonationStartBodySchema = z.object({
+  targetUserId: z.string().trim().min(1),
+});
+
 export interface OrganizationSummary {
   id: string;
   name: string;

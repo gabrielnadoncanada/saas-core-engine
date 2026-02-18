@@ -16,6 +16,8 @@ const sections: Array<{ title: string; items: NavItem[] }> = [
       { href: routes.app.dashboard, label: "Overview" },
       { href: routes.app.billing, label: "Billing" },
       { href: routes.app.team, label: "Team" },
+      { href: routes.app.roles, label: "Roles & Permissions" },
+      { href: routes.app.audit, label: "Audit Logs" },
     ],
   },
   {

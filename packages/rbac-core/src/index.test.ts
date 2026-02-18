@@ -52,4 +52,26 @@ describe("rbac-core", () => {
       }),
     ).toBe(false);
   });
+
+  it("allows custom permission from DB role", () => {
+    expect(
+      can(member, "org:invite:create", {
+        resource: "invitation",
+        organizationId: "org1",
+      }, {
+        customPermissions: ["org:invite:create:invitation"],
+      }),
+    ).toBe(true);
+  });
+
+  it("blocks owner-guarded actions when impersonating", () => {
+    expect(
+      can(owner, "org:member:remove", {
+        resource: "membership",
+        organizationId: "org1",
+      }, {
+        isImpersonating: true,
+      }),
+    ).toBe(false);
+  });
 });

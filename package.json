@@ -10,6 +10,7 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "preflight:prod": "tsx tooling/scripts/preflight-prod.ts",
+    "simulate:v2:incidents": "tsx tooling/scripts/v2-incident-sim.ts",
     "clean": "turbo clean && rimraf node_modules **/node_modules **/.next **/dist",
 
     "db:migrate": "pnpm --filter @db run migrate",

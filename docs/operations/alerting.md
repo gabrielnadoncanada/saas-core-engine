@@ -33,6 +33,18 @@
 - Condition: `org_invite_rate_limited_total` > normal baseline + 3 sigma
 - Severity: `P2`
 
+6. Impersonation starts spike
+- Condition: `action=org.impersonation.started` exceeds baseline + 3 sigma over 30m
+- Severity: `P2`
+
+7. Forbidden impersonation attempts
+- Condition: `action=org.impersonation.started` with `outcome=forbidden` > 5 in 10m
+- Severity: `P2`
+
+8. RBAC policy churn anomaly
+- Condition: `action=org.roles.updated` exceeds baseline + 3 sigma over 1h
+- Severity: `P3`
+
 ## Routing
 
 - `P1`: Pager + incident channel + on-call escalation

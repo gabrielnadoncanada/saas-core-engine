@@ -7,9 +7,20 @@ export type RbacAction =
   | "org:invite:create"
   | "org:member:role:change"
   | "org:member:remove"
-  | "org:member:transfer_ownership";
+  | "org:member:transfer_ownership"
+  | "org:rbac:manage"
+  | "org:audit:read"
+  | "org:audit:export"
+  | "org:impersonation:start"
+  | "org:impersonation:stop";
 
-export type RbacResource = "organization" | "membership" | "invitation";
+export type RbacResource =
+  | "organization"
+  | "membership"
+  | "invitation"
+  | "role"
+  | "audit"
+  | "impersonation";
 
 export type Permission = `${RbacAction}:${RbacResource}`;
 
@@ -26,6 +37,12 @@ export type RbacResourceContext = {
   ownerUserId?: string;
 };
 
+export type RbacDecisionContext = {
+  customPermissions?: string[];
+  allowOwnerTargetActions?: boolean;
+  isImpersonating?: boolean;
+};
+
 export const PERMISSIONS: Record<RbacAction, RbacResource> = {
   "org:create": "organization",
   "org:list": "organization",
@@ -34,7 +51,18 @@ export const PERMISSIONS: Record<RbacAction, RbacResource> = {
   "org:member:role:change": "membership",
   "org:member:remove": "membership",
   "org:member:transfer_ownership": "membership",
+  "org:rbac:manage": "role",
+  "org:audit:read": "audit",
+  "org:audit:export": "audit",
+  "org:impersonation:start": "impersonation",
+  "org:impersonation:stop": "impersonation",
 };
+
+const OWNER_GUARDED_ACTIONS = new Set<RbacAction>([
+  "org:member:transfer_ownership",
+  "org:member:role:change",
+  "org:member:remove",
+]);
 
 const ROLE_MATRIX: Record<MembershipRole, Set<RbacAction>> = {
   owner: new Set<RbacAction>([
@@ -45,6 +73,11 @@ const ROLE_MATRIX: Record<MembershipRole, Set<RbacAction>> = {
     "org:member:role:change",
     "org:member:remove",
     "org:member:transfer_ownership",
+    "org:rbac:manage",
+    "org:audit:read",
+    "org:audit:export",
+    "org:impersonation:start",
+    "org:impersonation:stop",
   ]),
   admin: new Set<RbacAction>([
     "org:create",
@@ -53,6 +86,10 @@ const ROLE_MATRIX: Record<MembershipRole, Set<RbacAction>> = {
     "org:invite:create",
     "org:member:role:change",
     "org:member:remove",
+    "org:audit:read",
+    "org:audit:export",
+    "org:impersonation:start",
+    "org:impersonation:stop",
   ]),
   member: new Set<RbacAction>(["org:create", "org:list", "org:switch"]),
 };
@@ -61,26 +98,39 @@ export function can(
   user: RbacUser,
   action: RbacAction,
   resource: RbacResourceContext,
+  decision: RbacDecisionContext = {},
 ): boolean {
   if (user.organizationId !== resource.organizationId) return false;
 
   const permissions = ROLE_MATRIX[user.role];
-  if (!permissions || !permissions.has(action)) return false;
+  const defaultAllowed = Boolean(permissions && permissions.has(action));
+  const permissionKey = `${action}:${resource.resource}`;
+  const customAllowed = decision.customPermissions?.includes(permissionKey) ?? false;
+
+  if (!defaultAllowed && !customAllowed) return false;
+
+  if (decision.isImpersonating && OWNER_GUARDED_ACTIONS.has(action)) {
+    return false;
+  }
 
   if (user.role === "admin") {
     if (
       action === "org:member:transfer_ownership" ||
       resource.targetRole === "owner"
     ) {
-      return false;
+      return decision.allowOwnerTargetActions ?? false;
     }
   }
 
-  if (user.role === "member") {
+  if (
+    resource.targetRole === "owner" &&
+    user.role !== "owner" &&
+    !decision.allowOwnerTargetActions
+  ) {
     return false;
   }
 
-  return permissions ? permissions.has(action) : false;
+  return true;
 }
 
 export class RbacForbiddenError extends Error {
@@ -98,12 +148,13 @@ export function requirePermission(
   user: RbacUser,
   action: RbacAction,
   resource: Omit<RbacResourceContext, "resource"> & { resource?: RbacResource },
+  decision?: RbacDecisionContext,
 ): void {
   const resolvedResource = resource.resource ?? PERMISSIONS[action];
   const ctx: RbacResourceContext = {
     ...resource,
     resource: resolvedResource,
   };
-  if (can(user, action, ctx)) return;
+  if (can(user, action, ctx, decision)) return;
   throw new RbacForbiddenError(user.userId, action, resolvedResource);
 }

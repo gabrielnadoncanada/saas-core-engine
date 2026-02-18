@@ -160,7 +160,47 @@ function run(): number {
       "export function requirePermission(",
       "RBAC exposes requirePermission(...)",
     ),
+    checkContains(
+      "packages/db/prisma/schema.prisma",
+      "model Role {",
+      "V2 RBAC roles model exists",
+    ),
+    checkContains(
+      "packages/db/prisma/schema.prisma",
+      "model MembershipRoleAssignment {",
+      "V2 membership_roles model exists",
+    ),
+    checkContains(
+      "packages/db/prisma/schema.prisma",
+      "model ImpersonationSession {",
+      "V2 impersonation model exists",
+    ),
     checkFile("apps/web/src/server/rate-limit/org-action-rate-limit.ts", "Org action rate-limit exists"),
+    checkFile("apps/web/src/app/api/org/rbac/roles/route.ts", "RBAC admin roles endpoint exists"),
+    checkFile(
+      "apps/web/src/app/api/org/rbac/roles/[roleId]/permissions/route.ts",
+      "RBAC role permissions endpoint exists",
+    ),
+    checkFile(
+      "apps/web/src/app/api/org/rbac/memberships/[membershipId]/roles/route.ts",
+      "RBAC membership role assignment endpoint exists",
+    ),
+    checkFile("apps/web/src/app/api/org/audit/route.ts", "Org audit query/export endpoint exists"),
+    checkFile(
+      "apps/web/src/app/api/org/impersonation/start/route.ts",
+      "Impersonation start endpoint exists",
+    ),
+    checkFile(
+      "apps/web/src/app/api/org/impersonation/stop/route.ts",
+      "Impersonation stop endpoint exists",
+    ),
+    checkFile("docs/operations/runbook-rbac-v2.md", "RBAC V2 runbook exists"),
+    checkFile("docs/operations/runbook-audit-v2.md", "Audit V2 runbook exists"),
+    checkFile(
+      "docs/operations/runbook-impersonation-v2.md",
+      "Impersonation V2 runbook exists",
+    ),
+    checkFile("docs/operations/audit-retention.md", "Audit retention policy exists"),
     checkFile("apps/web/src/app/api/health/route.ts", "Health endpoint exists"),
     checkFile("apps/web/src/app/api/ready/route.ts", "Readiness endpoint exists"),
     checkFile("docs/operations/slo.md", "SLO document exists"),
@@ -173,6 +213,11 @@ function run(): number {
       "apps/web/src/server/config/env.ts",
       "SESSION_COOKIE_SECURE must be true in production",
       "Production cookie invariant exists",
+    ),
+    checkContains(
+      "apps/web/src/shared/ui/layout/topbar.tsx",
+      "Impersonation active",
+      "Impersonation banner exists",
     ),
   ];
 

@@ -65,6 +65,12 @@ export async function POST(req: Request) {
                 role,
                 reason: "rate_limited",
                 requestId,
+                impersonation: orgCtx.impersonation
+                  ? {
+                      actorUserId: orgCtx.impersonation.actorUserId,
+                      targetUserId: orgCtx.impersonation.targetUserId,
+                    }
+                  : null,
                 ...getActiveTraceContext(),
               },
             });
@@ -108,7 +114,17 @@ export async function POST(req: Request) {
               action: "org.invite.created",
               targetType: "email",
               targetId: email.toLowerCase(),
-              metadata: { role, requestId, ...getActiveTraceContext() },
+              metadata: {
+                role,
+                requestId,
+                impersonation: orgCtx.impersonation
+                  ? {
+                      actorUserId: orgCtx.impersonation.actorUserId,
+                      targetUserId: orgCtx.impersonation.targetUserId,
+                    }
+                  : null,
+                ...getActiveTraceContext(),
+              },
             });
 
             logInfo("org.invite.created", {
@@ -132,7 +148,17 @@ export async function POST(req: Request) {
                 error instanceof OrgCoreError && error.code === "forbidden"
                   ? "forbidden"
                   : "error",
-              metadata: { role, requestId, ...getActiveTraceContext() },
+              metadata: {
+                role,
+                requestId,
+                impersonation: orgCtx.impersonation
+                  ? {
+                      actorUserId: orgCtx.impersonation.actorUserId,
+                      targetUserId: orgCtx.impersonation.targetUserId,
+                    }
+                  : null,
+                ...getActiveTraceContext(),
+              },
             });
 
             logError("org.invite.failed", {

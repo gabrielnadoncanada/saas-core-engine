@@ -35,7 +35,15 @@ export async function POST(req: Request) {
             action: "org.member.role_changed",
             targetType: "membership",
             targetId: membershipId,
-            metadata: { role },
+            metadata: {
+              role,
+              impersonation: orgCtx.impersonation
+                ? {
+                    actorUserId: orgCtx.impersonation.actorUserId,
+                    targetUserId: orgCtx.impersonation.targetUserId,
+                  }
+                : null,
+            },
           });
 
           return NextResponse.json({ ok: true });
