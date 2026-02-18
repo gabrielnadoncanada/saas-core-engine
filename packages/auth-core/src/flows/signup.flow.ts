@@ -6,7 +6,8 @@ import type {
   UsersRepo,
 } from "../auth.ports";
 import { hashPassword } from "../hashing/password";
-import { authErr, isUniqueConstraintViolation } from "../errors";
+import { authErr } from "../errors";
+import { createUserOrThrowEmailInUse } from "./user-create";
 
 export class SignupFlow {
   constructor(
@@ -26,15 +27,11 @@ export class SignupFlow {
 
       const passwordHash = await hashPassword(params.password);
 
-      let user;
-      try {
-        user = await this.users.create({ email, passwordHash }, tx);
-      } catch (error) {
-        if (isUniqueConstraintViolation(error)) {
-          throw authErr("email_in_use", "Email already in use");
-        }
-        throw error;
-      }
+      const user = await createUserOrThrowEmailInUse(
+        this.users,
+        { email, passwordHash },
+        tx,
+      );
       const org = await this.orgs.create(params.orgName, tx);
       await this.memberships.create(
         { userId: user.id, organizationId: org.id, role: "owner" },

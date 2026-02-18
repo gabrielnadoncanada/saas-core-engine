@@ -4,6 +4,7 @@ import type { TxRunner, UsersRepo } from "../auth.ports";
 import { hashPassword } from "../hashing/password";
 import type { AuthEventEmitter } from "../events";
 import { noOpAuthEventEmitter } from "../events";
+import { failResult, okResult } from "./flow-result";
 
 export class PasswordResetFlow {
   constructor(
@@ -19,7 +20,7 @@ export class PasswordResetFlow {
     const user = await this.users.findByEmail(email);
 
     if (!user) {
-      return { ok: true as const };
+      return okResult({});
     }
 
     const issued = await this.tokens.issue({
@@ -34,18 +35,17 @@ export class PasswordResetFlow {
       at: new Date(),
     });
 
-    return {
-      ok: true as const,
+    return okResult({
       token: issued.token,
       expiresAt: issued.expiresAt,
-    };
+    });
   }
 
   async reset(params: { token: string; newPassword: string }) {
     return this.txRunner.withTx(async (tx) => {
       const consumed = await this.tokens.consume({ token: params.token }, tx);
       if (!consumed || consumed.type !== "password_reset" || !consumed.userId) {
-        return { ok: false as const };
+        return failResult();
       }
 
       const passwordHash = await hashPassword(params.newPassword);
@@ -57,7 +57,7 @@ export class PasswordResetFlow {
         at: new Date(),
       });
 
-      return { ok: true as const, userId: consumed.userId };
+      return okResult({ userId: consumed.userId });
     });
   }
 }

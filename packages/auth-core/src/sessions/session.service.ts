@@ -1,4 +1,4 @@
-import { hashIdentifier, hashTokenCandidates, type PepperInput } from "../hashing/token";
+import { hashIdentifier, type PepperInput } from "../hashing/token";
 import { randomTokenBase64Url } from "../hashing/random";
 import type {
   CreateSessionInput,
@@ -11,6 +11,7 @@ import type {
 import type { SessionsRepo, TxRunner } from "../auth.ports";
 import type { AuthEventEmitter } from "../events";
 import { noOpAuthEventEmitter } from "../events";
+import { findByTokenCandidates } from "../utils/token-candidates";
 
 export class SessionService {
   constructor(
@@ -56,11 +57,9 @@ export class SessionService {
   async validateSession(
     input: ValidateSessionInput,
   ): Promise<ValidSession | null> {
-    let session = null;
-    for (const tokenHash of hashTokenCandidates(input.sessionToken, this.pepper)) {
-      session = await this.sessionsRepo.findActiveByTokenHash(tokenHash);
-      if (session) break;
-    }
+    const session = await findByTokenCandidates(input.sessionToken, this.pepper, (tokenHash) =>
+      this.sessionsRepo.findActiveByTokenHash(tokenHash),
+    );
     if (!session) return null;
     const now = Date.now();
     const lastSeenTs = session.lastSeenAt?.getTime() ?? session.createdAt.getTime();
@@ -84,11 +83,9 @@ export class SessionService {
     input: RotateSessionInput,
   ): Promise<RotateSessionResult | null> {
     const rotate = async (tx?: any): Promise<RotateSessionResult | null> => {
-      let current = null;
-      for (const tokenHash of hashTokenCandidates(input.sessionToken, this.pepper)) {
-        current = await this.sessionsRepo.findActiveByTokenHash(tokenHash, tx);
-        if (current) break;
-      }
+      const current = await findByTokenCandidates(input.sessionToken, this.pepper, (tokenHash) =>
+        this.sessionsRepo.findActiveByTokenHash(tokenHash, tx),
+      );
       if (!current) return null;
 
       await this.sessionsRepo.revokeSession(current.id, tx);

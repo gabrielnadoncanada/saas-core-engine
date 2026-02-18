@@ -52,7 +52,10 @@ describe("OAuthLoginFlow", () => {
     });
 
     expect(res).toEqual({ userId: "u-new" });
-    expect(users.create).toHaveBeenCalledWith({ email: "new@example.com", passwordHash: null });
+    expect(users.create).toHaveBeenCalledWith(
+      { email: "new@example.com", passwordHash: null },
+      undefined,
+    );
     expect(accounts.create).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "u-new",

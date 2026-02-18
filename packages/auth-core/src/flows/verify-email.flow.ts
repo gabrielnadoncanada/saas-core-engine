@@ -2,6 +2,7 @@ import type { EmailTokenService } from "../email-tokens/email-token.service";
 import type { TxRunner, UsersRepo } from "../auth.ports";
 import type { AuthEventEmitter } from "../events";
 import { noOpAuthEventEmitter } from "../events";
+import { failResult, okResult } from "./flow-result";
 
 export class VerifyEmailFlow {
   constructor(
@@ -36,14 +37,14 @@ export class VerifyEmailFlow {
   async confirm(params: { token: string }) {
     const confirm = async (tx?: any) => {
       const consumed = await this.tokens.consume({ token: params.token }, tx);
-      if (!consumed) return { ok: false as const };
+      if (!consumed) return failResult();
 
-      if (consumed.type !== "verify_email") return { ok: false as const };
-      if (!consumed.userId) return { ok: false as const };
+      if (consumed.type !== "verify_email") return failResult();
+      if (!consumed.userId) return failResult();
 
       await this.users.markEmailVerified(consumed.userId, tx);
 
-      return { ok: true as const, userId: consumed.userId };
+      return okResult({ userId: consumed.userId });
     };
 
     if (this.txRunner) {

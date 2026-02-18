@@ -1,6 +1,7 @@
 import type { EmailTokenService } from "../email-tokens/email-token.service";
 import type { TxRunner, UsersRepo } from "../auth.ports";
-import { isUniqueConstraintViolation } from "../errors";
+import { failResult, okResult } from "./flow-result";
+import { createUserOrFindByEmailOnUnique } from "./user-create";
 
 export class MagicLoginFlow {
   constructor(
@@ -26,31 +27,26 @@ export class MagicLoginFlow {
   async confirm(params: { token: string }) {
     return this.txRunner.withTx(async (tx) => {
       const consumed = await this.tokens.consume({ token: params.token }, tx);
-      if (!consumed) return { ok: false as const };
-      if (consumed.type !== "magic_login") return { ok: false as const };
+      if (!consumed) return failResult();
+      if (consumed.type !== "magic_login") return failResult();
 
       let user = consumed.userId ? await this.users.findById(consumed.userId, tx) : null;
 
       if (!user) {
-        try {
-          user = await this.users.create(
-            {
-              email: consumed.email,
-              passwordHash: null,
-            },
-            tx,
-          );
-        } catch (error) {
-          if (!isUniqueConstraintViolation(error)) throw error;
-          user = await this.users.findByEmail(consumed.email, tx);
-          if (!user) throw error;
-        }
+        user = await createUserOrFindByEmailOnUnique(
+          this.users,
+          {
+            email: consumed.email,
+            passwordHash: null,
+          },
+          tx,
+        );
       }
 
       await this.users.markEmailVerified(user.id, tx);
       await this.users.touchLastLogin(user.id, tx);
 
-      return { ok: true as const, userId: user.id };
+      return okResult({ userId: user.id });
     });
   }
 }

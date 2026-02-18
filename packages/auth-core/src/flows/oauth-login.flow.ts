@@ -1,8 +1,9 @@
 import type { OAuthProvider } from "@contracts";
 import type { OAuthAccountsRepo, UsersRepo } from "../auth.ports";
-import { authErr, isUniqueConstraintViolation } from "../errors";
+import { authErr } from "../errors";
 import type { AuthEventEmitter } from "../events";
 import { noOpAuthEventEmitter } from "../events";
+import { createUserOrFindByEmailOnUnique } from "./user-create";
 
 export class OAuthLoginFlow {
   constructor(
@@ -31,13 +32,10 @@ export class OAuthLoginFlow {
     let user = await this.users.findByEmail(email);
 
     if (!user) {
-      try {
-        user = await this.users.create({ email, passwordHash: null });
-      } catch (error) {
-        if (!isUniqueConstraintViolation(error)) throw error;
-        user = await this.users.findByEmail(email);
-        if (!user) throw error;
-      }
+      user = await createUserOrFindByEmailOnUnique(this.users, {
+        email,
+        passwordHash: null,
+      });
     }
 
     await this.oauthAccounts.create({

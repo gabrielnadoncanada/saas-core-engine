@@ -1,8 +1,10 @@
 import type { OAuthProvider } from "@contracts";
-import { hashIdentifier, hashTokenCandidates, type PepperInput } from "../hashing/token";
+import { hashIdentifier, type PepperInput } from "../hashing/token";
 import { randomTokenBase64Url } from "../hashing/random";
 import { authErr } from "../errors";
 import type { OAuthStatesRepo } from "../auth.ports";
+import { findByTokenCandidates } from "../utils/token-candidates";
+import { clampTtlMinutes } from "../utils/ttl";
 
 function assertSafeRedirectPath(path: string): string {
   if (!path.startsWith("/") || path.startsWith("//") || path.includes("..") || path.includes("\\")) {
@@ -26,7 +28,7 @@ export class OAuthStateService {
     const codeVerifier = randomTokenBase64Url(48);
 
     const stateHash = hashIdentifier(state, this.pepper);
-    const ttlMinutes = Math.min(Math.max(Math.floor(params.ttlMinutes), 1), 20);
+    const ttlMinutes = clampTtlMinutes(params.ttlMinutes, 1, 20);
     const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000);
     const redirectPath = assertSafeRedirectPath(params.redirectPath);
 
@@ -45,16 +47,15 @@ export class OAuthStateService {
     provider: OAuthProvider;
     state: string;
   }): Promise<{ codeVerifier: string; redirectPath: string } | null> {
-    for (const stateHash of hashTokenCandidates(params.state, this.pepper)) {
-      const row = await this.repo.findValidByStateHash(stateHash);
-      if (!row) continue;
-      if (row.provider !== params.provider) return null;
+    const row = await findByTokenCandidates(params.state, this.pepper, (stateHash) =>
+      this.repo.findValidByStateHash(stateHash),
+    );
+    if (!row) return null;
+    if (row.provider !== params.provider) return null;
 
-      const deleted = await this.repo.deleteByIdIfExists(row.id);
-      if (!deleted) return null;
+    const deleted = await this.repo.deleteByIdIfExists(row.id);
+    if (!deleted) return null;
 
-      return { codeVerifier: row.codeVerifier, redirectPath: row.redirectPath };
-    }
-    return null;
+    return { codeVerifier: row.codeVerifier, redirectPath: row.redirectPath };
   }
 }
