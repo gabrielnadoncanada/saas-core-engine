@@ -3,6 +3,7 @@ import type {
   OrgsRepo,
   SubscriptionsRepo,
   TxRunner,
+  UsersRepo,
 } from "./org.ports";
 
 export class OrgService {
@@ -10,6 +11,7 @@ export class OrgService {
     private readonly orgs: OrgsRepo,
     private readonly memberships: MembershipsRepo,
     private readonly subs: SubscriptionsRepo,
+    private readonly users: UsersRepo,
     private readonly txRunner: TxRunner,
   ) {}
 
@@ -26,6 +28,7 @@ export class OrgService {
         { organizationId: org.id, plan: "free", status: "inactive" },
         tx,
       );
+      await this.users.setActiveOrganization(params.ownerUserId, org.id, tx);
 
       return { organizationId: org.id };
     });

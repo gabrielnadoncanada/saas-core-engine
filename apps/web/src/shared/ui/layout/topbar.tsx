@@ -5,14 +5,17 @@ import Link from "next/link";
 import { ThemeToggle } from "@/shared/ui/theme/theme-toggle";
 import { routes } from "@/shared/constants/routes";
 import { Button } from "@/shared/ui/shadcn/button";
+import { OrgSwitcher } from "@/shared/ui/layout/org-switcher";
 
 export function Topbar(props: { title: string }) {
-  const [me, setMe] = useState<{ userId: string } | null>(null);
+  const [me, setMe] = useState<{ userId: string; organizationId: string } | null>(null);
 
   useEffect(() => {
     void (async () => {
       const res = await fetch("/api/auth/me");
-      const json = (await res.json()) as { user?: { userId: string } | null };
+      const json = (await res.json()) as {
+        user?: { userId: string; organizationId: string } | null;
+      };
       setMe(json.user ?? null);
     })();
   }, []);
@@ -28,6 +31,7 @@ export function Topbar(props: { title: string }) {
         </div>
 
         <div className="flex items-center gap-2">
+          <OrgSwitcher />
           <Button asChild variant="outline" className="rounded-xl">
             <Link href={routes.app.team}>Invite</Link>
           </Button>

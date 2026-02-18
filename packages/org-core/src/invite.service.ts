@@ -1,4 +1,5 @@
 import type { InviteRole } from "@contracts";
+import { isUniqueConstraintViolation, orgErr } from "./errors";
 import type {
   InviteToken,
   InvitationsRepo,
@@ -23,10 +24,19 @@ export class InviteService {
     role: InviteRole;
     ttlMinutes: number;
   }) {
+    const inviterMembership = await this.memberships.findUserMembership({
+      userId: params.inviterUserId,
+      organizationId: params.organizationId,
+    });
+    if (!inviterMembership || !["owner", "admin"].includes(inviterMembership.role)) {
+      throw orgErr("forbidden", "Only owner/admin can invite members");
+    }
+
     const rawToken = this.inviteToken.randomToken();
     const tokenHash = this.inviteToken.hashToken(rawToken);
 
-    const expiresAt = new Date(Date.now() + params.ttlMinutes * 60 * 1000);
+    const clampedTtlMinutes = Math.max(60, Math.min(60 * 24 * 7, params.ttlMinutes));
+    const expiresAt = new Date(Date.now() + clampedTtlMinutes * 60 * 1000);
 
     const invite = await this.invites.create({
       organizationId: params.organizationId,
@@ -44,22 +54,19 @@ export class InviteService {
 
     return this.txRunner.withTx(async (tx) => {
       const invite = await this.invites.findValidByTokenHash(tokenHash, tx);
-      if (!invite) throw new Error("INVALID_INVITE");
+      if (!invite) throw orgErr("invalid_invite", "Invite is invalid or expired");
 
       const user = await this.users.findById(params.acceptUserId, tx);
-      if (!user) throw new Error("UNAUTHORIZED");
+      if (!user) throw orgErr("unauthorized", "User is not authenticated");
 
       if (user.email.toLowerCase() !== invite.email.toLowerCase()) {
-        throw new Error("INVITE_EMAIL_MISMATCH");
+        throw orgErr(
+          "invite_email_mismatch",
+          "Invite email does not match authenticated user",
+        );
       }
-
-      const existing = await this.memberships.findUserMembership(
-        { userId: user.id, organizationId: invite.organizationId },
-        tx,
-      );
-
-      if (!existing) {
-        await this.memberships.create(
+      try {
+        await this.memberships.ensureMembership(
           {
             userId: user.id,
             organizationId: invite.organizationId,
@@ -67,9 +74,12 @@ export class InviteService {
           },
           tx,
         );
+      } catch (error) {
+        if (!isUniqueConstraintViolation(error)) throw error;
       }
 
-      await this.invites.markAccepted(invite.id, tx);
+      await this.invites.markAcceptedIfPending(invite.id, tx);
+      await this.users.setActiveOrganization(user.id, invite.organizationId, tx);
 
       return { organizationId: invite.organizationId };
     });

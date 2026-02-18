@@ -23,18 +23,49 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   });
   if (!valid) return null;
 
-  const membership = await prisma.membership.findFirst({
-    where: { userId: valid.userId },
-    orderBy: { createdAt: "asc" },
-    select: { organizationId: true },
+  const userRecord = await prisma.user.findUnique({
+    where: { id: valid.userId },
+    select: { activeOrganizationId: true },
   });
-  if (!membership) return null;
+
+  const activeOrgId = userRecord?.activeOrganizationId ?? null;
+  let organizationId: string | null = null;
+
+  if (activeOrgId) {
+    const activeMembership = await prisma.membership.findUnique({
+      where: {
+        userId_organizationId: {
+          userId: valid.userId,
+          organizationId: activeOrgId,
+        },
+      },
+      select: { organizationId: true },
+    });
+    organizationId = activeMembership?.organizationId ?? null;
+  }
+
+  if (!organizationId) {
+    const fallbackMembership = await prisma.membership.findFirst({
+      where: { userId: valid.userId },
+      orderBy: { createdAt: "asc" },
+      select: { organizationId: true },
+    });
+    organizationId = fallbackMembership?.organizationId ?? null;
+
+    if (!organizationId) return null;
+    if (activeOrgId !== organizationId) {
+      await prisma.user.update({
+        where: { id: valid.userId },
+        data: { activeOrganizationId: organizationId },
+      });
+    }
+  }
 
   return {
     id: valid.userId,
     userId: valid.userId,
     sessionId: valid.sessionId,
-    organizationId: membership.organizationId,
+    organizationId,
   };
 }
 

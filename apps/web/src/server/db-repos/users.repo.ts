@@ -48,4 +48,26 @@ export class UsersRepo {
       data: { lastLoginAt: new Date() },
     });
   }
+
+  async setActiveOrganization(
+    userId: string,
+    organizationId: string,
+    tx?: DbTx,
+  ): Promise<void> {
+    await db(tx).user.update({
+      where: { id: userId },
+      data: { activeOrganizationId: organizationId },
+    });
+  }
+
+  async findActiveOrganizationId(
+    userId: string,
+    tx?: DbTx,
+  ): Promise<string | null> {
+    const user = await db(tx).user.findUnique({
+      where: { id: userId },
+      select: { activeOrganizationId: true },
+    });
+    return user?.activeOrganizationId ?? null;
+  }
 }

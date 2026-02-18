@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       ttlMinutes: 15,
     });
 
-    if ("token" in res && res.token) {
+    if ("token" in res && typeof res.token === "string" && res.token.length > 0) {
       const url = absoluteUrl(
         `/reset-password?token=${encodeURIComponent(res.token)}`,
       );

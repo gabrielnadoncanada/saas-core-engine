@@ -42,16 +42,19 @@ model User {
   id              String    @id @default(uuid())
   email           String    @unique
   passwordHash    String?   @map("password_hash")
+  activeOrganizationId String? @map("active_organization_id")
   emailVerifiedAt DateTime? @map("email_verified_at")
   lastLoginAt     DateTime? @map("last_login_at")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   memberships   Membership[]
+  activeOrganization Organization? @relation("UserActiveOrganization", fields: [activeOrganizationId], references: [id], onDelete: SetNull)
   sessions      Session[]
   oauthAccounts OAuthAccount[]
   emailTokens   EmailToken[]
 
+  @@index([activeOrganizationId])
   @@map("users")
 }
 
@@ -82,6 +85,7 @@ model Organization {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   memberships  Membership[]
+  activeUsers  User[] @relation("UserActiveOrganization")
   invitations  Invitation[]
   subscription Subscription?
 
@@ -143,6 +147,53 @@ model Subscription {
 
   @@index([status])
   @@map("subscriptions")
+}
+
+model OrgAuditLog {
+  id             String   @id @default(cuid())
+  organizationId String   @map("organization_id")
+  actorUserId    String?  @map("actor_user_id")
+  action         String
+  targetType     String?  @map("target_type")
+  targetId       String?  @map("target_id")
+  outcome        String   @default("success")
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([organizationId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@map("org_audit_logs")
+}
+
+model BillingWebhookEvent {
+  id                  String   @id @default(cuid())
+  provider            String   @default("stripe")
+  eventId             String   @unique @map("event_id")
+  eventType           String   @map("event_type")
+  eventCreatedAt      DateTime @map("event_created_at")
+  organizationId      String?  @map("organization_id")
+  stripeSubscriptionId String? @map("stripe_subscription_id")
+  status              String   @default("received")
+  errorMessage        String?  @map("error_message")
+  receivedAt          DateTime @default(now()) @map("received_at")
+  processedAt         DateTime? @map("processed_at")
+
+  @@index([eventCreatedAt])
+  @@index([organizationId, receivedAt])
+  @@index([stripeSubscriptionId, eventCreatedAt])
+  @@map("billing_webhook_events")
+}
+
+model BillingSubscriptionCursor {
+  id                  String   @id @default(cuid())
+  stripeSubscriptionId String  @unique @map("stripe_subscription_id")
+  lastEventId         String   @map("last_event_id")
+  lastEventType       String   @map("last_event_type")
+  lastEventCreatedAt  DateTime @map("last_event_created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@index([lastEventCreatedAt])
+  @@map("billing_subscription_cursors")
 }
 
 model EmailToken {

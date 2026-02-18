@@ -1,8 +1,11 @@
 import "server-only";
 
-import { prisma } from "@db";
 import { requireUser } from "@/server/auth/require-user";
 import { getDefaultOrgIdForUser } from "@/server/auth/require-org";
+import {
+  createInviteService,
+  createMembershipService,
+} from "@/server/adapters/core/org-core.adapter";
 import { TeamMembersTable } from "@/features/team/ui/members-table";
 import { InviteMemberForm } from "@/features/team/ui/invite-member-form";
 
@@ -19,16 +22,12 @@ export default async function TeamPage() {
     );
   }
 
-  const members = await prisma.membership.findMany({
-    where: { organizationId: orgId },
-    include: { user: true },
-    orderBy: { createdAt: "asc" },
-  });
-
-  const invites = await prisma.invitation.findMany({
-    where: { organizationId: orgId, acceptedAt: null, expiresAt: { gt: new Date() } },
-    orderBy: { createdAt: "desc" },
-  });
+  const membershipService = createMembershipService();
+  const inviteService = createInviteService();
+  const [members, invites] = await Promise.all([
+    membershipService.listOrgMembers(orgId),
+    inviteService.listPendingInvites(orgId),
+  ]);
 
   return (
     <div style={{ padding: 24, maxWidth: 980 }}>
@@ -46,10 +45,12 @@ export default async function TeamPage() {
         <TeamMembersTable
           members={members.map((m) => ({
             id: m.id,
+            userId: m.userId,
             email: m.user.email,
             role: m.role,
             joinedAt: m.createdAt.toISOString(),
           }))}
+          currentUserId={user.userId}
         />
       </div>
 

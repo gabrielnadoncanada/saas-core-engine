@@ -25,6 +25,35 @@ export class MembershipsRepo {
     });
   }
 
+  async ensureMembership(
+    params: { userId: string; organizationId: string; role: MembershipRole },
+    tx?: DbTx,
+  ): Promise<Membership> {
+    return db(tx).membership.upsert({
+      where: {
+        userId_organizationId: {
+          userId: params.userId,
+          organizationId: params.organizationId,
+        },
+      },
+      update: {},
+      create: params,
+    });
+  }
+
+  async findById(membershipId: string, tx?: DbTx): Promise<Membership | null> {
+    return db(tx).membership.findUnique({ where: { id: membershipId } });
+  }
+
+  async countByRole(
+    params: { organizationId: string; role: MembershipRole },
+    tx?: DbTx,
+  ): Promise<number> {
+    return db(tx).membership.count({
+      where: { organizationId: params.organizationId, role: params.role },
+    });
+  }
+
   async listOrgMembers(organizationId: string, tx?: DbTx) {
     return db(tx).membership.findMany({
       where: { organizationId },

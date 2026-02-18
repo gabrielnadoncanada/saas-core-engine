@@ -25,12 +25,13 @@ export function createOrgService() {
     new OrgsRepo(),
     new MembershipsRepo(),
     new SubscriptionsRepo(),
+    new UsersRepo(),
     txRunner,
   );
 }
 
 export function createMembershipService() {
-  return new MembershipService(new MembershipsRepo());
+  return new MembershipService(new MembershipsRepo(), txRunner);
 }
 
 export function createInviteService() {

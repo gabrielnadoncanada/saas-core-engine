@@ -1,0 +1,36 @@
+import { OrgCoreError } from "@org-core";
+import { NextResponse } from "next/server";
+
+type OrgErrorBody = {
+  ok: false;
+  error: string;
+};
+
+export function orgErrorResponse(
+  error: unknown,
+  fallbackMessage = "internal_error",
+): NextResponse<OrgErrorBody> {
+  if (error instanceof OrgCoreError) {
+    switch (error.code) {
+      case "unauthorized":
+        return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+      case "forbidden":
+        return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+      case "invalid_invite":
+        return NextResponse.json({ ok: false, error: "invalid_invite" }, { status: 400 });
+      case "invite_email_mismatch":
+        return NextResponse.json(
+          { ok: false, error: "invite_email_mismatch" },
+          { status: 400 },
+        );
+      default:
+        return NextResponse.json({ ok: false, error: "org_error" }, { status: 400 });
+    }
+  }
+
+  if (error instanceof Error && error.message === "UNAUTHORIZED") {
+    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  }
+
+  return NextResponse.json({ ok: false, error: fallbackMessage }, { status: 500 });
+}

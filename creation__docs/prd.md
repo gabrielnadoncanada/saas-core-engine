@@ -105,7 +105,8 @@ V1 doit être lean, mais complet sur les fondamentaux SaaS.
 
 ### Model
 
-- Every user belongs to an organization
+- Every user can belong to multiple organizations
+- One active organization is selected per session/user context
 - Default org auto-created at signup
 
 ### Features
@@ -121,7 +122,6 @@ V1 doit être lean, mais complet sur les fondamentaux SaaS.
 
 ### Non-Goals
 
-- Multi-org per user (V2)
 - Custom role builder (V2)
 
 ---
@@ -428,9 +428,8 @@ Mandatory checklist:
 ## V2 Agency Pack
 
 - Advanced RBAC engine
-- Audit logs
+- Audit logs (advanced querying/export)
 - Impersonation
-- Multi-org per user
 
 ## V3 AI Automation Pack
 

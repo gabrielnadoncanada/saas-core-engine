@@ -19,7 +19,21 @@ export interface MembershipsRepo {
     params: { userId: string; organizationId: string },
     tx?: any,
   ): Promise<MembershipSummary | null>;
-  listOrgMembers(organizationId: string, tx?: any): Promise<MembershipSummary[]>;
+  ensureMembership(
+    params: { userId: string; organizationId: string; role: MembershipRole },
+    tx?: any,
+  ): Promise<{ id: string }>;
+  findById(membershipId: string, tx?: any): Promise<MembershipSummary | null>;
+  countByRole(
+    params: { organizationId: string; role: MembershipRole },
+    tx?: any,
+  ): Promise<number>;
+  updateRole(membershipId: string, role: MembershipRole, tx?: any): Promise<void>;
+  remove(membershipId: string, tx?: any): Promise<void>;
+  listOrgMembers(
+    organizationId: string,
+    tx?: any,
+  ): Promise<Array<MembershipSummary & { user: { email: string } }>>;
 }
 
 export interface SubscriptionsRepo {
@@ -51,12 +65,17 @@ export interface InvitationsRepo {
     tokenHash: string,
     tx?: any,
   ): Promise<InvitationSummary | null>;
-  markAccepted(invitationId: string, tx?: any): Promise<void>;
+  markAcceptedIfPending(invitationId: string, tx?: any): Promise<boolean>;
   listPending(organizationId: string, tx?: any): Promise<InvitationSummary[]>;
 }
 
 export interface UsersRepo {
   findById(userId: string, tx?: any): Promise<{ id: string; email: string } | null>;
+  setActiveOrganization(
+    userId: string,
+    organizationId: string,
+    tx?: any,
+  ): Promise<void>;
 }
 
 export interface TxRunner {

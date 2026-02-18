@@ -34,11 +34,12 @@ export class InvitationsRepo {
     });
   }
 
-  async markAccepted(invitationId: string, tx?: DbTx): Promise<void> {
-    await db(tx).invitation.update({
-      where: { id: invitationId },
+  async markAcceptedIfPending(invitationId: string, tx?: DbTx): Promise<boolean> {
+    const result = await db(tx).invitation.updateMany({
+      where: { id: invitationId, acceptedAt: null },
       data: { acceptedAt: new Date() },
     });
+    return result.count > 0;
   }
 
   async listPending(organizationId: string, tx?: DbTx): Promise<Invitation[]> {

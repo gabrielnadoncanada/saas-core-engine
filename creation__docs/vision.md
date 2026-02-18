@@ -65,6 +65,7 @@ Permettre à un développeur de lancer un SaaS B2B production-ready en moins de 
 
 - Create organization
 - Switch organization
+- Multi-organization membership with active-org switcher
 - Invite members
 - Role assignment
 - Org-scoped data isolation
@@ -119,7 +120,7 @@ Permettre à un développeur de lancer un SaaS B2B production-ready en moins de 
 - Users
 - Organizations
 - Subscriptions
-- Audit logs
+- Audit logs (org actions + billing/webhook traces)
 - Settings
 
 ### UX
