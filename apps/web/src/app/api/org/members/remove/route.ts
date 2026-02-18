@@ -1,53 +1,45 @@
 import { NextResponse } from "next/server";
-import { OrgCoreError } from "@org-core";
-import { requireUser } from "@/server/auth/require-user";
-import { getDefaultOrgIdForUser } from "@/server/auth/require-org";
+import { orgMembershipIdBodySchema } from "@contracts";
 import { orgErrorResponse } from "@/server/auth/org-error-response";
+import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
 import { createMembershipService } from "@/server/adapters/core/org-core.adapter";
 import { logOrgAudit } from "@/server/services/org-audit.service";
-
-type Body = { membershipId: string };
+import { withApiTelemetry } from "@/server/telemetry/otel";
 
 export async function POST(req: Request) {
-  const user = await requireUser();
-  const orgId = await getDefaultOrgIdForUser();
-  if (!orgId) {
-    return NextResponse.json({ ok: false, error: "No org" }, { status: 400 });
-  }
+  return withApiTelemetry(req, "/api/org/members/remove", async () => {
+    const parsed = orgMembershipIdBodySchema.safeParse(await req.json());
 
-  const body = (await req.json()) as Body;
-  const membershipId = body?.membershipId?.trim();
+    if (!parsed.success) {
+      return NextResponse.json({ ok: false, error: "Invalid input" }, { status: 400 });
+    }
 
-  if (!membershipId) {
-    return NextResponse.json({ ok: false, error: "Invalid input" }, { status: 400 });
-  }
+    const { membershipId } = parsed.data;
 
-  try {
-    const memberships = createMembershipService();
-    await memberships.removeMember({
-      actorUserId: user.userId,
-      organizationId: orgId,
-      membershipId,
-    });
+    try {
+      return await withRequiredOrgScope({
+        action: "org:member:remove",
+        run: async (orgCtx) => {
+          const memberships = createMembershipService();
+          await memberships.removeMember({
+            actorUserId: orgCtx.userId,
+            organizationId: orgCtx.organizationId,
+            membershipId,
+          });
 
-    await logOrgAudit({
-      organizationId: orgId,
-      actorUserId: user.userId,
-      action: "org.member.removed",
-      targetType: "membership",
-      targetId: membershipId,
-    });
+          await logOrgAudit({
+            organizationId: orgCtx.organizationId,
+            actorUserId: orgCtx.userId,
+            action: "org.member.removed",
+            targetType: "membership",
+            targetId: membershipId,
+          });
 
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    await logOrgAudit({
-      organizationId: orgId,
-      actorUserId: user.userId,
-      action: "org.member.removed",
-      targetType: "membership",
-      targetId: membershipId,
-      outcome: error instanceof OrgCoreError && error.code === "forbidden" ? "forbidden" : "error",
-    });
-    return orgErrorResponse(error);
-  }
+          return NextResponse.json({ ok: true });
+        },
+      });
+    } catch (error) {
+      return orgErrorResponse(error);
+    }
+  });
 }

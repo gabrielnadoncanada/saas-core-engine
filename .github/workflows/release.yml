@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag (example: v1.4.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Production preflight
+        run: pnpm preflight:prod
+
+      - name: Quality gates
+        run: |
+          pnpm lint
+          pnpm typecheck
+          pnpm test
+          pnpm build
+
+      - name: Ensure tag does not exist
+        run: |
+          if git rev-parse "${{ inputs.release_tag }}" >/dev/null 2>&1; then
+            echo "Tag already exists: ${{ inputs.release_tag }}"
+            exit 1
+          fi
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ inputs.release_tag }}"
+          git push origin "${{ inputs.release_tag }}"
+
+      - name: Build release artifact
+        run: |
+          mkdir -p artifacts
+          tar -czf "artifacts/${{ inputs.release_tag }}-source.tar.gz" \
+            --exclude=".git" \
+            --exclude="**/node_modules" \
+            .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ inputs.release_tag }}
+          path: artifacts/${{ inputs.release_tag }}-source.tar.gz
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag }}
+          generate_release_notes: true
+          files: artifacts/${{ inputs.release_tag }}-source.tar.gz

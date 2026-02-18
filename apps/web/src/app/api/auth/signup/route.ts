@@ -10,12 +10,14 @@ import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
 import { authErrorResponse } from "@/server/auth/auth-error-response";
 import { getEmailService } from "@/server/services/email.service";
 import { absoluteUrl } from "@/server/services/url.service";
+import { withApiTelemetry } from "@/server/telemetry/otel";
 
 type Body = { email: string; password: string; orgName: string };
 
 export async function POST(req: Request) {
-  try {
-    await enforceAuthRateLimit(req, "signup");
+  return withApiTelemetry(req, "/api/auth/signup", async () => {
+    try {
+      await enforceAuthRateLimit(req, "signup");
 
     const body = (await req.json()) as Body;
 
@@ -55,8 +57,9 @@ export async function POST(req: Request) {
       // Non-blocking: signup succeeds even if verification email fails
     }
 
-    return NextResponse.json({ ok: true, userId, organizationId });
-  } catch (error) {
-    return authErrorResponse(error);
-  }
+      return NextResponse.json({ ok: true, userId, organizationId });
+    } catch (error) {
+      return authErrorResponse(error);
+    }
+  });
 }

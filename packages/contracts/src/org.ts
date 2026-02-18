@@ -1,12 +1,38 @@
+import { z } from "zod";
+
 export type OrgErrorCode =
   | "forbidden"
   | "invalid_invite"
   | "invite_email_mismatch"
   | "unauthorized";
 
-export type MembershipRole = "owner" | "admin" | "member";
+export const membershipRoleSchema = z.enum(["owner", "admin", "member"]);
+export type MembershipRole = z.infer<typeof membershipRoleSchema>;
 
-export type InviteRole = Extract<MembershipRole, "admin" | "member">;
+export const inviteRoleSchema = z.enum(["admin", "member"]);
+export type InviteRole = z.infer<typeof inviteRoleSchema>;
+
+export const orgInviteBodySchema = z.object({
+  email: z.string().trim().email().max(320),
+  role: inviteRoleSchema,
+});
+
+export const orgCreateBodySchema = z.object({
+  name: z.string().trim().min(1).max(120),
+});
+
+export const orgSwitchBodySchema = z.object({
+  organizationId: z.string().trim().min(1),
+});
+
+export const orgMembershipIdBodySchema = z.object({
+  membershipId: z.string().trim().min(1),
+});
+
+export const orgMemberRoleChangeBodySchema = z.object({
+  membershipId: z.string().trim().min(1),
+  role: inviteRoleSchema,
+});
 
 export interface OrganizationSummary {
   id: string;

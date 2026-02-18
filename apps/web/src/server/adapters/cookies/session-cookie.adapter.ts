@@ -12,7 +12,7 @@ export async function setSessionCookie(
   cookieStore.set(env.SESSION_COOKIE_NAME, result.sessionToken, {
     httpOnly: true,
     secure: env.SESSION_COOKIE_SECURE,
-    sameSite: "lax",
+    sameSite: env.SESSION_COOKIE_SAME_SITE,
     path: "/",
     expires: result.expiresAt,
   });
@@ -24,7 +24,7 @@ export async function clearSessionCookie(): Promise<void> {
   cookieStore.set(env.SESSION_COOKIE_NAME, "", {
     httpOnly: true,
     secure: env.SESSION_COOKIE_SECURE,
-    sameSite: "lax",
+    sameSite: env.SESSION_COOKIE_SAME_SITE,
     path: "/",
     expires: new Date(0),
   });

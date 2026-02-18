@@ -1,4 +1,4 @@
-import { AITextInput, AITextOutput, AIStreamEvent } from "./types";
+import type { AITextInput, AITextOutput, AIStreamEvent } from "./types";
 import type { ZodTypeAny } from "zod";
 import type { AIStructuredInput, AIStructuredOutput } from "./types";
 

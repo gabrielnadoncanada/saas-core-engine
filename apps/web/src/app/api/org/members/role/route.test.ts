@@ -1,17 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { OrgCoreError } from "@org-core";
 
-const requireUser = vi.fn();
-const getDefaultOrgIdForUser = vi.fn();
 const changeMemberRole = vi.fn();
 const logOrgAudit = vi.fn();
+const withRequiredOrgScope = vi.fn();
 
-vi.mock("@/server/auth/require-user", () => ({
-  requireUser,
-}));
-
-vi.mock("@/server/auth/require-org", () => ({
-  getDefaultOrgIdForUser,
+vi.mock("@/server/auth/with-org-scope", () => ({
+  withRequiredOrgScope,
 }));
 
 vi.mock("@/server/adapters/core/org-core.adapter", () => ({
@@ -24,13 +19,19 @@ vi.mock("@/server/services/org-audit.service", () => ({
   logOrgAudit,
 }));
 
+vi.mock("@/server/telemetry/otel", () => ({
+  withApiTelemetry: async (_req: Request, _route: string, handler: () => Promise<Response>) =>
+    handler(),
+}));
+
 describe("POST /api/org/members/role", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    requireUser.mockResolvedValue({ userId: "u1" });
-    getDefaultOrgIdForUser.mockResolvedValue("org1");
     changeMemberRole.mockResolvedValue(undefined);
     logOrgAudit.mockResolvedValue(undefined);
+    withRequiredOrgScope.mockImplementation(async ({ run }: any) =>
+      run({ userId: "u1", organizationId: "org1", role: "owner" }),
+    );
   });
 
   it("returns 400 for invalid input", async () => {

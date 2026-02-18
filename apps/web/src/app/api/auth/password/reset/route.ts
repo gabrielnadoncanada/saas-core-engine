@@ -6,12 +6,14 @@ import {
   createSessionService,
 } from "@/server/adapters/core/auth-core.adapter";
 import { authErrorResponse } from "@/server/auth/auth-error-response";
+import { withApiTelemetry } from "@/server/telemetry/otel";
 
 type Body = { token: string; newPassword: string };
 
 export async function POST(req: Request) {
-  try {
-    const body = (await req.json()) as Body;
+  return withApiTelemetry(req, "/api/auth/password/reset", async () => {
+    try {
+      const body = (await req.json()) as Body;
 
     if (!body?.token || !body?.newPassword) {
       return NextResponse.json(
@@ -39,9 +41,10 @@ export async function POST(req: Request) {
       userAgent: req.headers.get("user-agent"),
     });
 
-    await setSessionCookie(session);
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    return authErrorResponse(error);
-  }
+      await setSessionCookie(session);
+      return NextResponse.json({ ok: true });
+    } catch (error) {
+      return authErrorResponse(error);
+    }
+  });
 }

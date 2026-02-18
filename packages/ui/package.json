@@ -20,6 +20,7 @@
     "@contracts": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "typescript": "^5.6.0"
   }
 }

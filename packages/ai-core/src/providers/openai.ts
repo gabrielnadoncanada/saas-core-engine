@@ -1,6 +1,6 @@
 import OpenAI from "openai";
-import { AIProvider } from "../provider";
-import { AIStreamEvent, AITextInput, AITextOutput } from "../types";
+import type { AIProvider } from "../provider";
+import type { AIStreamEvent, AITextInput, AITextOutput } from "../types";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { ZodTypeAny } from "zod";
 import type { AIStructuredInput, AIStructuredOutput } from "../types";

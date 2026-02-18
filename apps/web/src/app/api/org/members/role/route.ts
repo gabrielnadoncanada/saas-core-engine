@@ -1,57 +1,48 @@
 import { NextResponse } from "next/server";
-import { OrgCoreError } from "@org-core";
-import { requireUser } from "@/server/auth/require-user";
-import { getDefaultOrgIdForUser } from "@/server/auth/require-org";
+import { orgMemberRoleChangeBodySchema } from "@contracts";
 import { orgErrorResponse } from "@/server/auth/org-error-response";
+import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
 import { createMembershipService } from "@/server/adapters/core/org-core.adapter";
 import { logOrgAudit } from "@/server/services/org-audit.service";
-
-type Body = { membershipId: string; role: "admin" | "member" };
+import { withApiTelemetry } from "@/server/telemetry/otel";
 
 export async function POST(req: Request) {
-  const user = await requireUser();
-  const orgId = await getDefaultOrgIdForUser();
-  if (!orgId) {
-    return NextResponse.json({ ok: false, error: "No org" }, { status: 400 });
-  }
+  return withApiTelemetry(req, "/api/org/members/role", async () => {
+    const parsed = orgMemberRoleChangeBodySchema.safeParse(await req.json());
 
-  const body = (await req.json()) as Body;
-  const membershipId = body?.membershipId?.trim();
-  const role = body?.role;
+    if (!parsed.success) {
+      return NextResponse.json({ ok: false, error: "Invalid input" }, { status: 400 });
+    }
 
-  if (!membershipId || (role !== "admin" && role !== "member")) {
-    return NextResponse.json({ ok: false, error: "Invalid input" }, { status: 400 });
-  }
+    const { membershipId, role } = parsed.data;
 
-  try {
-    const memberships = createMembershipService();
-    await memberships.changeMemberRole({
-      actorUserId: user.userId,
-      organizationId: orgId,
-      membershipId,
-      role,
-    });
+    try {
+      return await withRequiredOrgScope({
+        action: "org:member:role:change",
+        targetRole: role,
+        run: async (orgCtx) => {
+          const memberships = createMembershipService();
+          await memberships.changeMemberRole({
+            actorUserId: orgCtx.userId,
+            organizationId: orgCtx.organizationId,
+            membershipId,
+            role,
+          });
 
-    await logOrgAudit({
-      organizationId: orgId,
-      actorUserId: user.userId,
-      action: "org.member.role_changed",
-      targetType: "membership",
-      targetId: membershipId,
-      metadata: { role },
-    });
+          await logOrgAudit({
+            organizationId: orgCtx.organizationId,
+            actorUserId: orgCtx.userId,
+            action: "org.member.role_changed",
+            targetType: "membership",
+            targetId: membershipId,
+            metadata: { role },
+          });
 
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    await logOrgAudit({
-      organizationId: orgId,
-      actorUserId: user.userId,
-      action: "org.member.role_changed",
-      targetType: "membership",
-      targetId: membershipId,
-      outcome: error instanceof OrgCoreError && error.code === "forbidden" ? "forbidden" : "error",
-      metadata: { role },
-    });
-    return orgErrorResponse(error);
-  }
+          return NextResponse.json({ ok: true });
+        },
+      });
+    } catch (error) {
+      return orgErrorResponse(error);
+    }
+  });
 }

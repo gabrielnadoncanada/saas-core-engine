@@ -82,9 +82,6 @@ describe("InviteService concurrency", () => {
       findUserMembership: async () => null,
       ensureMembership: async ({ userId, organizationId }) => {
         const key = `${userId}:${organizationId}`;
-        if (seen.has(key)) {
-          throw { code: "P2002" };
-        }
         seen.add(key);
         return { id: "m_1" };
       },

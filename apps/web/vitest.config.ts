@@ -15,6 +15,9 @@ export default defineConfig({
       "@contracts": fileURLToPath(
         new URL("../../packages/contracts/src/index.ts", import.meta.url),
       ),
+      "@rbac-core": fileURLToPath(
+        new URL("../../packages/rbac-core/src/index.ts", import.meta.url),
+      ),
     },
   },
   test: {

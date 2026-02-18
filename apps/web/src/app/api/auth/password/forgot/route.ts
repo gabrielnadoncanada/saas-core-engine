@@ -4,12 +4,14 @@ import { absoluteUrl } from "@/server/services/url.service";
 import { createPasswordResetFlow } from "@/server/adapters/core/auth-core.adapter";
 import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
 import { authErrorResponse } from "@/server/auth/auth-error-response";
+import { withApiTelemetry } from "@/server/telemetry/otel";
 
 type Body = { email: string };
 
 export async function POST(req: Request) {
-  try {
-    await enforceAuthRateLimit(req, "password_forgot");
+  return withApiTelemetry(req, "/api/auth/password/forgot", async () => {
+    try {
+      await enforceAuthRateLimit(req, "password_forgot");
 
     const body = (await req.json()) as Body;
     const email = body?.email?.trim();
@@ -30,8 +32,9 @@ export async function POST(req: Request) {
       await mail.sendResetPassword(email, url);
     }
 
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    return authErrorResponse(error);
-  }
+      return NextResponse.json({ ok: true });
+    } catch (error) {
+      return authErrorResponse(error);
+    }
+  });
 }

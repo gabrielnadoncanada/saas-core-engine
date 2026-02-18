@@ -17,6 +17,8 @@
       "@auth-core/*": ["../../packages/auth-core/src/*"],
       "@org-core": ["../../packages/org-core/src/index.ts"],
       "@org-core/*": ["../../packages/org-core/src/*"],
+      "@rbac-core": ["../../packages/rbac-core/src/index.ts"],
+      "@rbac-core/*": ["../../packages/rbac-core/src/*"],
       "@billing-core": ["../../packages/billing-core/src/index.ts"],
       "@billing-core/*": ["../../packages/billing-core/src/*"],
       "@email": ["../../packages/email/src/index.ts"],

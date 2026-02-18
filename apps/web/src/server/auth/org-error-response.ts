@@ -1,4 +1,5 @@
 import { OrgCoreError } from "@org-core";
+import { RbacForbiddenError } from "@rbac-core";
 import { NextResponse } from "next/server";
 
 type OrgErrorBody = {
@@ -30,6 +31,15 @@ export function orgErrorResponse(
 
   if (error instanceof Error && error.message === "UNAUTHORIZED") {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  }
+  if (error instanceof Error && error.message === "NO_ORG") {
+    return NextResponse.json({ ok: false, error: "no_org" }, { status: 400 });
+  }
+  if (
+    error instanceof RbacForbiddenError ||
+    (error instanceof Error && error.message === "FORBIDDEN")
+  ) {
+    return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   }
 
   return NextResponse.json({ ok: false, error: fallbackMessage }, { status: 500 });

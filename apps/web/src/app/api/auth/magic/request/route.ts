@@ -4,12 +4,14 @@ import { absoluteUrl } from "@/server/services/url.service";
 import { createMagicLoginFlow } from "@/server/adapters/core/auth-core.adapter";
 import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
 import { authErrorResponse } from "@/server/auth/auth-error-response";
+import { withApiTelemetry } from "@/server/telemetry/otel";
 
 type Body = { email: string };
 
 export async function POST(req: Request) {
-  try {
-    await enforceAuthRateLimit(req, "magic_request");
+  return withApiTelemetry(req, "/api/auth/magic/request", async () => {
+    try {
+      await enforceAuthRateLimit(req, "magic_request");
 
     const body = (await req.json()) as Body;
     const email = body?.email?.trim();
@@ -29,8 +31,9 @@ export async function POST(req: Request) {
     const mail = getEmailService();
     await mail.sendMagicLink(email, url);
 
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    return authErrorResponse(error);
-  }
+      return NextResponse.json({ ok: true });
+    } catch (error) {
+      return authErrorResponse(error);
+    }
+  });
 }

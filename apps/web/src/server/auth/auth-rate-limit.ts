@@ -3,20 +3,11 @@ import "server-only";
 import { authErr, buildAuthRateLimitKey, type AuthRateLimitRoute } from "@auth-core";
 import { prisma } from "@db";
 import { env } from "@/server/config/env";
+import { extractClientIp } from "@/server/http/request-ip";
 
 function windowStart(windowSeconds: number, now = new Date()): Date {
   const ms = windowSeconds * 1000;
   return new Date(Math.floor(now.getTime() / ms) * ms);
-}
-
-function extractIp(req: Request): string {
-  if (env.TRUST_PROXY_HEADERS) {
-    const forwarded = req.headers.get("x-forwarded-for");
-    if (forwarded) return forwarded.split(",")[0]!.trim();
-    const realIp = req.headers.get("x-real-ip");
-    if (realIp) return realIp.trim();
-  }
-  return "127.0.0.1";
 }
 
 export async function enforceAuthRateLimit(
@@ -25,7 +16,7 @@ export async function enforceAuthRateLimit(
 ): Promise<void> {
   if (!env.RATE_LIMIT_ENABLED) return;
 
-  const ip = extractIp(req);
+  const ip = extractClientIp(req);
   const key = buildAuthRateLimitKey({ ip, route });
   const ws = windowStart(env.RATE_LIMIT_WINDOW_SECONDS);
 

@@ -281,6 +281,17 @@ model AuthRateLimitBucket {
   @@map("auth_rate_limit_buckets")
 }
 
+model OrgActionRateLimitBucket {
+  id          String   @id @default(cuid())
+  scope       String
+  windowStart DateTime @map("window_start")
+  count       Int      @default(0)
+
+  @@unique([scope, windowStart])
+  @@index([scope, windowStart])
+  @@map("org_action_rate_limit_buckets")
+}
+
 model AIAuditLog {
   id             String   @id @default(cuid())
   organizationId String

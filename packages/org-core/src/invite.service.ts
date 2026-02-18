@@ -1,5 +1,5 @@
 import type { InviteRole } from "@contracts";
-import { isUniqueConstraintViolation, orgErr } from "./errors";
+import { orgErr } from "./errors";
 import type {
   InviteToken,
   InvitationsRepo,
@@ -69,18 +69,14 @@ export class InviteService<TTx = unknown> {
           "Invite email does not match authenticated user",
         );
       }
-      try {
-        await this.memberships.ensureMembership(
-          {
-            userId: user.id,
-            organizationId: invite.organizationId,
-            role: invite.role,
-          },
-          tx,
-        );
-      } catch (error) {
-        if (!isUniqueConstraintViolation(error)) throw error;
-      }
+      await this.memberships.ensureMembership(
+        {
+          userId: user.id,
+          organizationId: invite.organizationId,
+          role: invite.role,
+        },
+        tx,
+      );
 
       // If another concurrent request already accepted this invite, this remains
       // idempotent and succeeds for the same authenticated email.

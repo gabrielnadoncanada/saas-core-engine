@@ -4,6 +4,7 @@ import { createOAuthStateService } from "@/server/adapters/core/auth-core.adapte
 import { env } from "@/server/config/env";
 import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
 import { authErrorResponse } from "@/server/auth/auth-error-response";
+import { withApiTelemetry } from "@/server/telemetry/otel";
 
 function safeRedirectPath(input: string | null): string {
   if (!input) return "/dashboard";
@@ -17,8 +18,9 @@ function safeRedirectPath(input: string | null): string {
 }
 
 export async function GET(req: Request) {
-  try {
-    await enforceAuthRateLimit(req, "oauth_start");
+  return withApiTelemetry(req, "/api/auth/oauth/google/start", async () => {
+    try {
+      await enforceAuthRateLimit(req, "oauth_start");
 
     const url = new URL(req.url);
     const redirect = safeRedirectPath(url.searchParams.get("redirect"));
@@ -44,8 +46,9 @@ export async function GET(req: Request) {
     authorize.searchParams.set("nonce", nonce);
     authorize.searchParams.set("prompt", "select_account");
 
-    return NextResponse.redirect(authorize.toString());
-  } catch (error) {
-    return authErrorResponse(error);
-  }
+      return NextResponse.redirect(authorize.toString());
+    } catch (error) {
+      return authErrorResponse(error);
+    }
+  });
 }

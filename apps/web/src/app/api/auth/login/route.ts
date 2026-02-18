@@ -7,12 +7,14 @@ import {
 } from "@/server/adapters/core/auth-core.adapter";
 import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
 import { authErrorResponse } from "@/server/auth/auth-error-response";
+import { withApiTelemetry } from "@/server/telemetry/otel";
 
 type Body = { email: string; password: string };
 
 export async function POST(req: Request) {
-  try {
-    await enforceAuthRateLimit(req, "login");
+  return withApiTelemetry(req, "/api/auth/login", async () => {
+    try {
+      await enforceAuthRateLimit(req, "login");
 
     const body = (await req.json()) as Body;
 
@@ -43,8 +45,9 @@ export async function POST(req: Request) {
 
     await setSessionCookie(session);
 
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    return authErrorResponse(error);
-  }
+      return NextResponse.json({ ok: true });
+    } catch (error) {
+      return authErrorResponse(error);
+    }
+  });
 }

@@ -4,8 +4,7 @@
     "composite": true,
     "incremental": true,
     "rootDir": "./src",
-    "outDir": "./dist",
-    "types": ["node"]
+    "outDir": "./dist"
   },
   "references": [{ "path": "../contracts" }],
   "include": ["src/**/*.ts"],
