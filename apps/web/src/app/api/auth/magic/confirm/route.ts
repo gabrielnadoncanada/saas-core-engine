@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { env } from "@/server/config/env";
+
 import { setSessionCookie } from "@/server/adapters/cookies/session-cookie.adapter";
 import {
   createMagicLoginFlow,
   createSessionService,
 } from "@/server/adapters/core/auth-core.adapter";
+import { env } from "@/server/config/env";
 import { withApiTelemetry } from "@/server/telemetry/otel";
 
 export async function GET(req: Request) {

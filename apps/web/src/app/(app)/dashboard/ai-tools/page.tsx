@@ -1,6 +1,6 @@
 import "server-only";
-import { requireUser } from "@/server/auth/require-user";
 import { AIToolsDemo } from "@/features/ai-tools/ui/ai-tools-demo";
+import { requireUser } from "@/server/auth/require-user";
 
 export default async function AIToolsPage() {
   await requireUser();

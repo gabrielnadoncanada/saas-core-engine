@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@db";
+import { NextResponse } from "next/server";
+
 import { getSessionUser } from "@/server/auth/require-user";
 import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
 

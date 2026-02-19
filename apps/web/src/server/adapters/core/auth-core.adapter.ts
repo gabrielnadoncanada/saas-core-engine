@@ -11,6 +11,8 @@ import {
   VerifyEmailFlow,
   VerifyEmailRequestFlow,
 } from "@auth-core";
+import { withTx } from "@db";
+
 import { env } from "@/server/config/env";
 import { EmailTokensRepo } from "@/server/db-repos/email-tokens.repo";
 import { MembershipsRepo } from "@/server/db-repos/memberships.repo";
@@ -20,7 +22,6 @@ import { OrgsRepo } from "@/server/db-repos/orgs.repo";
 import { SessionsRepo } from "@/server/db-repos/sessions.repo";
 import { SubscriptionsRepo } from "@/server/db-repos/subscriptions.repo";
 import { UsersRepo } from "@/server/db-repos/users.repo";
-import { withTx } from "@db";
 import { authEventEmitter } from "@/server/logging/auth-event-emitter";
 
 const txRunner = { withTx };

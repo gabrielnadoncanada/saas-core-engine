@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import { env } from "@/server/config/env";
+
 import { setSessionCookie } from "@/server/adapters/cookies/session-cookie.adapter";
 import {
   createLoginFlow,
   createSessionService,
 } from "@/server/adapters/core/auth-core.adapter";
-import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
 import { authErrorResponse } from "@/server/auth/auth-error-response";
+import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
+import { env } from "@/server/config/env";
 import { withApiTelemetry } from "@/server/telemetry/otel";
 
 type Body = { email: string; password: string };

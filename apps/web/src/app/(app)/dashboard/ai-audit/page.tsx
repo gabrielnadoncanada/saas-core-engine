@@ -1,7 +1,7 @@
 import "server-only";
 
-import { requireUser } from "@/server/auth/require-user";
 import { AIAuditPanel } from "@/features/ai-audit/ui/ai-audit-panel";
+import { requireUser } from "@/server/auth/require-user";
 
 export default async function AIAuditPage() {
   await requireUser();

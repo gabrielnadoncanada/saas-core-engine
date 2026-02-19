@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+
 import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
-import { withApiTelemetry } from "@/server/telemetry/otel";
 import { queryOrgAudit } from "@/server/services/org-audit.service";
+import { withApiTelemetry } from "@/server/telemetry/otel";
 
 function csvEscape(input: unknown): string {
   const value = String(input ?? "");

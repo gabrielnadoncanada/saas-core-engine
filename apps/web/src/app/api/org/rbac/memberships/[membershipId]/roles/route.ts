@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
 import { orgMembershipRolesBodySchema } from "@contracts";
+import { NextResponse } from "next/server";
+
 import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
-import { withApiTelemetry, getActiveTraceContext } from "@/server/telemetry/otel";
-import { setMembershipCustomRoles } from "@/server/services/org-rbac.service";
-import { logOrgAudit } from "@/server/services/org-audit.service";
 import { extractClientIp } from "@/server/http/request-ip";
+import { logOrgAudit } from "@/server/services/org-audit.service";
+import { setMembershipCustomRoles } from "@/server/services/org-rbac.service";
+import { withApiTelemetry, getActiveTraceContext } from "@/server/telemetry/otel";
 
 type RouteContext = {
   params: Promise<{ membershipId: string }>;

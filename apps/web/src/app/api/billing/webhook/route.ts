@@ -1,15 +1,17 @@
-import { NextResponse } from "next/server";
-import type Stripe from "stripe";
 import {
   billingEventCreatedAt,
   extractBillingSubscriptionId,
   extractOrganizationId,
 } from "@billing-core";
-import { stripe } from "@/server/services/stripe.service";
+import { NextResponse } from "next/server";
+
+import type Stripe from "stripe";
+
 import { env } from "@/server/config/env";
-import { withApiTelemetry } from "@/server/telemetry/otel";
 import { BillingWebhookEventsRepo } from "@/server/db-repos/billing-webhook-events.repo";
 import { enqueueBillingWebhookProcess } from "@/server/jobs/queues";
+import { stripe } from "@/server/services/stripe.service";
+import { withApiTelemetry } from "@/server/telemetry/otel";
 
 function constructStripeEvent(
   s: ReturnType<typeof stripe>,

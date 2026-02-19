@@ -1,6 +1,7 @@
 "use client";
 
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
 
 type Point = { label: string; value: number };

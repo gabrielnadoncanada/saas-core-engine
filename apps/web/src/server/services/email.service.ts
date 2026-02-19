@@ -1,8 +1,10 @@
 import "server-only";
 
-import { Resend } from "resend";
-import type { EmailProvider, SendEmailInput } from "@email";
 import { EmailService } from "@email";
+import { Resend } from "resend";
+
+import type { EmailProvider, SendEmailInput } from "@email";
+
 import { env } from "@/server/config/env";
 
 class ResendProvider implements EmailProvider {
@@ -15,7 +17,7 @@ class ResendProvider implements EmailProvider {
   async send(input: SendEmailInput): Promise<void> {
     // Dev fallback: log email if not configured
     if (!this.client) {
-      // eslint-disable-next-line no-console
+       
       console.warn("[EMAIL DEV MODE]", {
         to: input.to,
         subject: input.subject,

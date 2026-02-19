@@ -1,4 +1,5 @@
 import Link from "next/link";
+
 import { Separator } from "@/shared/ui/shadcn/separator";
 
 export function DocsLayout(props: {

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+
+import { routes } from "@/shared/constants/routes";
 import { Button } from "@/shared/ui/shadcn/button";
 import { Input } from "@/shared/ui/shadcn/input";
 import { Separator } from "@/shared/ui/shadcn/separator";
 import { useToast } from "@/shared/ui/toast/use-toast";
-import { routes } from "@/shared/constants/routes";
 
 export function LoginForm() {
   const { push, ToastHost } = useToast();

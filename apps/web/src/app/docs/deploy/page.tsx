@@ -1,5 +1,5 @@
-import { DocsLayout } from "@/features/docs/ui/docs-layout";
 import { CodeBlock } from "@/features/docs/ui/code-block";
+import { DocsLayout } from "@/features/docs/ui/docs-layout";
 
 export default function DeployPage() {
   return (

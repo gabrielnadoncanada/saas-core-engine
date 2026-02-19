@@ -18,6 +18,8 @@ export default [
       "**/build/**",
       "**/coverage/**",
       "**/prisma/migrations/**",
+      "**/tailwind.config.ts",
+      "**/vitest.config.ts",
     ],
   },
 
@@ -34,7 +36,6 @@ export default [
       parserOptions: {
         // monorepo: ESLint TS type-aware
         project: [
-          "./tsconfig.json",
           "./apps/*/tsconfig.json",
           "./packages/*/tsconfig.json",
         ],

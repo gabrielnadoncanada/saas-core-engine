@@ -1,6 +1,6 @@
 import "server-only";
-import { requireUser } from "@/server/auth/require-user";
 import { AIPromptsPanel } from "@/features/ai-prompts/ui/ai-prompts-panel";
+import { requireUser } from "@/server/auth/require-user";
 
 export default async function AIPromptsPage() {
   await requireUser();

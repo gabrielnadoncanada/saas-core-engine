@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
 import { orgMemberRoleChangeBodySchema } from "@contracts";
+import { NextResponse } from "next/server";
+
+import { createMembershipService } from "@/server/adapters/core/org-core.adapter";
 import { orgErrorResponse } from "@/server/auth/org-error-response";
 import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
-import { createMembershipService } from "@/server/adapters/core/org-core.adapter";
 import { logOrgAudit } from "@/server/services/org-audit.service";
 import { withApiTelemetry } from "@/server/telemetry/otel";
 

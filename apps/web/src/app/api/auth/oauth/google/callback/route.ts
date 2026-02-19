@@ -1,12 +1,13 @@
-import { NextResponse } from "next/server";
 import { GoogleProvider, oidcNonceFromCodeVerifier } from "@auth-core";
-import { env } from "@/server/config/env";
+import { NextResponse } from "next/server";
+
 import { setSessionCookie } from "@/server/adapters/cookies/session-cookie.adapter";
 import {
   createOAuthLoginFlow,
   createOAuthStateService,
   createSessionService,
 } from "@/server/adapters/core/auth-core.adapter";
+import { env } from "@/server/config/env";
 import { withApiTelemetry } from "@/server/telemetry/otel";
 
 const google = new GoogleProvider(env.GOOGLE_OAUTH_CLIENT_ID);

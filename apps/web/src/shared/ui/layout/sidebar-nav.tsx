@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Badge } from "@/shared/ui/shadcn/badge";
-import { Separator } from "@/shared/ui/shadcn/separator";
-import { Button } from "@/shared/ui/shadcn/button";
+
 import { routes } from "@/shared/constants/routes";
+import { Badge } from "@/shared/ui/shadcn/badge";
+import { Button } from "@/shared/ui/shadcn/button";
+import { Separator } from "@/shared/ui/shadcn/separator";
 
 type NavItem = { href: string; label: string };
 

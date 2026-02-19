@@ -1,5 +1,5 @@
-import { AuthCard } from "@/shared/ui/auth/auth-card";
 import { ForgotPasswordForm } from "@/features/auth/ui/forgot-password-form";
+import { AuthCard } from "@/shared/ui/auth/auth-card";
 
 export default function ForgotPasswordPage() {
   return (

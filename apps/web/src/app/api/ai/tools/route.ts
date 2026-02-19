@@ -1,22 +1,21 @@
-import { z } from "zod";
 import { getRequestMeta, OpenAIProvider, estimateCost } from "@ai-core";
+import { executeToolWithContract } from "@ai-core";
 import { prisma } from "@db";
+import { z } from "zod";
 
-import { getSessionUser } from "@/server/auth/require-user";
-import { env } from "@/server/config/env";
-import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
 import {
   createAIEnforcementService,
   createAIPromptsService,
 } from "@/server/adapters/core/ai-core.adapter";
-import { buildToolRegistry } from "@/server/ai/tools";
-import { executeToolWithContract } from "@ai-core";
-
 import { DEFAULT_PROMPTS } from "@/server/ai/prompts/default-prompts";
+import { buildToolRegistry } from "@/server/ai/tools";
 import {
   redact,
   clampJsonSize,
 } from "@/server/ai/tools/telemetry";
+import { getSessionUser } from "@/server/auth/require-user";
+import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
+import { env } from "@/server/config/env";
 
 const BodySchema = z.object({
   prompt: z.string().min(3),

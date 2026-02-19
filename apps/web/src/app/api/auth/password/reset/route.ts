@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { env } from "@/server/config/env";
+
 import { setSessionCookie } from "@/server/adapters/cookies/session-cookie.adapter";
 import {
   createPasswordResetFlow,
   createSessionService,
 } from "@/server/adapters/core/auth-core.adapter";
 import { authErrorResponse } from "@/server/auth/auth-error-response";
+import { env } from "@/server/config/env";
 import { withApiTelemetry } from "@/server/telemetry/otel";
 
 type Body = { token: string; newPassword: string };

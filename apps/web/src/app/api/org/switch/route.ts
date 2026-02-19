@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
 import { orgSwitchBodySchema } from "@contracts";
 import { OrgCoreError } from "@org-core";
+import { NextResponse } from "next/server";
+
 import { createOrgService } from "@/server/adapters/core/org-core.adapter";
 import { orgErrorResponse } from "@/server/auth/org-error-response";
 import { withRequiredOrgScope } from "@/server/auth/with-org-scope";

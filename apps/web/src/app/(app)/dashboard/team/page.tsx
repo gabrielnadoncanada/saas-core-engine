@@ -1,13 +1,13 @@
 import "server-only";
 
-import { requireUser } from "@/server/auth/require-user";
-import { getDefaultOrgIdForUser } from "@/server/auth/require-org";
+import { InviteMemberForm } from "@/features/team/ui/invite-member-form";
+import { TeamMembersTable } from "@/features/team/ui/members-table";
 import {
   createInviteService,
   createMembershipService,
 } from "@/server/adapters/core/org-core.adapter";
-import { TeamMembersTable } from "@/features/team/ui/members-table";
-import { InviteMemberForm } from "@/features/team/ui/invite-member-form";
+import { getDefaultOrgIdForUser } from "@/server/auth/require-org";
+import { requireUser } from "@/server/auth/require-user";
 
 export default async function TeamPage() {
   const user = await requireUser();

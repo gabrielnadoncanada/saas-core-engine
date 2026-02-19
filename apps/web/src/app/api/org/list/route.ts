@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/server/auth/require-user";
+
 import { createOrgService } from "@/server/adapters/core/org-core.adapter";
+import { requireUser } from "@/server/auth/require-user";
 import { withApiTelemetry } from "@/server/telemetry/otel";
 
 export async function GET(req: Request) {

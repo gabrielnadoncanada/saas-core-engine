@@ -1,4 +1,5 @@
 import Link from "next/link";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
 
 export function AuthCard(props: {

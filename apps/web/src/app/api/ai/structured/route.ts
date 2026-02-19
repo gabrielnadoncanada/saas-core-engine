@@ -3,15 +3,15 @@ import { getRequestMeta } from "@ai-core";
 import { prisma } from "@db";
 import { z } from "zod";
 
-import { getSessionUser } from "@/server/auth/require-user";
-import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
-import { env } from "@/server/config/env";
 import {
   createAIEnforcementService,
   createAIPromptsService,
 } from "@/server/adapters/core/ai-core.adapter";
-
 import { DEFAULT_PROMPTS } from "@/server/ai/prompts/default-prompts";
+import { getSessionUser } from "@/server/auth/require-user";
+import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
+import { env } from "@/server/config/env";
+
 
 const BodySchema = z.object({
   text: z.string().min(10),

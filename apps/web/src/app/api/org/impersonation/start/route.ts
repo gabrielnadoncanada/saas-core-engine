@@ -1,12 +1,13 @@
-import { NextResponse } from "next/server";
 import { orgImpersonationStartBodySchema } from "@contracts";
 import { prisma } from "@db";
-import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
-import { withApiTelemetry, getActiveTraceContext } from "@/server/telemetry/otel";
-import { extractClientIp } from "@/server/http/request-ip";
-import { logOrgAudit } from "@/server/services/org-audit.service";
-import { startImpersonation } from "@/server/services/impersonation.service";
+import { NextResponse } from "next/server";
+
 import { setImpersonationCookie } from "@/server/adapters/cookies/session-cookie.adapter";
+import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
+import { extractClientIp } from "@/server/http/request-ip";
+import { startImpersonation } from "@/server/services/impersonation.service";
+import { logOrgAudit } from "@/server/services/org-audit.service";
+import { withApiTelemetry, getActiveTraceContext } from "@/server/telemetry/otel";
 
 export async function POST(req: Request) {
   return withApiTelemetry(req, "/api/org/impersonation/start", async () =>

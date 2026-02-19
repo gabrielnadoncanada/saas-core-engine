@@ -1,7 +1,8 @@
 import "server-only";
-import { z } from "zod";
-import type { AITool } from "@ai-core";
 import { prisma } from "@db";
+import { z } from "zod";
+
+import type { AITool } from "@ai-core";
 
 export const subscriptionGetTool: AITool = {
   name: "subscription.get",

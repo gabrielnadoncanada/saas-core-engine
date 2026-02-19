@@ -1,8 +1,10 @@
 import "server-only";
 
 import { randomBytes } from "node:crypto";
+
 import { hashToken } from "@auth-core";
 import { prisma } from "@db";
+
 import { env } from "@/server/config/env";
 
 function createOpaqueToken(): string {

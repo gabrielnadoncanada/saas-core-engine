@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
+
 import { Button } from "@/shared/ui/shadcn/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
 
 type ToolExec = { step: number; toolName: string; durationMs: number; status: "ok" | "error"; errorMessage?: string | null };
 
@@ -51,7 +52,6 @@ export function AIAuditPanel() {
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
   return (
@@ -67,7 +67,7 @@ export function AIAuditPanel() {
           <FilterButton active={status === "error"} onClick={() => setStatus("error")}>Error</FilterButton>
 
           <div className="ml-auto">
-            <Button variant="outline" className="rounded-2xl" onClick={load} disabled={loading}>
+            <Button variant="outline" className="rounded-2xl" onClick={() => { void load(); }} disabled={loading}>
               {loading ? "Loading…" : "Refresh"}
             </Button>
           </div>

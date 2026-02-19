@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
-import { Button } from "@/shared/ui/shadcn/button";
 import Link from "next/link";
-import { routes } from "@/shared/constants/routes";
+import { useEffect, useMemo, useState } from "react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
+
+import { routes } from "@/shared/constants/routes";
+import { Button } from "@/shared/ui/shadcn/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
+
 
 type DailyPoint = { day: string; tokens: number; costUsd: number };
 

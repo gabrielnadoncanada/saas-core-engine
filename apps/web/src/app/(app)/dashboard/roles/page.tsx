@@ -1,10 +1,11 @@
 import "server-only";
 
 import { prisma } from "@db";
-import { requireUser } from "@/server/auth/require-user";
-import { getDefaultOrgIdForUser } from "@/server/auth/require-org";
-import { listOrgRoles } from "@/server/services/org-rbac.service";
+
 import { RolesPermissionsPanel } from "@/features/rbac/ui/roles-permissions-panel";
+import { getDefaultOrgIdForUser } from "@/server/auth/require-org";
+import { requireUser } from "@/server/auth/require-user";
+import { listOrgRoles } from "@/server/services/org-rbac.service";
 
 export default async function RolesPage() {
   const user = await requireUser();

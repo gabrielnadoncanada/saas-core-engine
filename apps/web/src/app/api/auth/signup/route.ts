@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { env } from "@/server/config/env";
+
 import { setSessionCookie } from "@/server/adapters/cookies/session-cookie.adapter";
 import {
   createSessionService,
   createSignupFlow,
   createVerifyEmailFlow,
 } from "@/server/adapters/core/auth-core.adapter";
-import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
 import { authErrorResponse } from "@/server/auth/auth-error-response";
+import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
+import { env } from "@/server/config/env";
 import { getEmailService } from "@/server/services/email.service";
 import { absoluteUrl } from "@/server/services/url.service";
 import { withApiTelemetry } from "@/server/telemetry/otel";

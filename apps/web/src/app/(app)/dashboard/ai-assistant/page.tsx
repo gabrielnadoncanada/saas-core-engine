@@ -1,7 +1,7 @@
 import "server-only";
 
-import { requireUser } from "@/server/auth/require-user";
 import { AIChat } from "@/features/ai/ui/ai-chat";
+import { requireUser } from "@/server/auth/require-user";
 
 export default async function AIAssistantPage() {
   await requireUser();

@@ -1,18 +1,21 @@
-import type Stripe from "stripe";
 import {
   billingEventCreatedAt,
   extractBillingSubscriptionId,
   extractOrganizationId,
 } from "@billing-core";
-import { stripe } from "@/server/services/stripe.service";
-import { env } from "@/server/config/env";
+import { prisma } from "@db";
+
+import type Stripe from "stripe";
+
 import {
   createBillingWebhookOrchestrator,
   createSubscriptionSyncService,
 } from "@/server/adapters/core/billing-core.adapter";
 import { mapStripeSubscriptionToSnapshot } from "@/server/adapters/stripe/stripe-webhook.adapter";
+import { env } from "@/server/config/env";
 import { BillingWebhookEventsRepo } from "@/server/db-repos/billing-webhook-events.repo";
-import { prisma } from "@db";
+import { stripe } from "@/server/services/stripe.service";
+
 
 export async function processBillingWebhookEventById(eventId: string): Promise<"processed" | "ignored"> {
   const eventsRepo = new BillingWebhookEventsRepo();
@@ -40,7 +43,7 @@ export async function processBillingWebhookEventById(eventId: string): Promise<"
 
   switch (event.type) {
     case "checkout.session.completed": {
-      const session = event.data.object as Stripe.Checkout.Session;
+      const session = event.data.object;
       const orgId = session.metadata?.["organizationId"];
       const providerCustomerId = typeof session.customer === "string" ? session.customer : null;
       const subId = typeof session.subscription === "string" ? session.subscription : null;
@@ -71,7 +74,7 @@ export async function processBillingWebhookEventById(eventId: string): Promise<"
     }
     case "customer.subscription.updated":
     case "customer.subscription.created": {
-      const sub = event.data.object as Stripe.Subscription;
+      const sub = event.data.object;
       const orgId = sub.metadata?.["organizationId"];
       const providerCustomerId = typeof sub.customer === "string" ? sub.customer : null;
       if (orgId) {
@@ -85,7 +88,7 @@ export async function processBillingWebhookEventById(eventId: string): Promise<"
       break;
     }
     case "customer.subscription.deleted": {
-      const sub = event.data.object as Stripe.Subscription;
+      const sub = event.data.object;
       await sync.markCanceled({ providerSubscriptionId: sub.id });
       break;
     }

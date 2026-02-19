@@ -1,7 +1,8 @@
 import { OrgCoreError } from "@org-core";
 import { NextResponse } from "next/server";
-import { requireUser } from "@/server/auth/require-user";
+
 import { createInviteService } from "@/server/adapters/core/org-core.adapter";
+import { requireUser } from "@/server/auth/require-user";
 import { logOrgAudit } from "@/server/services/org-audit.service";
 import { withApiTelemetry } from "@/server/telemetry/otel";
 

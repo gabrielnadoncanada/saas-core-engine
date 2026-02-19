@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { shouldIgnoreOutOfOrderEvent } from "@billing-core";
+import { describe, expect, it } from "vitest";
 
 describe("shouldIgnoreOutOfOrderEvent", () => {
   it("returns false when there is no cursor", () => {

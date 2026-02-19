@@ -1,5 +1,5 @@
-import type Stripe from "stripe";
 import type { BillingProviderSubscriptionSnapshot } from "@contracts";
+import type Stripe from "stripe";
 
 export function mapStripeSubscriptionToSnapshot(
   sub: Stripe.Subscription,

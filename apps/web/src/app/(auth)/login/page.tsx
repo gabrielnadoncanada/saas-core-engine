@@ -1,5 +1,5 @@
-import { AuthCard } from "@/shared/ui/auth/auth-card";
 import { LoginForm } from "@/features/auth/ui/login-form";
+import { AuthCard } from "@/shared/ui/auth/auth-card";
 
 export default function LoginPage() {
   return (

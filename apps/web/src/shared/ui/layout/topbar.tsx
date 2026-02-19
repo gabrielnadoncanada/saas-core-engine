@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ThemeToggle } from "@/shared/ui/theme/theme-toggle";
+import { useEffect, useState } from "react";
+
 import { routes } from "@/shared/constants/routes";
-import { Button } from "@/shared/ui/shadcn/button";
 import { OrgSwitcher } from "@/shared/ui/layout/org-switcher";
+import { Button } from "@/shared/ui/shadcn/button";
+import { ThemeToggle } from "@/shared/ui/theme/theme-toggle";
 
 export function Topbar(props: { title: string }) {
   const [me, setMe] = useState<{

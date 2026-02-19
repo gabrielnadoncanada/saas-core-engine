@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { createVerifyEmailFlow } from "@/server/adapters/core/auth-core.adapter";
 import { absoluteUrl } from "@/server/services/url.service";
 

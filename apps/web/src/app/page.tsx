@@ -1,8 +1,9 @@
 import Link from "next/link";
+
+import { routes } from "@/shared/constants/routes";
 import { Button } from "@/shared/ui/shadcn/button";
 import { Card, CardContent } from "@/shared/ui/shadcn/card";
 import { Separator } from "@/shared/ui/shadcn/separator";
-import { routes } from "@/shared/constants/routes";
 
 export default function HomePage() {
   return (

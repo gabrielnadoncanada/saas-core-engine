@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { withApiTelemetry, getActiveTraceContext } from "@/server/telemetry/otel";
+
 import { getImpersonationTokenFromCookie, clearImpersonationCookie } from "@/server/adapters/cookies/session-cookie.adapter";
+import { requireUser } from "@/server/auth/require-user";
+import { extractClientIp } from "@/server/http/request-ip";
 import { stopImpersonation } from "@/server/services/impersonation.service";
 import { logOrgAudit } from "@/server/services/org-audit.service";
-import { extractClientIp } from "@/server/http/request-ip";
-import { requireUser } from "@/server/auth/require-user";
+import { withApiTelemetry, getActiveTraceContext } from "@/server/telemetry/otel";
 
 export async function POST(req: Request) {
   return withApiTelemetry(req, "/api/org/impersonation/stop", async () => {

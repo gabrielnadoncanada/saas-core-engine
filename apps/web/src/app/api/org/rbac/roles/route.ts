@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
 import { orgRoleCreateBodySchema } from "@contracts";
+import { NextResponse } from "next/server";
+
 import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
-import { withApiTelemetry } from "@/server/telemetry/otel";
-import { createOrgRole, listOrgRoles } from "@/server/services/org-rbac.service";
-import { logOrgAudit } from "@/server/services/org-audit.service";
 import { extractClientIp } from "@/server/http/request-ip";
+import { logOrgAudit } from "@/server/services/org-audit.service";
+import { createOrgRole, listOrgRoles } from "@/server/services/org-rbac.service";
+import { withApiTelemetry } from "@/server/telemetry/otel";
 import { getActiveTraceContext } from "@/server/telemetry/otel";
 
 export async function GET(req: Request) {

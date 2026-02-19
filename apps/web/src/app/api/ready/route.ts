@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@db";
+import { NextResponse } from "next/server";
+
 import { env } from "@/server/config/env";
-import { logError, logInfo } from "@/server/logging/logger";
 import { getOrCreateRequestId, withRequestId } from "@/server/http/request-context";
+import { logError, logInfo } from "@/server/logging/logger";
 import { withApiTelemetry } from "@/server/telemetry/otel";
 
 type ReadinessState = "ok" | "error";

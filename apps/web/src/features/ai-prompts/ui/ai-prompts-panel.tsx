@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
+
 import { Button } from "@/shared/ui/shadcn/button";
-import { Textarea } from "@/shared/ui/shadcn/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
 import { Separator } from "@/shared/ui/shadcn/separator";
+import { Textarea } from "@/shared/ui/shadcn/textarea";
 
 type Version = { id: string; version: number; content: string; createdAt: string; createdById?: string | null };
 
@@ -18,7 +19,7 @@ export function AIPromptsPanel() {
 
   async function loadKeys() {
     const res = await fetch("/api/ai/prompts");
-    const json = (await res.json()) as any;
+    const json = (await res.json());
     setKeys(json.keys ?? ["chat.system"]);
   }
 
@@ -27,7 +28,7 @@ export function AIPromptsPanel() {
     url.searchParams.set("key", k);
 
     const res = await fetch(url.toString());
-    const json = (await res.json()) as any;
+    const json = (await res.json());
 
     setActiveVersion(json.activeVersion ?? 1);
     setVersions((json.versions ?? []) as Version[]);

@@ -1,5 +1,6 @@
-import type { Organization } from "@prisma/client";
 import { prisma, type DbTx } from "@db";
+
+import type { Organization } from "@prisma/client";
 
 const db = (tx?: DbTx) => tx ?? prisma;
 

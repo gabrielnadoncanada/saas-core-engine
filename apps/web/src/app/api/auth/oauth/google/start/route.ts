@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
 import { codeChallengeS256, oidcNonceFromCodeVerifier } from "@auth-core";
+import { NextResponse } from "next/server";
+
 import { createOAuthStateService } from "@/server/adapters/core/auth-core.adapter";
-import { env } from "@/server/config/env";
-import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
 import { authErrorResponse } from "@/server/auth/auth-error-response";
+import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
+import { env } from "@/server/config/env";
 import { withApiTelemetry } from "@/server/telemetry/otel";
 
 function safeRedirectPath(input: string | null): string {

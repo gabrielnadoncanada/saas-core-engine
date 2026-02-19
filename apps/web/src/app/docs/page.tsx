@@ -1,5 +1,5 @@
-import { DocsLayout } from "@/features/docs/ui/docs-layout";
 import { DocCard } from "@/features/docs/ui/doc-card";
+import { DocsLayout } from "@/features/docs/ui/docs-layout";
 
 export default function DocsIndexPage() {
   return (

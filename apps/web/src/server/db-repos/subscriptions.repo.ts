@@ -1,9 +1,10 @@
+import { prisma, type DbTx } from "@db";
+
 import type {
   Subscription,
   SubscriptionPlan,
   SubscriptionStatus,
 } from "@prisma/client";
-import { prisma, type DbTx } from "@db";
 
 const db = (tx?: DbTx) => tx ?? prisma;
 

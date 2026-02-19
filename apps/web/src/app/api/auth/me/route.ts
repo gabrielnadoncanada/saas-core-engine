@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { getSessionUser } from "@/server/auth/require-user";
 
 export async function GET() {

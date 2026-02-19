@@ -1,7 +1,9 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+
 import type { CreateSessionResult } from "@auth-core";
+
 import { env } from "@/server/config/env";
 
 const IMPERSONATION_COOKIE_NAME = `${env.SESSION_COOKIE_NAME}_imp`;

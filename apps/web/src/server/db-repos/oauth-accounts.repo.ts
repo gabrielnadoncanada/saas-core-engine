@@ -1,5 +1,6 @@
-import type { OAuthAccount, OAuthProvider } from "@prisma/client";
 import { prisma, type DbTx } from "@db";
+
+import type { OAuthAccount, OAuthProvider } from "@prisma/client";
 
 const db = (tx?: DbTx) => tx ?? prisma;
 

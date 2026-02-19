@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { OrgCoreError } from "@org-core";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const changeMemberRole = vi.fn();
 const logOrgAudit = vi.fn();

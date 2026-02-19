@@ -1,15 +1,16 @@
-import { z } from "zod";
 import { getRequestMeta, OpenAIProvider } from "@ai-core";
 import { estimateCost } from "@ai-core";
 import { prisma } from "@db";
-import { env } from "@/server/config/env";
-import { getSessionUser } from "@/server/auth/require-user";
-import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
-import { DEFAULT_PROMPTS } from "@/server/ai/prompts/default-prompts";
+import { z } from "zod";
+
 import {
   createAIEnforcementService,
   createAIPromptsService,
 } from "@/server/adapters/core/ai-core.adapter";
+import { DEFAULT_PROMPTS } from "@/server/ai/prompts/default-prompts";
+import { getSessionUser } from "@/server/auth/require-user";
+import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
+import { env } from "@/server/config/env";
 
 const MessageSchema = z.object({
   role: z.enum(["user", "assistant"]),

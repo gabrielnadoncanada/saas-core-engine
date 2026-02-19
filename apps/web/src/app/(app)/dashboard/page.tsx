@@ -2,12 +2,13 @@ import "server-only";
 
 import { prisma } from "@db";
 import Link from "next/link";
-import { requireUser } from "@/server/auth/require-user";
-import { getDefaultOrgIdForUser } from "@/server/auth/require-org";
-import { routes } from "@/shared/constants/routes";
-import { MetricsChart } from "@/features/dashboard/ui/metrics-chart";
+
 import { ActivityFeed } from "@/features/dashboard/ui/activity-feed";
+import { MetricsChart } from "@/features/dashboard/ui/metrics-chart";
+import { getDefaultOrgIdForUser } from "@/server/auth/require-org";
+import { requireUser } from "@/server/auth/require-user";
 import { env } from "@/server/config/env";
+import { routes } from "@/shared/constants/routes";
 
 export default async function DashboardHomePage() {
   const sessionUser = await requireUser();

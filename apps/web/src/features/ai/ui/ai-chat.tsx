@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+
 import { Button } from "@/shared/ui/shadcn/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
 import { Input } from "@/shared/ui/shadcn/input";
@@ -65,7 +66,7 @@ export function AIChat() {
         const line = part.split("\n").find((l) => l.startsWith("data: "));
         if (!line) continue;
 
-        const data = JSON.parse(line.slice(6)) as any;
+        const data = JSON.parse(line.slice(6));
 
         if (data.type === "delta") {
           assistant += data.text;

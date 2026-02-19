@@ -1,7 +1,9 @@
 import "server-only";
 
-import type { MembershipRole } from "@contracts";
 import { prisma } from "@db";
+
+import type { MembershipRole } from "@contracts";
+
 import { requireUser } from "@/server/auth/require-user";
 
 export type OrgContext = {

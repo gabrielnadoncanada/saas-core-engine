@@ -1,8 +1,11 @@
 import { prisma } from "@db";
+
 import type {
   BillingWebhookEventsRepo as BillingWebhookEventsRepoPort,
   BillingWebhookEnvelope,
 } from "@billing-core";
+import type { Prisma } from "@prisma/client";
+
 
 function isUniqueConstraintViolation(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
@@ -32,7 +35,7 @@ export class BillingWebhookEventsRepo implements BillingWebhookEventsRepoPort {
           organizationId: event.organizationId,
           providerSubscriptionId: event.providerSubscriptionId,
           status: "received",
-          payload: payload as any,
+          payload: payload as Prisma.InputJsonValue,
         },
       });
       return "created";

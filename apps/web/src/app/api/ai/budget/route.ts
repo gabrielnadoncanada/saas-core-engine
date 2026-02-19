@@ -1,9 +1,10 @@
+import { AI_POLICY, normalizePlan } from "@ai-core";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { AI_POLICY, normalizePlan } from "@ai-core";
+
+import { createAIUsageService } from "@/server/adapters/core/ai-core.adapter";
 import { getSessionUser } from "@/server/auth/require-user";
 import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
-import { createAIUsageService } from "@/server/adapters/core/ai-core.adapter";
 import { AIBudgetsRepo } from "@/server/db-repos/ai-budgets.repo";
 
 const BodySchema = z.object({

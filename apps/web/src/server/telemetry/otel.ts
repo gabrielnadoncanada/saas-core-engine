@@ -1,4 +1,5 @@
 import { performance } from "node:perf_hooks";
+
 import {
   context,
   metrics,
@@ -19,6 +20,7 @@ import {
   PeriodicExportingMetricReader,
 } from "@opentelemetry/sdk-metrics";
 import { BatchSpanProcessor, NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+
 import { env } from "@/server/config/env";
 
 let initialized = false;

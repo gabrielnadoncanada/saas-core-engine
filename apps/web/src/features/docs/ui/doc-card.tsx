@@ -1,4 +1,5 @@
 import Link from "next/link";
+
 import { Card, CardContent } from "@/shared/ui/shadcn/card";
 
 export function DocCard(props: { title: string; desc: string; href: string }) {

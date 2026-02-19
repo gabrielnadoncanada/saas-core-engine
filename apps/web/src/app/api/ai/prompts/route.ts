@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+
+import { createAIPromptsService } from "@/server/adapters/core/ai-core.adapter";
+import { DEFAULT_PROMPTS } from "@/server/ai/prompts/default-prompts";
 import { getSessionUser } from "@/server/auth/require-user";
 import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
-import { DEFAULT_PROMPTS } from "@/server/ai/prompts/default-prompts";
-import { createAIPromptsService } from "@/server/adapters/core/ai-core.adapter";
 
 export async function GET(req: Request) {
   const user = await getSessionUser();

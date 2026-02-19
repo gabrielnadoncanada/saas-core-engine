@@ -1,8 +1,9 @@
 import "server-only";
 
 import { prisma } from "@db";
-import { getDefaultOrgIdForUser } from "@/server/auth/require-org";
+
 import { BillingActions } from "@/features/billing/ui/billing-actions";
+import { getDefaultOrgIdForUser } from "@/server/auth/require-org";
 
 export default async function BillingPage() {
   const orgId = await getDefaultOrgIdForUser();

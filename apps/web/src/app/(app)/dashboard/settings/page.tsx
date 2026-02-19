@@ -1,8 +1,9 @@
 import "server-only";
 
 import { prisma } from "@db";
-import { requireUser } from "@/server/auth/require-user";
+
 import { SecurityActions } from "@/features/settings/ui/security-actions";
+import { requireUser } from "@/server/auth/require-user";
 
 export default async function SettingsPage() {
   const sessionUser = await requireUser();
