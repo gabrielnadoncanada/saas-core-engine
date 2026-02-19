@@ -1,13 +1,31 @@
+import { ThemeProvider } from "@/shared/components/ThemeProvider";
 import "./globals.css";
-import { ThemeScript } from "@/shared/ui/theme/theme-script";
+import { Toaster } from "@/shared/components/ui/sonner";
+import { Plus_Jakarta_Sans } from "next/font/google";
 
-export default function RootLayout(props: { children: React.ReactNode }) {
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta-sans",
+});
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en">
-      <head>
-        <ThemeScript />
-      </head>
-      <body>{props.children}</body>
+    <html lang="fr-CA" suppressHydrationWarning>
+      <body className={plusJakartaSans.className}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster />
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

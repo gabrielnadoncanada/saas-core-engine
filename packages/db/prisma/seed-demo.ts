@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { hashPassword } from "@auth-core";
+import { hashPassword } from "../../auth-core/src/index";
 
 const prisma = new PrismaClient();
 
@@ -22,20 +22,30 @@ async function main() {
     data: { email: "teammate@saastemplate.dev", passwordHash },
   });
 
-  const org = await prisma.organization.create({
+  const primaryOrg = await prisma.organization.create({
     data: { name: "Demo Workspace" },
+  });
+
+  const secondaryOrg = await prisma.organization.create({
+    data: { name: "Client Sandbox" },
   });
 
   await prisma.membership.createMany({
     data: [
-      { userId: owner.id, organizationId: org.id, role: "owner" },
-      { userId: member.id, organizationId: org.id, role: "member" },
+      { userId: owner.id, organizationId: primaryOrg.id, role: "owner" },
+      { userId: owner.id, organizationId: secondaryOrg.id, role: "admin" },
+      { userId: member.id, organizationId: primaryOrg.id, role: "member" },
     ],
+  });
+
+  await prisma.user.update({
+    where: { id: owner.id },
+    data: { activeOrganizationId: primaryOrg.id },
   });
 
   await prisma.subscription.create({
     data: {
-      organizationId: org.id,
+      organizationId: primaryOrg.id,
       plan: "pro",
       status: "active",
       providerCustomerId: "cus_demo",
@@ -67,7 +77,10 @@ async function main() {
     ],
   });
 
-  console.log("✅ Demo seed complete");
+  console.log("Demo seed complete");
+  console.log("Organizations:");
+  console.log(`- ${primaryOrg.name} (${primaryOrg.id})`);
+  console.log(`- ${secondaryOrg.name} (${secondaryOrg.id})`);
   console.log("Login: demo@saastemplate.dev / DemoPassw0rd!");
 }
 

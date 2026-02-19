@@ -5,7 +5,6 @@ const startImpersonation = vi.fn();
 const setImpersonationCookie = vi.fn();
 const logOrgAudit = vi.fn();
 const extractClientIp = vi.fn();
-const findUnique = vi.fn();
 
 vi.mock("@/server/auth/with-org-scope", () => ({
   withRequiredOrgScope,
@@ -33,14 +32,6 @@ vi.mock("@/server/telemetry/otel", () => ({
   getActiveTraceContext: () => ({ traceId: "trace-1", spanId: "span-1" }),
 }));
 
-vi.mock("@db", () => ({
-  prisma: {
-    membership: {
-      findUnique,
-    },
-  },
-}));
-
 describe("POST /api/org/impersonation/start", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -52,6 +43,7 @@ describe("POST /api/org/impersonation/start", () => {
     startImpersonation.mockResolvedValue({
       token: "tok-1",
       session: { id: "imp-1" },
+      target: { userId: "member-1", role: "member" },
     });
   });
 
@@ -68,7 +60,12 @@ describe("POST /api/org/impersonation/start", () => {
   });
 
   it("blocks owner impersonation", async () => {
-    findUnique.mockResolvedValueOnce({ userId: "owner-1", role: "owner" });
+    const { OrgCoreError } = await import("@org-core");
+    startImpersonation.mockRejectedValueOnce(
+      new OrgCoreError("forbidden", "blocked", {
+        reason: "target_owner_blocked",
+      }),
+    );
 
     const { POST } = await import("./route");
     const res = await POST(
@@ -90,8 +87,6 @@ describe("POST /api/org/impersonation/start", () => {
   });
 
   it("starts impersonation and sets cookie", async () => {
-    findUnique.mockResolvedValueOnce({ userId: "member-1", role: "member" });
-
     const { POST } = await import("./route");
     const res = await POST(
       new Request("http://localhost/api/org/impersonation/start", {

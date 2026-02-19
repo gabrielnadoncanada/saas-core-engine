@@ -14,7 +14,7 @@ import {
 } from "@opentelemetry/api";
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import Resources from "@opentelemetry/resources";
+import { resourceFromAttributes } from "@opentelemetry/resources";
 import {
   MeterProvider,
   PeriodicExportingMetricReader,
@@ -38,7 +38,7 @@ function ensureTelemetryInitialized(): void {
   if (!env.OTEL_ENABLED || !env.OTEL_EXPORTER_OTLP_ENDPOINT) return;
 
   const baseUrl = trimSlash(env.OTEL_EXPORTER_OTLP_ENDPOINT);
-  const resource = Resources.resourceFromAttributes({
+  const resource = resourceFromAttributes({
     "service.name": env.APP_NAME,
     "service.namespace": "saas-core-engine",
     "deployment.environment": env.NODE_ENV,

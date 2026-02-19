@@ -1,4 +1,4 @@
-import { codeChallengeS256 } from "@auth-core";
+import { codeChallengeS256, safeRedirectPath } from "@auth-core";
 import { NextResponse } from "next/server";
 
 import { createOAuthStateService } from "@/server/adapters/core/auth-core.adapter";
@@ -6,16 +6,6 @@ import { authErrorResponse } from "@/server/auth/auth-error-response";
 import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
 import { env } from "@/server/config/env";
 import { withApiTelemetry } from "@/server/telemetry/otel";
-
-function safeRedirectPath(input: string | null): string {
-  if (!input) return "/dashboard";
-  if (!input.startsWith("/")) return "/dashboard";
-  if (input.startsWith("//")) return "/dashboard";
-  if (input.includes("..")) return "/dashboard";
-  if (input.includes("\\")) return "/dashboard";
-  if (input.includes("http://") || input.includes("https://")) return "/dashboard";
-  return input;
-}
 
 export async function GET(req: Request) {
   return withApiTelemetry(req, "/api/auth/oauth/github/start", async () => {

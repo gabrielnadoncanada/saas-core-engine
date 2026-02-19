@@ -10,24 +10,44 @@ export function InviteMemberForm() {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "member">("member");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setErrorMessage("Email is required");
+      setStatus("error");
+      return;
+    }
+
+    setErrorMessage("");
     setStatus("loading");
 
     try {
       const res = await fetch("/api/org/invite", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email, role }),
+        body: JSON.stringify({ email: trimmedEmail, role }),
       });
 
-      if (!res.ok) throw new Error("Invite failed");
+      const text = await res.text();
+      let errorFromApi: string | undefined;
+      if (text) {
+        try {
+          errorFromApi = (JSON.parse(text) as { error?: string }).error;
+        } catch {
+          // Ignore non-JSON responses and fall back to a generic message.
+        }
+      }
+      if (!res.ok) throw new Error(errorFromApi ?? "Invite failed");
 
       setEmail("");
       setRole("member");
       setStatus("done");
-    } catch {
+      setErrorMessage("");
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "Invite failed");
       setStatus("error");
     }
   }
@@ -45,6 +65,8 @@ export function InviteMemberForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="teammate@company.com"
+          type="email"
+          autoComplete="email"
           style={input}
         />
       </div>
@@ -57,12 +79,12 @@ export function InviteMemberForm() {
         </select>
       </div>
 
-      <button type="submit" style={button} disabled={status === "loading"}>
+      <button type="submit" style={button} disabled={status === "loading" || !email.trim()}>
         {status === "loading" ? "Sending..." : "Invite"}
       </button>
 
       {status === "done" && <span style={{ color: "green" }}>Sent ✅</span>}
-      {status === "error" && <span style={{ color: "crimson" }}>Error</span>}
+      {status === "error" && <span style={{ color: "crimson" }}>{errorMessage || "Error"}</span>}
     </form>
   );
 }

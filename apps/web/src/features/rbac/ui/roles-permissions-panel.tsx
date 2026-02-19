@@ -24,6 +24,173 @@ type Member = {
   customRoleIds: string[];
 };
 
+type PermissionOption = {
+  key: string;
+  action: string;
+  resource: string;
+  label: string;
+  description: string;
+};
+
+type PermissionGroup = {
+  title: string;
+  items: PermissionOption[];
+};
+
+const PERMISSION_GROUPS: PermissionGroup[] = [
+  {
+    title: "Organization",
+    items: [
+      {
+        key: "org:create:organization",
+        action: "org:create",
+        resource: "organization",
+        label: "Create org",
+        description: "Create organizations",
+      },
+      {
+        key: "org:list:organization",
+        action: "org:list",
+        resource: "organization",
+        label: "List orgs",
+        description: "List user organizations",
+      },
+      {
+        key: "org:switch:organization",
+        action: "org:switch",
+        resource: "organization",
+        label: "Switch org",
+        description: "Switch active organization",
+      },
+      {
+        key: "org:invite:create:invitation",
+        action: "org:invite:create",
+        resource: "invitation",
+        label: "Invite members",
+        description: "Create invitations",
+      },
+      {
+        key: "org:member:role:change:membership",
+        action: "org:member:role:change",
+        resource: "membership",
+        label: "Change member role",
+        description: "Promote or demote members",
+      },
+      {
+        key: "org:member:remove:membership",
+        action: "org:member:remove",
+        resource: "membership",
+        label: "Remove members",
+        description: "Remove user from org",
+      },
+      {
+        key: "org:member:transfer_ownership:membership",
+        action: "org:member:transfer_ownership",
+        resource: "membership",
+        label: "Transfer ownership",
+        description: "Transfer owner role",
+      },
+      {
+        key: "org:rbac:manage:role",
+        action: "org:rbac:manage",
+        resource: "role",
+        label: "Manage RBAC",
+        description: "Manage roles and permissions",
+      },
+      {
+        key: "org:audit:read:audit",
+        action: "org:audit:read",
+        resource: "audit",
+        label: "Read audit",
+        description: "View audit logs",
+      },
+      {
+        key: "org:audit:export:audit",
+        action: "org:audit:export",
+        resource: "audit",
+        label: "Export audit",
+        description: "Export audit logs",
+      },
+      {
+        key: "org:impersonation:start:impersonation",
+        action: "org:impersonation:start",
+        resource: "impersonation",
+        label: "Start impersonation",
+        description: "Start impersonating a member",
+      },
+      {
+        key: "org:impersonation:stop:impersonation",
+        action: "org:impersonation:stop",
+        resource: "impersonation",
+        label: "Stop impersonation",
+        description: "Stop active impersonation",
+      },
+    ],
+  },
+  {
+    title: "AI",
+    items: [
+      {
+        key: "ai:assistant:use:ai",
+        action: "ai:assistant:use",
+        resource: "ai",
+        label: "Use assistant",
+        description: "Access AI assistant/chat",
+      },
+      {
+        key: "ai:tools:execute:ai",
+        action: "ai:tools:execute",
+        resource: "ai",
+        label: "Execute tools",
+        description: "Run AI tools",
+      },
+      {
+        key: "ai:usage:read:ai",
+        action: "ai:usage:read",
+        resource: "ai",
+        label: "Read usage",
+        description: "View AI usage metrics",
+      },
+      {
+        key: "ai:audit:read:ai",
+        action: "ai:audit:read",
+        resource: "ai",
+        label: "Read AI audit",
+        description: "View AI audit logs",
+      },
+      {
+        key: "ai:prompts:manage:ai",
+        action: "ai:prompts:manage",
+        resource: "ai",
+        label: "Manage prompts",
+        description: "Create/edit prompt templates",
+      },
+    ],
+  },
+];
+
+const KNOWN_PERMISSION_KEYS = new Set(
+  PERMISSION_GROUPS.flatMap((group) => group.items.map((item) => item.key)),
+);
+
+function parsePermissionKey(key: string): { action: string; resource: string } | null {
+  const idx = key.lastIndexOf(":");
+  if (idx <= 0 || idx >= key.length - 1) return null;
+  return {
+    action: key.slice(0, idx),
+    resource: key.slice(idx + 1),
+  };
+}
+
+function buildPermissionState(roles: Role[]): Record<string, string[]> {
+  return Object.fromEntries(
+    roles.map((role) => [
+      role.id,
+      role.rolePermissions.map((entry) => `${entry.permission.action}:${entry.permission.resource}`),
+    ]),
+  );
+}
+
 export function RolesPermissionsPanel(props: {
   roles: Role[];
   members: Member[];
@@ -34,15 +201,8 @@ export function RolesPermissionsPanel(props: {
   const [busy, setBusy] = useState<string | null>(null);
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleDescription, setNewRoleDescription] = useState("");
-  const [permissionDraft, setPermissionDraft] = useState<Record<string, string>>(
-    Object.fromEntries(
-      props.roles.map((role) => [
-        role.id,
-        role.rolePermissions
-          .map((entry) => `${entry.permission.action}:${entry.permission.resource}`)
-          .join("\n"),
-      ]),
-    ),
+  const [permissionDraft, setPermissionDraft] = useState<Record<string, string[]>>(
+    buildPermissionState(props.roles),
   );
 
   const current = useMemo(
@@ -76,24 +236,24 @@ export function RolesPermissionsPanel(props: {
     }
   }
 
+  function setPermissionChecked(roleId: string, permissionKey: string, checked: boolean) {
+    setPermissionDraft((prev) => {
+      const currentKeys = new Set(prev[roleId] ?? []);
+      if (checked) currentKeys.add(permissionKey);
+      else currentKeys.delete(permissionKey);
+      return {
+        ...prev,
+        [roleId]: Array.from(currentKeys),
+      };
+    });
+  }
+
   async function saveRolePermissions(roleId: string) {
     setError(null);
     setBusy(`perm:${roleId}`);
     try {
-      const lines = (permissionDraft[roleId] ?? "")
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
-
-      const permissions = lines
-        .map((line) => {
-          const [action, resource] = line.split(":");
-          if (!action || !resource) return null;
-          return {
-            action: action.trim(),
-            resource: resource.trim(),
-          };
-        })
+      const permissions = (permissionDraft[roleId] ?? [])
+        .map((key) => parsePermissionKey(key))
         .filter(Boolean) as Array<{ action: string; resource: string }>;
 
       const res = await fetch(`/api/org/rbac/roles/${roleId}/permissions`, {
@@ -163,7 +323,7 @@ export function RolesPermissionsPanel(props: {
       <section style={{ border: "1px solid #e9e9e9", borderRadius: 12, padding: 16 }}>
         <h2 style={{ margin: 0, fontSize: 18 }}>Custom roles</h2>
         <p style={{ marginTop: 8, color: "#666" }}>
-          Define org-level role bundles and attach permissions as action:resource.
+          Create roles, then toggle permissions in the matrix below.
         </p>
 
         {canManage ? (
@@ -194,38 +354,70 @@ export function RolesPermissionsPanel(props: {
 
         <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
           {props.roles.length === 0 ? <div style={{ color: "#666" }}>No custom roles yet.</div> : null}
-          {props.roles.map((role) => (
-            <article key={role.id} style={{ border: "1px solid #eee", borderRadius: 10, padding: 12 }}>
-              <div style={{ fontWeight: 700 }}>{role.name}</div>
-              <div style={{ color: "#666", fontSize: 12 }}>{role.key}</div>
-              {role.description ? <div style={{ marginTop: 4 }}>{role.description}</div> : null}
+          {props.roles.map((role) => {
+            const selectedKeys = new Set(permissionDraft[role.id] ?? []);
+            const unknownKeys = (permissionDraft[role.id] ?? []).filter((key) => !KNOWN_PERMISSION_KEYS.has(key));
 
-              <textarea
-                value={permissionDraft[role.id] ?? ""}
-                onChange={(event) =>
-                  setPermissionDraft((prev) => ({
-                    ...prev,
-                    [role.id]: event.target.value,
-                  }))
-                }
-                rows={6}
-                style={{ ...input, marginTop: 10, fontFamily: "monospace" }}
-                disabled={!canManage}
-              />
+            return (
+              <article key={role.id} style={{ border: "1px solid #eee", borderRadius: 10, padding: 12 }}>
+                <div style={{ fontWeight: 700 }}>{role.name}</div>
+                <div style={{ color: "#666", fontSize: 12 }}>{role.key}</div>
+                {role.description ? <div style={{ marginTop: 4 }}>{role.description}</div> : null}
 
-              {canManage ? (
-                <button
-                  style={{ ...btnPrimary, marginTop: 8 }}
-                  disabled={busy === `perm:${role.id}`}
-                  onClick={() => {
-                    void saveRolePermissions(role.id);
-                  }}
-                >
-                  Save permissions
-                </button>
-              ) : null}
-            </article>
-          ))}
+                <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+                  {PERMISSION_GROUPS.map((group) => (
+                    <div key={group.title} style={{ border: "1px solid #f0f0f0", borderRadius: 10, padding: 10 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>{group.title}</div>
+                      <div style={{ display: "grid", gap: 8 }}>
+                        {group.items.map((item) => (
+                          <label
+                            key={item.key}
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "18px 1fr",
+                              gap: 8,
+                              alignItems: "start",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedKeys.has(item.key)}
+                              disabled={!canManage}
+                              onChange={(event) => {
+                                setPermissionChecked(role.id, item.key, event.target.checked);
+                              }}
+                            />
+                            <span style={{ fontSize: 13 }}>
+                              <strong>{item.label}</strong>
+                              <span style={{ color: "#666", marginLeft: 6 }}>{item.description}</span>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {unknownKeys.length > 0 ? (
+                  <div style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
+                    Unknown permissions preserved: {unknownKeys.join(", ")}
+                  </div>
+                ) : null}
+
+                {canManage ? (
+                  <button
+                    style={{ ...btnPrimary, marginTop: 12 }}
+                    disabled={busy === `perm:${role.id}`}
+                    onClick={() => {
+                      void saveRolePermissions(role.id);
+                    }}
+                  >
+                    Save permissions
+                  </button>
+                ) : null}
+              </article>
+            );
+          })}
         </div>
       </section>
 

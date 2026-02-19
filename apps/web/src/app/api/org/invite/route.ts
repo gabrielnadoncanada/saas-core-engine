@@ -20,6 +20,7 @@ import { getEmailService } from "@/server/services/email.service";
 import { logOrgAudit } from "@/server/services/org-audit.service";
 import { absoluteUrl } from "@/server/services/url.service";
 import { getActiveTraceContext, withApiTelemetry } from "@/server/telemetry/otel";
+import { env } from "@/server/config/env";
 
 export async function POST(req: Request) {
   return withApiTelemetry(req, "/api/org/invite", async () => {
@@ -117,8 +118,27 @@ export async function POST(req: Request) {
               if (!(error instanceof Error) || error.message !== "QUEUE_DISABLED") {
                 throw error;
               }
-              const mail = getEmailService();
-              await mail.sendOrgInvite(email, acceptUrl, organization?.name ?? undefined);
+              try {
+                const mail = getEmailService();
+                await mail.sendOrgInvite(email, acceptUrl, organization?.name ?? undefined);
+              } catch (emailError) {
+                if (!env.DEMO_MODE && env.NODE_ENV === "production") {
+                  throw emailError;
+                }
+
+                logWarn("org.invite.email_delivery_failed_nonprod", {
+                  requestId,
+                  organizationId: orgCtx.organizationId,
+                  actorUserId: orgCtx.userId,
+                  email: email.toLowerCase(),
+                  acceptUrl,
+                  error:
+                    emailError instanceof Error
+                      ? { name: emailError.name, message: emailError.message }
+                      : { message: "unknown_error" },
+                  ...getActiveTraceContext(),
+                });
+              }
             }
 
             await logOrgAudit({

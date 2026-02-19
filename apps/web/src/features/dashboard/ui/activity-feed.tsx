@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 
 type Item = { title: string; detail: string; time: string };
 

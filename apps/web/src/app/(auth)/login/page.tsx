@@ -1,5 +1,6 @@
 import { LoginForm } from "@/features/auth/ui/login-form";
-import { AuthCard } from "@/shared/ui/auth/auth-card";
+import { env } from "@/server/config/env";
+import { AuthCard } from "@/shared/components/auth/auth-card";
 
 export default function LoginPage() {
   return (
@@ -8,7 +9,7 @@ export default function LoginPage() {
       subtitle="Sign in with email/password, Google, GitHub, or a magic link."
       footer={<LoginFormFooter />}
     >
-      <LoginForm />
+      <LoginForm demoMode={env.DEMO_MODE} />
     </AuthCard>
   );
 }

@@ -1,6 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
+
+type BillingApiResponse = {
+  url?: string;
+  error?: string;
+};
+
+async function readJsonSafely(res: Response): Promise<BillingApiResponse> {
+  const text = await res.text();
+  if (!text) return {};
+
+  try {
+    return JSON.parse(text) as BillingApiResponse;
+  } catch {
+    return {};
+  }
+}
 
 export function BillingActions(props: { isPro: boolean; hasCustomer: boolean }) {
   const [loading, setLoading] = useState<null | "checkout" | "portal">(null);
@@ -13,9 +30,11 @@ export function BillingActions(props: { isPro: boolean; hasCustomer: boolean }) 
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ plan: "pro" }),
       });
-      const json = (await res.json()) as { url?: string; error?: string };
+      const json = await readJsonSafely(res);
       if (!res.ok || !json.url) throw new Error(json.error ?? "Checkout failed");
       window.location.href = json.url;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Checkout failed");
     } finally {
       setLoading(null);
     }
@@ -25,9 +44,11 @@ export function BillingActions(props: { isPro: boolean; hasCustomer: boolean }) 
     setLoading("portal");
     try {
       const res = await fetch("/api/billing/portal", { method: "POST" });
-      const json = (await res.json()) as { url?: string; error?: string };
+      const json = await readJsonSafely(res);
       if (!res.ok || !json.url) throw new Error(json.error ?? "Portal failed");
       window.location.href = json.url;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Portal failed");
     } finally {
       setLoading(null);
     }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { Separator } from "@/shared/ui/shadcn/separator";
+import { Separator } from "@/shared/components/ui/separator";
 
 export function DocsLayout(props: {
   title: string;

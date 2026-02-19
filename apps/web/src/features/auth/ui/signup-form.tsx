@@ -3,12 +3,11 @@
 import { useState } from "react";
 
 import { routes } from "@/shared/constants/routes";
-import { Button } from "@/shared/ui/shadcn/button";
-import { Input } from "@/shared/ui/shadcn/input";
-import { useToast } from "@/shared/ui/toast/use-toast";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { toast } from "sonner";
 
 export function SignupForm() {
-  const { push, ToastHost } = useToast();
   const [orgName, setOrgName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,7 +29,7 @@ export function SignupForm() {
 
       window.location.href = routes.app.dashboard;
     } catch (err) {
-      push({ kind: "error", message: err instanceof Error ? err.message : "Signup failed" });
+      toast.error(err instanceof Error ? err.message : "Signup failed");
     } finally {
       setBusy(false);
     }
@@ -38,8 +37,6 @@ export function SignupForm() {
 
   return (
     <>
-      <ToastHost />
-
       <form
         onSubmit={(e) => {
           void submit(e);

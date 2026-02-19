@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 
-import { Button } from "@/shared/ui/shadcn/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
-import { Separator } from "@/shared/ui/shadcn/separator";
-import { Textarea } from "@/shared/ui/shadcn/textarea";
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Separator } from "@/shared/components/ui/separator";
+import { Textarea } from "@/shared/components/ui/textarea";
 
 export function AIToolsChainDemo() {
   const [prompt, setPrompt] = useState(

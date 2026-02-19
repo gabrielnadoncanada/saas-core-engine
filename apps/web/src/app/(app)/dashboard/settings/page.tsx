@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@db";
 
+import { ProfileEmailForm } from "@/features/settings/ui/profile-email-form";
 import { SecurityActions } from "@/features/settings/ui/security-actions";
 import { requireUser } from "@/server/auth/require-user";
 
@@ -16,13 +17,7 @@ export default async function SettingsPage() {
       <div style={{ marginTop: 16, display: "grid", gap: 16 }}>
         <section style={card}>
           <h2 style={h2}>Profile</h2>
-          <div style={{ marginTop: 10 }}>
-            <div style={label}>Email</div>
-            <div style={{ fontSize: 16, fontWeight: 600 }}>{user?.email ?? "—"}</div>
-            <div style={{ marginTop: 6, fontSize: 12, color: "#666" }}>
-              Email changes are not supported in V1 (keeps linking simple).
-            </div>
-          </div>
+          <ProfileEmailForm currentEmail={user?.email ?? ""} />
         </section>
 
         <section style={card}>
@@ -49,9 +44,4 @@ const card: React.CSSProperties = {
 const h2: React.CSSProperties = {
   fontSize: 16,
   fontWeight: 700,
-};
-
-const label: React.CSSProperties = {
-  fontSize: 12,
-  color: "#666",
 };

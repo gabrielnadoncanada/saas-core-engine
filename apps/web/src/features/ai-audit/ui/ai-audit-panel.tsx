@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-import { Button } from "@/shared/ui/shadcn/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 
 type ToolExec = { step: number; toolName: string; durationMs: number; status: "ok" | "error"; errorMessage?: string | null };
 

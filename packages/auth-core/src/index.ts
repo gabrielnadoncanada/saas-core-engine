@@ -41,6 +41,7 @@ export { PasswordResetFlow } from "./flows/password-reset.flow";
 export { OAuthLoginFlow } from "./flows/oauth-login.flow";
 export { OAuthStateService } from "./oauth/state.service";
 export { codeChallengeS256, oidcNonceFromCodeVerifier } from "./oauth/pkce";
+export { safeRedirectPath } from "./oauth/safe-redirect";
 export { GoogleProvider } from "./oauth/providers/google";
 export type {
   GoogleIdTokenClaims,

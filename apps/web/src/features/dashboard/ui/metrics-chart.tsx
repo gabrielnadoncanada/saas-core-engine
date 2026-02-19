@@ -2,7 +2,7 @@
 
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 
 type Point = { label: string; value: number };
 

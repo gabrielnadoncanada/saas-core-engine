@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { routes } from "@/shared/constants/routes";
-import { Button } from "@/shared/ui/shadcn/button";
+import { Button } from "@/shared/components/ui/button";
 
 type MeResponse = {
   user: {

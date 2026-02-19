@@ -3,15 +3,21 @@
 import { useState } from "react";
 
 import { routes } from "@/shared/constants/routes";
-import { Button } from "@/shared/ui/shadcn/button";
-import { Input } from "@/shared/ui/shadcn/input";
-import { Separator } from "@/shared/ui/shadcn/separator";
-import { useToast } from "@/shared/ui/toast/use-toast";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Separator } from "@/shared/components/ui/separator";
+import { toast } from "sonner";
 
-export function LoginForm() {
-  const { push, ToastHost } = useToast();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+type LoginFormProps = {
+  demoMode?: boolean;
+};
+
+const DEMO_EMAIL = "demo@saastemplate.dev";
+const DEMO_PASSWORD = "DemoPassw0rd!";
+
+export function LoginForm({ demoMode = false }: LoginFormProps) {
+  const [email, setEmail] = useState(demoMode ? DEMO_EMAIL : "");
+  const [password, setPassword] = useState(demoMode ? DEMO_PASSWORD : "");
   const [busy, setBusy] = useState<null | "password" | "magic" | "google" | "github">(null);
 
   async function loginPassword(e: React.FormEvent) {
@@ -29,7 +35,7 @@ export function LoginForm() {
 
       window.location.href = routes.app.dashboard;
     } catch (err) {
-      push({ kind: "error", message: err instanceof Error ? err.message : "Login failed" });
+      toast.error(err instanceof Error ? err.message : "Login failed");
     } finally {
       setBusy(null);
     }
@@ -43,9 +49,9 @@ export function LoginForm() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      push({ kind: "success", message: "If the email exists, a magic link was sent." });
+      toast.success("If the email exists, a magic link was sent.");
     } catch {
-      push({ kind: "error", message: "Failed to send magic link." });
+      toast.error("Failed to send magic link.");
     } finally {
       setBusy(null);
     }
@@ -63,8 +69,6 @@ export function LoginForm() {
 
   return (
     <>
-      <ToastHost />
-
       <form
         onSubmit={(e) => {
           void loginPassword(e);

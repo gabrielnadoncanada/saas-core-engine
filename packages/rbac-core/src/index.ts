@@ -187,3 +187,13 @@ export function requirePermission(
   if (can(user, action, ctx, decision)) return;
   throw new RbacForbiddenError(user.userId, action, resolvedResource);
 }
+
+export {
+  OrgRbacService,
+  type OrgRbacRoleRepo,
+  type OrgRbacPermissionRepo,
+  type OrgRbacMembershipRepo,
+  type OrgRbacAssignmentsRepo,
+  type OrgRolePermissionInput,
+  type OrgRoleWithPermissions,
+} from "./custom-rbac.service";

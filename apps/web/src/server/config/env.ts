@@ -99,7 +99,7 @@ const envSchema = z
     QUEUE_REDIS_URL: z.string().url().default("redis://127.0.0.1:6379"),
 
     DEMO_MODE: boolFromString.default("false"),
-    OPENAI_API_KEY: z.string().min(1),
+    OPENAI_API_KEY: z.string().min(1).default("dev-missing-openai-key"),
     AI_DEFAULT_MODEL: z.string().min(1).default("gpt-4o-mini"),
   })
   .superRefine((value, ctx) => {

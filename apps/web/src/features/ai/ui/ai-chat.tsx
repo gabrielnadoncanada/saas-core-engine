@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react";
 
-import { Button } from "@/shared/ui/shadcn/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
-import { Input } from "@/shared/ui/shadcn/input";
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Input } from "@/shared/components/ui/input";
 
 type Msg = { role: "user" | "assistant"; content: string };
 type ChatErrorResponse = { error?: string };

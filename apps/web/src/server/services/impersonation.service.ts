@@ -4,15 +4,96 @@ import { randomBytes } from "node:crypto";
 
 import { hashToken } from "@auth-core";
 import { prisma } from "@db";
+import {
+  ImpersonationService,
+  type ImpersonationSessionsRepo,
+  type ImpersonationTokenCodec,
+} from "@org-core";
 
 import { env } from "@/server/config/env";
+import { MembershipsRepo } from "@/server/db-repos/memberships.repo";
 
-function createOpaqueToken(): string {
-  return randomBytes(24).toString("hex");
+class PrismaImpersonationSessionsRepo implements ImpersonationSessionsRepo {
+  create(params: {
+    organizationId: string;
+    actorUserId: string;
+    targetUserId: string;
+    tokenHash: string;
+    actorIp?: string | null;
+    actorUserAgent?: string | null;
+    traceId?: string | null;
+  }) {
+    return prisma.impersonationSession.create({
+      data: {
+        organizationId: params.organizationId,
+        actorUserId: params.actorUserId,
+        targetUserId: params.targetUserId,
+        tokenHash: params.tokenHash,
+        actorIp: params.actorIp ?? null,
+        actorUserAgent: params.actorUserAgent ?? null,
+        traceId: params.traceId ?? null,
+      },
+      select: { id: true },
+    });
+  }
+
+  findActiveByTokenHash(tokenHash: string) {
+    return prisma.impersonationSession.findFirst({
+      where: {
+        tokenHash,
+        endedAt: null,
+      },
+      select: {
+        id: true,
+        organizationId: true,
+        actorUserId: true,
+        targetUserId: true,
+      },
+    });
+  }
+
+  findActiveByTokenHashAndActor(params: {
+    tokenHash: string;
+    actorUserId: string;
+  }) {
+    return prisma.impersonationSession.findFirst({
+      where: {
+        tokenHash: params.tokenHash,
+        endedAt: null,
+        actorUserId: params.actorUserId,
+      },
+      select: { id: true },
+    });
+  }
+
+  endById(params: { id: string; reason: string }) {
+    return prisma.impersonationSession.update({
+      where: { id: params.id },
+      data: {
+        endedAt: new Date(),
+        endReason: params.reason,
+      },
+      select: {
+        id: true,
+        organizationId: true,
+        actorUserId: true,
+        targetUserId: true,
+      },
+    });
+  }
 }
 
-function hashOpaqueToken(token: string): string {
-  return hashToken(token, env.TOKEN_PEPPER);
+const tokenCodec: ImpersonationTokenCodec = {
+  randomToken: () => randomBytes(24).toString("hex"),
+  hashToken: (token: string) => hashToken(token, env.TOKEN_PEPPER),
+};
+
+function createImpersonationService() {
+  return new ImpersonationService(
+    new MembershipsRepo(),
+    new PrismaImpersonationSessionsRepo(),
+    tokenCodec,
+  );
 }
 
 export async function startImpersonation(params: {
@@ -23,32 +104,11 @@ export async function startImpersonation(params: {
   userAgent?: string | null;
   traceId?: string | null;
 }) {
-  const token = createOpaqueToken();
-  const tokenHash = hashOpaqueToken(token);
-
-  const session = await prisma.impersonationSession.create({
-    data: {
-      organizationId: params.organizationId,
-      actorUserId: params.actorUserId,
-      targetUserId: params.targetUserId,
-      tokenHash,
-      actorIp: params.ip ?? null,
-      actorUserAgent: params.userAgent ?? null,
-      traceId: params.traceId ?? null,
-    },
-  });
-
-  return { token, session };
+  return createImpersonationService().start(params);
 }
 
 export async function resolveActiveImpersonation(token: string) {
-  const tokenHash = hashOpaqueToken(token);
-  return prisma.impersonationSession.findFirst({
-    where: {
-      tokenHash,
-      endedAt: null,
-    },
-  });
+  return createImpersonationService().resolveActiveImpersonation(token);
 }
 
 export async function stopImpersonation(params: {
@@ -56,23 +116,5 @@ export async function stopImpersonation(params: {
   actorUserId: string;
   reason?: string;
 }) {
-  const tokenHash = hashOpaqueToken(params.token);
-
-  const existing = await prisma.impersonationSession.findFirst({
-    where: {
-      tokenHash,
-      endedAt: null,
-      actorUserId: params.actorUserId,
-    },
-  });
-
-  if (!existing) return null;
-
-  return prisma.impersonationSession.update({
-    where: { id: existing.id },
-    data: {
-      endedAt: new Date(),
-      endReason: params.reason ?? "manual",
-    },
-  });
+  return createImpersonationService().stop(params);
 }

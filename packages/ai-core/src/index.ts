@@ -15,3 +15,4 @@ export * from "./providers/openai";
 export * from "./tools/types";
 export * from "./tools/registry";
 export * from "./tools/executor";
+export * from "./tool-workflows";

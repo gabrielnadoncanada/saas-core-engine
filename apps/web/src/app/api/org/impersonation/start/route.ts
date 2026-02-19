@@ -1,5 +1,5 @@
 import { orgImpersonationStartBodySchema } from "@contracts";
-import { prisma } from "@db";
+import { OrgCoreError } from "@org-core";
 import { NextResponse } from "next/server";
 
 import { setImpersonationCookie } from "@/server/adapters/cookies/session-cookie.adapter";
@@ -19,68 +19,60 @@ export async function POST(req: Request) {
           return NextResponse.json({ ok: false, error: "Invalid input" }, { status: 400 });
         }
 
-        const membership = await prisma.membership.findUnique({
-          where: {
-            userId_organizationId: {
-              userId: parsed.data.targetUserId,
-              organizationId: orgCtx.organizationId,
-            },
-          },
-          select: { role: true, userId: true },
-        });
+        try {
+          const started = await startImpersonation({
+            organizationId: orgCtx.organizationId,
+            actorUserId: orgCtx.userId,
+            targetUserId: parsed.data.targetUserId,
+            ip: extractClientIp(req),
+            userAgent: req.headers.get("user-agent"),
+            traceId: getActiveTraceContext()?.traceId ?? null,
+          });
 
-        if (!membership) {
-          return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
-        }
+          await setImpersonationCookie(started.token);
 
-        if (membership.role === "owner") {
           await logOrgAudit({
             organizationId: orgCtx.organizationId,
             actorUserId: orgCtx.userId,
             action: "org.impersonation.started",
             targetType: "user",
-            targetId: membership.userId,
-            target: { userId: membership.userId, role: membership.role },
+            targetId: started.target.userId,
+            target: started.target,
+            ip: extractClientIp(req),
+            userAgent: req.headers.get("user-agent"),
+            traceId: getActiveTraceContext()?.traceId ?? null,
+            metadata: { impersonationSessionId: started.session.id },
+          });
+
+          return NextResponse.json({
+            ok: true,
+            impersonation: {
+              sessionId: started.session.id,
+              targetUserId: started.target.userId,
+            },
+          });
+        } catch (error) {
+          if (!(error instanceof OrgCoreError) || error.code !== "forbidden") {
+            throw error;
+          }
+
+          await logOrgAudit({
+            organizationId: orgCtx.organizationId,
+            actorUserId: orgCtx.userId,
+            action: "org.impersonation.started",
+            targetType: "user",
+            targetId: parsed.data.targetUserId,
             outcome: "forbidden",
             ip: extractClientIp(req),
             userAgent: req.headers.get("user-agent"),
             traceId: getActiveTraceContext()?.traceId ?? null,
-            metadata: { reason: "target_owner_blocked" },
+            metadata:
+              error.details && typeof error.details === "object"
+                ? (error.details as Record<string, unknown>)
+                : undefined,
           });
           return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
         }
-
-        const started = await startImpersonation({
-          organizationId: orgCtx.organizationId,
-          actorUserId: orgCtx.userId,
-          targetUserId: membership.userId,
-          ip: extractClientIp(req),
-          userAgent: req.headers.get("user-agent"),
-          traceId: getActiveTraceContext()?.traceId ?? null,
-        });
-
-        await setImpersonationCookie(started.token);
-
-        await logOrgAudit({
-          organizationId: orgCtx.organizationId,
-          actorUserId: orgCtx.userId,
-          action: "org.impersonation.started",
-          targetType: "user",
-          targetId: membership.userId,
-          target: { userId: membership.userId, role: membership.role },
-          ip: extractClientIp(req),
-          userAgent: req.headers.get("user-agent"),
-          traceId: getActiveTraceContext()?.traceId ?? null,
-          metadata: { impersonationSessionId: started.session.id },
-        });
-
-        return NextResponse.json({
-          ok: true,
-          impersonation: {
-            sessionId: started.session.id,
-            targetUserId: membership.userId,
-          },
-        });
       },
     }),
   );

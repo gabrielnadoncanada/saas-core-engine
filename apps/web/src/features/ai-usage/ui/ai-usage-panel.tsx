@@ -5,8 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
 
 import { routes } from "@/shared/constants/routes";
-import { Button } from "@/shared/ui/shadcn/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 
 
 type DailyPoint = { day: string; tokens: number; costUsd: number };

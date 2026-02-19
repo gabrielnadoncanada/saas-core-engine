@@ -1,8 +1,8 @@
 import Link from "next/link";
 
-import { Button } from "@/shared/ui/shadcn/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
-import { Separator } from "@/shared/ui/shadcn/separator";
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Separator } from "@/shared/components/ui/separator";
 
 export default function LicensePage() {
   return (

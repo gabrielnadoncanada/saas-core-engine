@@ -1,5 +1,8 @@
-import { getRequestMeta, OpenAIProvider, estimateCost } from "@ai-core";
-import { executeToolWithContract } from "@ai-core";
+import {
+  OpenAIProvider,
+  runSingleToolWorkflow,
+  executeToolWithContract,
+} from "@ai-core";
 import { prisma } from "@db";
 import { z } from "zod";
 
@@ -20,12 +23,6 @@ import { env } from "@/server/config/env";
 const BodySchema = z.object({
   prompt: z.string().min(3),
 });
-
-const ToolPickSchema = z.object({
-  tool: z.string(),
-  args: z.record(z.any()).default({}),
-});
-type ToolPick = z.infer<typeof ToolPickSchema>;
 
 export async function POST(req: Request) {
   const user = await getSessionUser();
@@ -100,84 +97,33 @@ export async function POST(req: Request) {
 
   const registry = buildToolRegistry();
   const tools = registry.list();
-
-  // Step 1: Ask model to pick a tool + args (structured)
-  const pickMessages = [
-    { role: "system" as const, content: systemPrompt },
-    {
-      role: "system" as const,
-      content:
-        `You can call ONE tool. Choose the best tool from this list:\n` +
-        tools.map((t) => `- ${t.name}: ${t.description}`).join("\n") +
-        `\nReturn JSON: {"tool": "...", "args": {...}}`,
-    },
-    { role: "user" as const, content: body.data.prompt },
-  ];
-
-  const { messageCount, promptChars } = getRequestMeta(pickMessages);
+  const promptChars = body.data.prompt.length;
+  const messageCount = 3;
 
   try {
-    const pick = await provider.generateStructured<typeof ToolPickSchema, ToolPick>({
-      messages: pickMessages,
+    const out = await runSingleToolWorkflow({
+      provider,
       model,
-      temperature: 0,
-      schema: ToolPickSchema,
+      systemPrompt,
+      prompt: body.data.prompt,
       userId: user.id,
       orgId: user.organizationId,
+      tools,
+      executeTool: async ({ tool, args, userId, orgId }) =>
+        executeToolWithContract(registry, tool, args, { userId, orgId }),
+      transformResult: (result) =>
+        clampJsonSize(redact(result)) as Record<string, unknown>,
+      maxResultChars: 20_000,
     });
-
-    // Step 2: Execute the tool
-    const exec = await executeToolWithContract(
-      registry,
-      pick.data.tool,
-      pick.data.args,
-      {
-        userId: user.id,
-        orgId: user.organizationId,
-      },
-    );
-
-    const result = clampJsonSize(redact(exec.result));
-    const toolError = null;
-
-    const resultJson = JSON.stringify(result);
-    if (resultJson.length > 20_000) {
-      throw new Error("Tool result too large");
-    }
-
-    // Step 3: Ask model to explain result (normal generate)
-    const explain = await provider.generate({
-      model,
-      temperature: 0.2,
-      userId: user.id,
-      orgId: user.organizationId,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: `User asked: ${body.data.prompt}` },
-        {
-          role: "user",
-          content: `Tool used: ${pick.data.tool}\nTool result JSON:\n${JSON.stringify(result)}`,
-        },
-        {
-          role: "user",
-          content: `Explain the result concisely and suggest next actions.`,
-        },
-      ],
-    });
-
-    // Usage tracking: add both calls
-    const inputTokens = pick.usage.inputTokens + explain.usage.inputTokens;
-    const outputTokens = pick.usage.outputTokens + explain.usage.outputTokens;
-    const cost = estimateCost(model, inputTokens, outputTokens);
 
     await prisma.aIUsage.create({
       data: {
         userId: user.id,
         organizationId: user.organizationId,
         model,
-        inputTokens,
-        outputTokens,
-        costUsd: cost,
+        inputTokens: out.usage.inputTokens,
+        outputTokens: out.usage.outputTokens,
+        costUsd: out.costUsd,
       },
     });
 
@@ -188,14 +134,14 @@ export async function POST(req: Request) {
         model,
         plan: policy.plan,
         route: "/api/ai/tools",
-        promptChars,
-        messageCount,
-        inputTokens,
-        outputTokens,
-        costUsd: cost,
-        status: toolError ? "error" : "ok",
-        errorCode: toolError ? "tool" : null,
-        errorMessage: toolError ? toolError : null,
+        promptChars: out.promptChars,
+        messageCount: out.messageCount,
+        inputTokens: out.usage.inputTokens,
+        outputTokens: out.usage.outputTokens,
+        costUsd: out.costUsd,
+        status: "ok",
+        errorCode: null,
+        errorMessage: null,
       },
       select: { id: true },
     });
@@ -203,11 +149,11 @@ export async function POST(req: Request) {
     await prisma.aIToolExecution.create({
       data: {
         auditLogId: audit.id,
-        step: 1,
-        toolName: pick.data.tool,
-        durationMs: exec.durationMs,
-        status: toolError ? "error" : "ok",
-        errorMessage: toolError,
+        step: out.execution.step,
+        toolName: out.execution.toolName,
+        durationMs: out.execution.durationMs,
+        status: out.execution.status,
+        errorMessage: out.execution.errorMessage,
       },
     });
 
@@ -216,12 +162,12 @@ export async function POST(req: Request) {
         ok: true,
         plan: policy.plan,
         model,
-        tool: pick.data.tool,
-        args: pick.data.args,
-        result,
-        answer: explain.text,
-        usage: { inputTokens, outputTokens },
-        costUsd: cost,
+        tool: out.tool,
+        args: out.args,
+        result: out.result,
+        answer: out.answer,
+        usage: out.usage,
+        costUsd: out.costUsd,
       }),
       { status: 200, headers: { "content-type": "application/json" } },
     );

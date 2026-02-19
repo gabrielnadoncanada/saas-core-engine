@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 
-import { Button } from "@/shared/ui/shadcn/button";
-import { Input } from "@/shared/ui/shadcn/input";
-import { useToast } from "@/shared/ui/toast/use-toast";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { toast } from "sonner";
 
 export function ForgotPasswordForm() {
-  const { push, ToastHost } = useToast();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -20,9 +19,9 @@ export function ForgotPasswordForm() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      push({ kind: "success", message: "If the email exists, a reset link was sent." });
+      toast.success("If the email exists, a reset link was sent.");
     } catch {
-      push({ kind: "error", message: "Failed to send reset link." });
+      toast.error("Failed to send reset link.");
     } finally {
       setBusy(false);
     }
@@ -30,8 +29,6 @@ export function ForgotPasswordForm() {
 
   return (
     <>
-      <ToastHost />
-
       <form
         onSubmit={(e) => {
           void submit(e);

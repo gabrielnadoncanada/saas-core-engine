@@ -11,6 +11,12 @@ type Member = {
   joinedAt: string;
 };
 
+function formatIsoDate(dateInput: string): string {
+  const parsed = new Date(dateInput);
+  if (Number.isNaN(parsed.getTime())) return dateInput;
+  return parsed.toISOString().slice(0, 10);
+}
+
 export function TeamMembersTable(props: {
   members: Member[];
   currentUserId: string;
@@ -72,7 +78,7 @@ export function TeamMembersTable(props: {
               <tr key={m.id}>
                 <td style={td}>{m.email}</td>
                 <td style={td}>{m.role}</td>
-                <td style={td}>{new Date(m.joinedAt).toLocaleDateString()}</td>
+                <td style={td}>{formatIsoDate(m.joinedAt)}</td>
                 <td style={td}>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     {canManageRoles && m.role !== "owner" ? (
