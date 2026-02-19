@@ -1,7 +1,7 @@
 # SaaS Template — Next.js + Auth + Orgs + Stripe (Production-ready)
 
 A developer-first SaaS starter you can ship in days.
-Includes real flows: password + magic link + Google OAuth, organizations & invites, sessions/security, and Stripe subscriptions with webhook sync.
+Includes real flows: password + magic link + Google/GitHub OAuth, organizations & invites, sessions/security, and Stripe subscriptions with webhook sync.
 
 ## Features
 
@@ -11,6 +11,7 @@ Includes real flows: password + magic link + Google OAuth, organizations & invit
 - Magic link
 - Reset password
 - Google OAuth (PKCE)
+- GitHub OAuth (PKCE)
 - OAuth account linking
 
 **Multi-tenant / Workspace**
@@ -51,7 +52,7 @@ Copy `.env.example` → `.env` and fill required vars:
 Optional (recommended):
 
 - Resend (email)
-- Google OAuth
+- Google/GitHub OAuth
 - Stripe
 
 ### 2) Run setup
@@ -94,6 +95,13 @@ If missing, the app logs email links to server console (dev fallback).
 - `GOOGLE_OAUTH_CLIENT_SECRET`
 - `GOOGLE_OAUTH_REDIRECT_URI`
 - `GOOGLE_OAUTH_SCOPES="openid email profile"`
+
+### GitHub OAuth
+
+- `GITHUB_OAUTH_CLIENT_ID`
+- `GITHUB_OAUTH_CLIENT_SECRET`
+- `GITHUB_OAUTH_REDIRECT_URI`
+- `GITHUB_OAUTH_SCOPES="read:user user:email"`
 
 ### Stripe
 

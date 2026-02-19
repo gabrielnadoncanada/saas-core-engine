@@ -42,6 +42,12 @@ stripe listen --forward-to localhost:3000/api/billing/webhook`}</CodeBlock>
         <li>Set authorized redirect URI to your deployed callback URL</li>
         <li>Keep scopes: <code>openid email profile</code></li>
       </ul>
+
+      <h2>GitHub OAuth</h2>
+      <ul>
+        <li>Set callback URL to <code>/api/auth/oauth/github/callback</code></li>
+        <li>Keep scopes: <code>read:user user:email</code></li>
+      </ul>
     </DocsLayout>
   );
 }

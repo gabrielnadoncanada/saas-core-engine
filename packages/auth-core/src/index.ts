@@ -46,6 +46,11 @@ export type {
   GoogleIdTokenClaims,
   GoogleTokenExchangeParams,
 } from "./oauth/providers/google";
+export { GitHubProvider } from "./oauth/providers/github";
+export type {
+  GitHubTokenExchangeParams,
+  GitHubUserClaims,
+} from "./oauth/providers/github";
 export { VerifyEmailFlow } from "./flows/verify-email.flow";
 export { VerifyEmailRequestFlow } from "./flows/verify-email-request.flow";
 export { buildAuthRateLimitKey } from "./rate-limit";

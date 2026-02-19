@@ -11,6 +11,9 @@ export const routes = {
   },
   app: {
     dashboard: "/dashboard",
+    users: "/dashboard/users",
+    organizations: "/dashboard/organizations",
+    subscriptions: "/dashboard/subscriptions",
     billing: "/dashboard/billing",
     team: "/dashboard/team",
     roles: "/dashboard/roles",

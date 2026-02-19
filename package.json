@@ -14,6 +14,8 @@
     "simulate:v2:incidents": "tsx tooling/scripts/v2-incident-sim.ts",
     "simulate:v3:incidents": "tsx tooling/scripts/v3-incident-sim.ts",
     "webhook:replay": "tsx tooling/scripts/webhook-replay.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "clean": "turbo clean && rimraf node_modules **/node_modules **/.next **/dist",
 
     "db:migrate": "pnpm --filter @db run migrate",
@@ -26,6 +28,7 @@
     "@eslint/js": "^9.0.0",
     "tsx": "^4.0.0",
     "eslint": "^9.0.0",
+    "prettier": "^3.6.2",
     "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-unused-imports": "^4.1.0",
     "typescript-eslint": "^8.0.0"

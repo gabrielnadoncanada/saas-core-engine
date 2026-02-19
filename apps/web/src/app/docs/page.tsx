@@ -15,7 +15,7 @@ export default function DocsIndexPage() {
         />
         <DocCard
           title="Configuration"
-          desc="Environment variables for Resend, Google OAuth, Stripe."
+          desc="Environment variables for Resend, Google/GitHub OAuth, Stripe."
           href="/docs/configuration"
         />
         <DocCard
@@ -32,7 +32,7 @@ export default function DocsIndexPage() {
 
       <h2 className="mt-10 text-xl font-extrabold">What’s included</h2>
       <ul className="mt-3 text-muted-foreground">
-        <li>Auth: password, magic link, reset, Google OAuth</li>
+        <li>Auth: password, magic link, reset, Google/GitHub OAuth</li>
         <li>Organizations: roles, invites, team page</li>
         <li>Security: session list + revoke</li>
         <li>Billing: Stripe Checkout + Portal + webhooks sync</li>

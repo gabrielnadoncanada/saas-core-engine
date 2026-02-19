@@ -15,6 +15,9 @@ const sections: Array<{ title: string; items: NavItem[] }> = [
     title: "Workspace",
     items: [
       { href: routes.app.dashboard, label: "Overview" },
+      { href: routes.app.users, label: "Users" },
+      { href: routes.app.organizations, label: "Organizations" },
+      { href: routes.app.subscriptions, label: "Subscriptions" },
       { href: routes.app.billing, label: "Billing" },
       { href: routes.app.team, label: "Team" },
       { href: routes.app.roles, label: "Roles & Permissions" },
@@ -102,7 +105,13 @@ function LogoutButton() {
   }
 
   return (
-    <Button variant="outline" className="w-full rounded-xl" onClick={logout}>
+    <Button
+      variant="outline"
+      className="w-full rounded-xl"
+      onClick={() => {
+        void logout();
+      }}
+    >
       Logout
     </Button>
   );

@@ -34,6 +34,12 @@ GOOGLE_OAUTH_CLIENT_SECRET="..."
 GOOGLE_OAUTH_REDIRECT_URI="http://localhost:3000/api/auth/oauth/google/callback"
 GOOGLE_OAUTH_SCOPES="openid email profile"`}</CodeBlock>
 
+      <h2>GitHub OAuth</h2>
+      <CodeBlock>{`GITHUB_OAUTH_CLIENT_ID="..."
+GITHUB_OAUTH_CLIENT_SECRET="..."
+GITHUB_OAUTH_REDIRECT_URI="http://localhost:3000/api/auth/oauth/github/callback"
+GITHUB_OAUTH_SCOPES="read:user user:email"`}</CodeBlock>
+
       <h2>Stripe</h2>
       <CodeBlock>{`STRIPE_SECRET_KEY="sk_..."
 STRIPE_WEBHOOK_SECRET="whsec_..."

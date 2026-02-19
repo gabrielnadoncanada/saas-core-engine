@@ -5,7 +5,7 @@ export default function LoginPage() {
   return (
     <AuthCard
       title="Welcome back"
-      subtitle="Sign in with email/password, Google, or a magic link."
+      subtitle="Sign in with email/password, Google, GitHub, or a magic link."
       footer={<LoginFormFooter />}
     >
       <LoginForm />

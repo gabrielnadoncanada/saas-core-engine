@@ -12,7 +12,7 @@ export function LoginForm() {
   const { push, ToastHost } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState<null | "password" | "magic" | "google">(null);
+  const [busy, setBusy] = useState<null | "password" | "magic" | "google" | "github">(null);
 
   async function loginPassword(e: React.FormEvent) {
     e.preventDefault();
@@ -56,11 +56,21 @@ export function LoginForm() {
     window.location.href = `/api/auth/oauth/google/start?redirect=${encodeURIComponent(routes.app.dashboard)}`;
   }
 
+  function github() {
+    setBusy("github");
+    window.location.href = `/api/auth/oauth/github/start?redirect=${encodeURIComponent(routes.app.dashboard)}`;
+  }
+
   return (
     <>
       <ToastHost />
 
-      <form onSubmit={loginPassword} className="grid gap-3">
+      <form
+        onSubmit={(e) => {
+          void loginPassword(e);
+        }}
+        className="grid gap-3"
+      >
         <div className="grid gap-2">
           <label className="text-sm font-medium">Email</label>
           <Input
@@ -94,7 +104,9 @@ export function LoginForm() {
           <button
             type="button"
             className="underline text-muted-foreground"
-            onClick={sendMagic}
+            onClick={() => {
+              void sendMagic();
+            }}
             disabled={busy !== null || !email}
           >
             {busy === "magic" ? "Sending…" : "Send magic link"}
@@ -105,6 +117,9 @@ export function LoginForm() {
 
         <Button type="button" variant="outline" className="rounded-xl" onClick={google} disabled={busy !== null}>
           {busy === "google" ? "Redirecting…" : "Continue with Google"}
+        </Button>
+        <Button type="button" variant="outline" className="rounded-xl" onClick={github} disabled={busy !== null}>
+          {busy === "github" ? "Redirecting…" : "Continue with GitHub"}
         </Button>
       </form>
     </>

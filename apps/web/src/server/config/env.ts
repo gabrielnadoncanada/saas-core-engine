@@ -57,6 +57,10 @@ const envSchema = z
     GOOGLE_OAUTH_CLIENT_SECRET: z.string().min(1),
     GOOGLE_OAUTH_REDIRECT_URI: z.string().url(),
     GOOGLE_OAUTH_SCOPES: z.string().default("openid email profile"),
+    GITHUB_OAUTH_CLIENT_ID: z.string().min(1).optional(),
+    GITHUB_OAUTH_CLIENT_SECRET: z.string().min(1).optional(),
+    GITHUB_OAUTH_REDIRECT_URI: z.string().url().optional(),
+    GITHUB_OAUTH_SCOPES: z.string().default("read:user user:email"),
 
     // Stripe
     STRIPE_SECRET_KEY: z.string().min(1),
