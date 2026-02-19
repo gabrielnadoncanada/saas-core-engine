@@ -47,7 +47,12 @@ export function ResetPasswordForm() {
     <>
       <ToastHost />
 
-      <form onSubmit={submit} className="grid gap-3">
+      <form
+        onSubmit={(e) => {
+          void submit(e);
+        }}
+        className="grid gap-3"
+      >
         <div className="grid gap-2">
           <label className="text-sm font-medium">New password</label>
           <Input

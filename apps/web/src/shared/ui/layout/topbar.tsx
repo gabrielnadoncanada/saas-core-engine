@@ -50,7 +50,13 @@ export function Topbar(props: { title: string }) {
             Impersonation active: actor {me.impersonation?.actorUserId.slice(0, 8)}... as{" "}
             {me.impersonation?.targetUserId.slice(0, 8)}...
           </span>
-          <Button size="sm" variant="outline" onClick={stopImpersonation}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              void stopImpersonation();
+            }}
+          >
             Stop
           </Button>
         </div>

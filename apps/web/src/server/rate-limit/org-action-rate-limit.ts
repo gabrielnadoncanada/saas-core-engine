@@ -66,7 +66,7 @@ export async function enforceOrgActionRateLimit(
   }
 
   for (const check of checks) {
-    const bucket = await (prisma as any).orgActionRateLimitBucket.upsert({
+    const bucket = await prisma.orgActionRateLimitBucket.upsert({
       where: {
         scope_windowStart: {
           scope: check.scope,

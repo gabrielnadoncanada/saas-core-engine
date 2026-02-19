@@ -38,11 +38,23 @@ export function SecurityActions(props: { userEmail: string }) {
 
   return (
     <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-      <button onClick={sendReset} disabled={busy !== null || !props.userEmail} style={btnPrimary}>
+      <button
+        onClick={() => {
+          void sendReset();
+        }}
+        disabled={busy !== null || !props.userEmail}
+        style={btnPrimary}
+      >
         {busy === "reset" ? "Sending…" : "Send password reset link"}
       </button>
 
-      <button onClick={revokeAll} disabled={busy !== null} style={btnDanger}>
+      <button
+        onClick={() => {
+          void revokeAll();
+        }}
+        disabled={busy !== null}
+        style={btnDanger}
+      >
         {busy === "revoke" ? "Revoking…" : "Revoke all sessions"}
       </button>
 

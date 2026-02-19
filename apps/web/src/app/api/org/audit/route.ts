@@ -5,7 +5,21 @@ import { queryOrgAudit } from "@/server/services/org-audit.service";
 import { withApiTelemetry } from "@/server/telemetry/otel";
 
 function csvEscape(input: unknown): string {
-  const value = String(input ?? "");
+  let value = "";
+
+  if (typeof input === "string") value = input;
+  else if (
+    typeof input === "number" ||
+    typeof input === "boolean" ||
+    typeof input === "bigint"
+  ) {
+    value = String(input);
+  } else if (input instanceof Date) {
+    value = input.toISOString();
+  } else if (input != null) {
+    value = JSON.stringify(input) ?? "";
+  }
+
   if (!/[",\n]/.test(value)) return value;
   return `"${value.replaceAll("\"", "\"\"")}"`;
 }

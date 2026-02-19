@@ -2,6 +2,8 @@ import "server-only";
 
 import { prisma } from "@db";
 
+import type { Prisma } from "@prisma/client";
+
 export type OrgAuditAction =
   | "org.created"
   | "org.switched"
@@ -30,6 +32,10 @@ export async function logOrgAudit(params: {
   outcome?: OrgAuditOutcome;
   metadata?: Record<string, unknown>;
 }) {
+  const target = (params.target ?? undefined) as Prisma.InputJsonValue | undefined;
+  const diff = (params.diff ?? undefined) as Prisma.InputJsonValue | undefined;
+  const metadata = (params.metadata ?? undefined) as Prisma.InputJsonValue | undefined;
+
   await prisma.orgAuditLog.create({
     data: {
       organizationId: params.organizationId,
@@ -37,13 +43,13 @@ export async function logOrgAudit(params: {
       action: params.action,
       targetType: params.targetType ?? null,
       targetId: params.targetId ?? null,
-      target: (params.target ?? undefined) as any,
-      diff: (params.diff ?? undefined) as any,
+      target,
+      diff,
       ip: params.ip ?? null,
       userAgent: params.userAgent ?? null,
       traceId: params.traceId ?? null,
       outcome: params.outcome ?? "success",
-      metadata: params.metadata as any,
+      metadata,
     },
   });
 }

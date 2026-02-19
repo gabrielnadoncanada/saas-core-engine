@@ -32,7 +32,12 @@ export function ForgotPasswordForm() {
     <>
       <ToastHost />
 
-      <form onSubmit={submit} className="grid gap-3">
+      <form
+        onSubmit={(e) => {
+          void submit(e);
+        }}
+        className="grid gap-3"
+      >
         <div className="grid gap-2">
           <label className="text-sm font-medium">Email</label>
           <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="you@company.com" />

@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 
+function parseRole(value: string): "admin" | "member" {
+  return value === "admin" ? "admin" : "member";
+}
+
 export function InviteMemberForm() {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "member">("member");
@@ -29,7 +33,12 @@ export function InviteMemberForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} style={{ display: "flex", gap: 12, alignItems: "flex-end" }}>
+    <form
+      onSubmit={(e) => {
+        void onSubmit(e);
+      }}
+      style={{ display: "flex", gap: 12, alignItems: "flex-end" }}
+    >
       <div style={{ flex: 1 }}>
         <label style={label}>Email</label>
         <input
@@ -42,7 +51,7 @@ export function InviteMemberForm() {
 
       <div>
         <label style={label}>Role</label>
-        <select value={role} onChange={(e) => setRole(e.target.value as any)} style={input}>
+        <select value={role} onChange={(e) => setRole(parseRole(e.target.value))} style={input}>
           <option value="member">Member</option>
           <option value="admin">Admin</option>
         </select>

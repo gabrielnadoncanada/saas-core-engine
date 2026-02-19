@@ -5,6 +5,7 @@ import { withApiTelemetry } from "@/server/telemetry/otel";
 
 export async function GET(req: Request) {
   return withApiTelemetry(req, "/api/health", async () => {
+    await Promise.resolve();
     const requestId = getOrCreateRequestId(req);
     return withRequestId(
       NextResponse.json({

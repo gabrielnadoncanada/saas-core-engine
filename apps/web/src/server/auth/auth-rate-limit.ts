@@ -21,7 +21,7 @@ export async function enforceAuthRateLimit(
   const key = buildAuthRateLimitKey({ ip, route });
   const ws = windowStart(env.RATE_LIMIT_WINDOW_SECONDS);
 
-  const bucket = await (prisma as any).authRateLimitBucket.upsert({
+  const bucket = await prisma.authRateLimitBucket.upsert({
     where: { key_windowStart: { key, windowStart: ws } },
     create: { key, windowStart: ws, count: 1 },
     update: { count: { increment: 1 } },

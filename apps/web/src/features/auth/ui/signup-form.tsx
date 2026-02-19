@@ -40,7 +40,12 @@ export function SignupForm() {
     <>
       <ToastHost />
 
-      <form onSubmit={submit} className="grid gap-3">
+      <form
+        onSubmit={(e) => {
+          void submit(e);
+        }}
+        className="grid gap-3"
+      >
         <div className="grid gap-2">
           <label className="text-sm font-medium">Workspace name</label>
           <Input value={orgName} onChange={(e) => setOrgName(e.target.value)} placeholder="Acme Inc." />

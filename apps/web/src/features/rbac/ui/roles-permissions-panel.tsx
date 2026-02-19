@@ -183,7 +183,9 @@ export function RolesPermissionsPanel(props: {
             <button
               style={btnPrimary}
               disabled={busy === "create-role" || newRoleName.trim().length < 2}
-              onClick={createRole}
+              onClick={() => {
+                void createRole();
+              }}
             >
               Create role
             </button>

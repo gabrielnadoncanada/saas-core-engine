@@ -66,7 +66,13 @@ export function SessionsPanel() {
     <div style={{ border: "1px solid #eee", borderRadius: 12, overflow: "hidden" }}>
       <div style={{ padding: 12, display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div style={{ fontWeight: 600 }}>Active sessions</div>
-        <button onClick={revokeAll} disabled={busy !== null} style={btnDanger}>
+        <button
+          onClick={() => {
+            void revokeAll();
+          }}
+          disabled={busy !== null}
+          style={btnDanger}
+        >
           {busy === "ALL" ? "Revoking…" : "Revoke all"}
         </button>
       </div>
@@ -99,7 +105,13 @@ export function SessionsPanel() {
                     </span>
                   </td>
                   <td style={{ ...td, textAlign: "right" }}>
-                    <button onClick={() => revoke(s.id)} disabled={busy !== null} style={btnGhost}>
+                    <button
+                      onClick={() => {
+                        void revoke(s.id);
+                      }}
+                      disabled={busy !== null}
+                      style={btnGhost}
+                    >
                       {busy === s.id ? "Revoking…" : "Revoke"}
                     </button>
                   </td>

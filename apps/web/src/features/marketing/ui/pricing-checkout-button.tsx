@@ -5,6 +5,13 @@ import { useState } from "react";
 import { routes } from "@/shared/constants/routes";
 import { Button } from "@/shared/ui/shadcn/button";
 
+type MeResponse = {
+  user: {
+    userId: string;
+    organizationId: string;
+  } | null;
+};
+
 export function PricingCheckoutButton() {
   const [busy, setBusy] = useState(false);
 
@@ -12,7 +19,7 @@ export function PricingCheckoutButton() {
     setBusy(true);
     try {
       // If not logged in, redirect to signup first
-      const me = await fetch("/api/auth/me").then((r) => r.json() as Promise<{ user: any | null }>);
+      const me = await fetch("/api/auth/me").then((r) => r.json() as Promise<MeResponse>);
       if (!me.user) {
         window.location.href = routes.auth.signup;
         return;
@@ -34,7 +41,13 @@ export function PricingCheckoutButton() {
   }
 
   return (
-    <Button onClick={upgrade} className="w-full rounded-2xl" disabled={busy}>
+    <Button
+      onClick={() => {
+        void upgrade();
+      }}
+      className="w-full rounded-2xl"
+      disabled={busy}
+    >
       {busy ? "Redirecting…" : "Upgrade to Pro"}
     </Button>
   );

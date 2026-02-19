@@ -25,6 +25,21 @@ function sseJson(data: unknown) {
   return `data: ${JSON.stringify(data)}\n\n`;
 }
 
+type EnforcementMeta = {
+  plan?: string;
+  quota?: number;
+  used?: number;
+};
+
+type EnforcementErrorLike = Error & {
+  status?: number;
+  meta?: EnforcementMeta | null;
+};
+
+function isEnforcementErrorLike(error: unknown): error is EnforcementErrorLike {
+  return error instanceof Error;
+}
+
 export async function POST(req: Request) {
   const sessionUser = await getSessionUser();
   if (!sessionUser) return new Response("Unauthorized", { status: 401 });
@@ -32,13 +47,18 @@ export async function POST(req: Request) {
     await withRequiredOrgScope({
       organizationId: sessionUser.organizationId,
       action: "ai:assistant:use",
-      run: async () => undefined,
+      run: async () => {
+        await Promise.resolve();
+      },
     });
   } catch {
     return new Response("Forbidden", { status: 403 });
   }
 
-  const raw = await req.json().catch(() => null);
+  const raw = await req
+    .text()
+    .then((text) => (text ? (JSON.parse(text) as unknown) : null))
+    .catch(() => null);
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success)
     return new Response("Invalid body", { status: 400 });
@@ -62,8 +82,8 @@ export async function POST(req: Request) {
       sessionUser.organizationId,
     );
   } catch (e) {
-    const status = (e as any).status ?? 429;
-    const meta = (e as any).meta ?? null;
+    const status = isEnforcementErrorLike(e) ? (e.status ?? 429) : 429;
+    const meta = isEnforcementErrorLike(e) ? (e.meta ?? null) : null;
 
     const errorCode =
       status === 402 ? "quota" : status === 429 ? "rpm" : "blocked";
@@ -82,12 +102,16 @@ export async function POST(req: Request) {
         costUsd: 0,
         status: "blocked",
         errorCode,
-        errorMessage: (e as Error).message,
+        errorMessage: isEnforcementErrorLike(e) ? e.message : "AI blocked",
       },
     });
 
     return new Response(
-      JSON.stringify({ ok: false, error: (e as Error).message, meta }),
+      JSON.stringify({
+        ok: false,
+        error: isEnforcementErrorLike(e) ? e.message : "AI blocked",
+        meta,
+      }),
       {
         status,
         headers: { "content-type": "application/json" },

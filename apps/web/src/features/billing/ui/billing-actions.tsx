@@ -36,11 +36,23 @@ export function BillingActions(props: { isPro: boolean; hasCustomer: boolean }) 
   return (
     <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
       {!props.isPro ? (
-        <button onClick={goCheckout} disabled={loading !== null} style={btnPrimary}>
+        <button
+          onClick={() => {
+            void goCheckout();
+          }}
+          disabled={loading !== null}
+          style={btnPrimary}
+        >
           {loading === "checkout" ? "Redirecting..." : "Upgrade to Pro"}
         </button>
       ) : (
-        <button onClick={goPortal} disabled={loading !== null} style={btnPrimary}>
+        <button
+          onClick={() => {
+            void goPortal();
+          }}
+          disabled={loading !== null}
+          style={btnPrimary}
+        >
           {loading === "portal" ? "Opening..." : "Manage subscription"}
         </button>
       )}

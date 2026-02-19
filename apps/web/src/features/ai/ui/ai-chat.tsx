@@ -7,6 +7,40 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/car
 import { Input } from "@/shared/ui/shadcn/input";
 
 type Msg = { role: "user" | "assistant"; content: string };
+type ChatErrorResponse = { error?: string };
+
+type SseEvent =
+  | { type: "delta"; text: string }
+  | { type: "usage"; inputTokens: number; outputTokens: number }
+  | { type: "done" }
+  | { type: "error"; message: string };
+
+function parseSseEvent(raw: string): SseEvent | null {
+  const parsed: unknown = JSON.parse(raw);
+  if (!parsed || typeof parsed !== "object") return null;
+
+  const obj = parsed as Record<string, unknown>;
+  if (obj["type"] === "delta" && typeof obj["text"] === "string") {
+    return { type: "delta", text: obj["text"] };
+  }
+  if (
+    obj["type"] === "usage" &&
+    typeof obj["inputTokens"] === "number" &&
+    typeof obj["outputTokens"] === "number"
+  ) {
+    return {
+      type: "usage",
+      inputTokens: obj["inputTokens"],
+      outputTokens: obj["outputTokens"],
+    };
+  }
+  if (obj["type"] === "done") return { type: "done" };
+  if (obj["type"] === "error" && typeof obj["message"] === "string") {
+    return { type: "error", message: obj["message"] };
+  }
+
+  return null;
+}
 
 export function AIChat() {
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -27,15 +61,19 @@ export function AIChat() {
     const res = await fetch("/api/ai/chat", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ messages: next.map((m) => ({ role: m.role, content: m.content })) }),
+      body: JSON.stringify({
+        messages: next.map((m) => ({ role: m.role, content: m.content })),
+      }),
     });
 
-    // Quota error (json)
     const ct = res.headers.get("content-type") ?? "";
     if (!res.ok && ct.includes("application/json")) {
-      const j = await res.json();
+      const j = (await res.json()) as ChatErrorResponse;
       setBusy(false);
-      setMessages([...next, { role: "assistant", content: `⚠️ ${j.error}` }]);
+      setMessages([
+        ...next,
+        { role: "assistant", content: `Warning: ${j.error ?? "AI request failed"}` },
+      ]);
       return;
     }
 
@@ -49,7 +87,6 @@ export function AIChat() {
     let assistant = "";
     let buffer = "";
 
-    // add placeholder assistant message
     setMessages([...next, { role: "assistant", content: "" }]);
 
     while (true) {
@@ -57,8 +94,6 @@ export function AIChat() {
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
-
-      // split on SSE message boundary
       const parts = buffer.split("\n\n");
       buffer = parts.pop() ?? "";
 
@@ -66,24 +101,29 @@ export function AIChat() {
         const line = part.split("\n").find((l) => l.startsWith("data: "));
         if (!line) continue;
 
-        const data = JSON.parse(line.slice(6));
+        const data = parseSseEvent(line.slice(6));
+        if (!data) continue;
 
         if (data.type === "delta") {
           assistant += data.text;
           setMessages((prev) => {
             const copy = prev.slice();
             const last = copy[copy.length - 1];
-            if (last?.role === "assistant") copy[copy.length - 1] = { role: "assistant", content: assistant };
+            if (last?.role === "assistant") {
+              copy[copy.length - 1] = { role: "assistant", content: assistant };
+            }
             return copy;
           });
+          continue;
         }
 
         if (data.type === "usage") {
           setUsage({ inputTokens: data.inputTokens, outputTokens: data.outputTokens });
+          continue;
         }
 
-        if (data.type === "done") {
-          // noop
+        if (data.type === "error") {
+          break;
         }
       }
     }
@@ -96,7 +136,9 @@ export function AIChat() {
       <CardHeader className="space-y-2">
         <CardTitle className="text-sm font-extrabold">AI Chat (Demo)</CardTitle>
         <div className="text-xs text-muted-foreground">
-          {usage ? `Usage: ${usage.inputTokens} in / ${usage.outputTokens} out (${totalTokens} total)` : "Usage: —"}
+          {usage
+            ? `Usage: ${usage.inputTokens} in / ${usage.outputTokens} out (${totalTokens} total)`
+            : "Usage: -"}
         </div>
       </CardHeader>
 
@@ -114,13 +156,19 @@ export function AIChat() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask something…"
+            placeholder="Ask something..."
             onKeyDown={(e) => {
               if (e.key === "Enter") void send();
             }}
           />
-          <Button className="rounded-2xl" disabled={busy} onClick={send}>
-            {busy ? "…" : "Send"}
+          <Button
+            className="rounded-2xl"
+            disabled={busy}
+            onClick={() => {
+              void send();
+            }}
+          >
+            {busy ? "..." : "Send"}
           </Button>
         </div>
       </CardContent>
