@@ -1,7 +1,7 @@
 import { prisma } from "@db";
 import type {
   BillingWebhookEventsRepo as BillingWebhookEventsRepoPort,
-  StripeWebhookEnvelope,
+  BillingWebhookEnvelope,
 } from "@billing-core";
 
 function isUniqueConstraintViolation(error: unknown): boolean {
@@ -19,7 +19,8 @@ const db = prisma as typeof prisma & {
 
 export class BillingWebhookEventsRepo implements BillingWebhookEventsRepoPort {
   async createReceived(
-    event: StripeWebhookEnvelope,
+    event: BillingWebhookEnvelope,
+    payload?: Record<string, unknown>,
   ): Promise<"created" | "duplicate"> {
     try {
       await db.billingWebhookEvent.create({
@@ -29,8 +30,9 @@ export class BillingWebhookEventsRepo implements BillingWebhookEventsRepoPort {
           eventType: event.type,
           eventCreatedAt: event.createdAt,
           organizationId: event.organizationId,
-          stripeSubscriptionId: event.stripeSubscriptionId,
+          providerSubscriptionId: event.providerSubscriptionId,
           status: "received",
+          payload: payload as any,
         },
       });
       return "created";
@@ -44,6 +46,7 @@ export class BillingWebhookEventsRepo implements BillingWebhookEventsRepoPort {
     eventId: string;
     status: string;
     errorMessage?: string;
+    incrementDeliveryAttempts?: boolean;
   }): Promise<void> {
     await db.billingWebhookEvent.update({
       where: { eventId: params.eventId },
@@ -51,7 +54,29 @@ export class BillingWebhookEventsRepo implements BillingWebhookEventsRepoPort {
         status: params.status,
         errorMessage: params.errorMessage ?? null,
         processedAt: new Date(),
+        lastAttemptAt: new Date(),
+        deliveryAttempts: params.incrementDeliveryAttempts
+          ? { increment: 1 }
+          : undefined,
       },
+    });
+  }
+
+  async getPayloadByEventId(eventId: string): Promise<Record<string, unknown> | null> {
+    const row = await prisma.billingWebhookEvent.findUnique({
+      where: { eventId },
+      select: { payload: true },
+    });
+    if (!row?.payload || typeof row.payload !== "object") return null;
+    return row.payload as Record<string, unknown>;
+  }
+
+  async listReplayableFailed(limit: number): Promise<Array<{ eventId: string }>> {
+    return prisma.billingWebhookEvent.findMany({
+      where: { status: "failed" },
+      orderBy: { receivedAt: "asc" },
+      take: limit,
+      select: { eventId: true },
     });
   }
 }

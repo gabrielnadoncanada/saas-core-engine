@@ -41,7 +41,7 @@ export default async function BillingPage() {
         </div>
 
         <div style={{ marginTop: 16 }}>
-          <BillingActions hasCustomer={Boolean(sub?.stripeCustomerId)} isPro={sub?.plan === "pro"} />
+          <BillingActions hasCustomer={Boolean(sub?.providerCustomerId)} isPro={sub?.plan === "pro"} />
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { prisma } from "@db";
 
 import { getSessionUser } from "@/server/auth/require-user";
 import { env } from "@/server/config/env";
+import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
 import {
   createAIEnforcementService,
   createAIPromptsService,
@@ -12,10 +13,8 @@ import {
 import { DEFAULT_PROMPTS } from "@/server/ai/prompts/default-prompts";
 
 import { buildToolRegistry } from "@/server/ai/tools";
-import { executeTool } from "@ai-core";
+import { executeToolWithContract } from "@ai-core";
 import {
-  time,
-  withTimeout,
   redact,
   clampJsonSize,
 } from "@/server/ai/tools/telemetry";
@@ -56,6 +55,15 @@ function clampResultSize(obj: unknown) {
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return new Response("Unauthorized", { status: 401 });
+  try {
+    await withRequiredOrgScope({
+      organizationId: user.organizationId,
+      action: "ai:tools:execute",
+      run: async () => undefined,
+    });
+  } catch {
+    return new Response("Forbidden", { status: 403 });
+  }
 
   const raw = await req.json().catch(() => null);
   const body = BodySchema.safeParse(raw);
@@ -170,18 +178,17 @@ export async function POST(req: Request) {
       let toolDurationMs = 0;
 
       try {
-        const exec = await time(async () => {
-          const res = await withTimeout(
-            executeTool(registry, pick.tool, pick.args, {
-              userId: user.id,
-              orgId: user.organizationId,
-            }),
-            2000,
-          );
-          return clampJsonSize(redact(res));
-        });
-        toolResult = exec.error ? null : exec.value;
-        toolError = exec.error;
+        const exec = await executeToolWithContract(
+          registry,
+          pick.tool,
+          pick.args,
+          {
+            userId: user.id,
+            orgId: user.organizationId,
+          },
+        );
+        toolResult = clampJsonSize(redact(exec.result));
+        toolError = null;
         toolDurationMs = exec.durationMs;
       } catch (e) {
         toolError = (e as Error).message;

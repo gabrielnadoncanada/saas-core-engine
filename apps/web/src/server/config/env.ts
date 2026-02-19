@@ -91,6 +91,8 @@ const envSchema = z
     OTEL_ENABLED: boolFromString.default("false"),
     OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
     OTEL_EXPORT_INTERVAL_MS: boundedNumberFromString(1000, 60000, "10000"),
+    QUEUE_ENABLED: boolFromString.default("false"),
+    QUEUE_REDIS_URL: z.string().url().default("redis://127.0.0.1:6379"),
 
     DEMO_MODE: boolFromString.default("false"),
     OPENAI_API_KEY: z.string().min(1),

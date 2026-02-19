@@ -1,10 +1,10 @@
-export type StripeOrderingEvent = {
+export type BillingOrderingEvent = {
   id: string;
   type: string;
   createdAt: Date;
 };
 
-export type StripeOrderingCursor = {
+export type BillingOrderingCursor = {
   lastEventId: string;
   lastEventType: string;
   lastEventCreatedAt: Date;
@@ -24,8 +24,8 @@ function precedence(eventType: string): number {
 }
 
 export function shouldIgnoreOutOfOrderEvent(
-  cursor: StripeOrderingCursor | null,
-  incoming: StripeOrderingEvent,
+  cursor: BillingOrderingCursor | null,
+  incoming: BillingOrderingEvent,
 ): boolean {
   if (!cursor) return false;
 
@@ -41,50 +41,54 @@ export function shouldIgnoreOutOfOrderEvent(
   return incomingPrecedence < cursorPrecedence;
 }
 
-export type StripeWebhookEnvelope = {
+export type BillingWebhookEnvelope = {
   id: string;
   type: string;
   createdAt: Date;
   organizationId: string | null;
-  stripeSubscriptionId: string | null;
+  providerSubscriptionId: string | null;
 };
 
 export interface BillingWebhookEventsRepo {
-  createReceived(event: StripeWebhookEnvelope): Promise<"created" | "duplicate">;
+  createReceived(
+    event: BillingWebhookEnvelope,
+    payload?: Record<string, unknown>,
+  ): Promise<"created" | "duplicate">;
   markStatus(params: {
     eventId: string;
     status: string;
     errorMessage?: string;
+    incrementDeliveryAttempts?: boolean;
   }): Promise<void>;
 }
 
 export interface BillingSubscriptionCursorRepo {
-  findByStripeSubscriptionId(
-    stripeSubscriptionId: string,
-  ): Promise<StripeOrderingCursor | null>;
+  findByProviderSubscriptionId(
+    providerSubscriptionId: string,
+  ): Promise<BillingOrderingCursor | null>;
   upsert(params: {
-    stripeSubscriptionId: string;
+    providerSubscriptionId: string;
     lastEventCreatedAt: Date;
     lastEventId: string;
     lastEventType: string;
   }): Promise<void>;
 }
 
-export class StripeWebhookOrchestrator {
+export class BillingWebhookOrchestrator {
   constructor(
     private readonly events: BillingWebhookEventsRepo,
     private readonly cursors: BillingSubscriptionCursorRepo,
   ) {}
 
   async begin(
-    event: StripeWebhookEnvelope,
+    event: BillingWebhookEnvelope,
   ): Promise<"process" | "duplicate" | "ignored"> {
     const created = await this.events.createReceived(event);
     if (created === "duplicate") return "duplicate";
 
-    if (event.stripeSubscriptionId) {
-      const cursor = await this.cursors.findByStripeSubscriptionId(
-        event.stripeSubscriptionId,
+    if (event.providerSubscriptionId) {
+      const cursor = await this.cursors.findByProviderSubscriptionId(
+        event.providerSubscriptionId,
       );
       if (
         shouldIgnoreOutOfOrderEvent(cursor, {
@@ -104,10 +108,10 @@ export class StripeWebhookOrchestrator {
     return "process";
   }
 
-  async complete(event: StripeWebhookEnvelope): Promise<void> {
-    if (event.stripeSubscriptionId) {
+  async complete(event: BillingWebhookEnvelope): Promise<void> {
+    if (event.providerSubscriptionId) {
       await this.cursors.upsert({
-        stripeSubscriptionId: event.stripeSubscriptionId,
+        providerSubscriptionId: event.providerSubscriptionId,
         lastEventCreatedAt: event.createdAt,
         lastEventId: event.id,
         lastEventType: event.type,
@@ -128,4 +132,3 @@ export class StripeWebhookOrchestrator {
     });
   }
 }
-

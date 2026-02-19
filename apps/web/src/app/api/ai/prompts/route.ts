@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/server/auth/require-user";
+import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
 import { DEFAULT_PROMPTS } from "@/server/ai/prompts/default-prompts";
 import { createAIPromptsService } from "@/server/adapters/core/ai-core.adapter";
 
@@ -10,6 +11,16 @@ export async function GET(req: Request) {
       { ok: false, error: "Unauthorized" },
       { status: 401 },
     );
+
+  try {
+    await withRequiredOrgScope({
+      organizationId: user.organizationId,
+      action: "ai:prompts:manage",
+      run: async () => undefined,
+    });
+  } catch {
+    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+  }
 
   const { searchParams } = new URL(req.url);
   const key = searchParams.get("key") as keyof typeof DEFAULT_PROMPTS | null;
@@ -35,6 +46,16 @@ export async function POST(req: Request) {
       { ok: false, error: "Unauthorized" },
       { status: 401 },
     );
+
+  try {
+    await withRequiredOrgScope({
+      organizationId: user.organizationId,
+      action: "ai:prompts:manage",
+      run: async () => undefined,
+    });
+  } catch {
+    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+  }
 
   const body = (await req.json()) as { key: string; content: string };
   const key = body.key as keyof typeof DEFAULT_PROMPTS;

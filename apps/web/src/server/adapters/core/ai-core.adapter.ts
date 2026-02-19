@@ -1,9 +1,11 @@
 import {
+  AIBudgetService,
   AIEnforcementService,
   AIPromptsService,
   AIRateLimitService,
   AIUsageService,
 } from "@ai-core";
+import { AIBudgetsRepo } from "@/server/db-repos/ai-budgets.repo";
 import { AIRateLimitRepo } from "@/server/db-repos/ai-rate-limit.repo";
 import { AIPromptsRepo } from "@/server/db-repos/ai-prompts.repo";
 import { AIUsageRepo } from "@/server/db-repos/ai-usage.repo";
@@ -30,9 +32,11 @@ export function createAIRateLimitService() {
 }
 
 export function createAIEnforcementService() {
+  const usage = createAIUsageService();
   return new AIEnforcementService(
-    createAIUsageService(),
+    usage,
     createAIRateLimitService(),
+    new AIBudgetService(usage, new AIBudgetsRepo()),
   );
 }
 

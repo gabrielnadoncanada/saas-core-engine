@@ -30,6 +30,7 @@ const sections: Array<{ title: string; items: NavItem[] }> = [
   {
     title: "AI",
     items: [
+      { href: routes.app.aiAssistant, label: "AI Assistant" },
       { href: routes.app.aiUsage, label: "AI Usage" },
       { href: routes.app.aiAudit, label: "AI Audit" },
       { href: routes.app.aiPrompts, label: "AI Prompts" },

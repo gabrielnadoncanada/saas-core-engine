@@ -1,28 +1,40 @@
 import { NextResponse } from "next/server";
-import { AI_POLICY, getMonthRange, normalizePlan } from "@ai-core";
+import { AI_POLICY, buildAIUsageReport, getMonthRange, normalizePlan } from "@ai-core";
 import { prisma } from "@db";
 import { getSessionUser } from "@/server/auth/require-user";
+import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
 import { createAIUsageService } from "@/server/adapters/core/ai-core.adapter";
+import { AIBudgetsRepo } from "@/server/db-repos/ai-budgets.repo";
 
 export async function GET() {
   const user = await getSessionUser();
-  if (!user)
-    return NextResponse.json(
-      { ok: false, error: "Unauthorized" },
-      { status: 401 },
-    );
+  if (!user) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
 
   const orgId = user.organizationId;
+  try {
+    await withRequiredOrgScope({
+      organizationId: orgId,
+      action: "ai:usage:read",
+      run: async () => undefined,
+    });
+  } catch {
+    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+  }
+
   const usageService = createAIUsageService();
   const plan = await usageService.getOrgPlan(orgId);
   const normalizedPlan = normalizePlan(plan);
   const policyEntry = AI_POLICY[normalizedPlan];
   const quota = policyEntry.monthlyTokens;
 
-  const monthly = await usageService.getOrgMonthlyUsage(orgId);
-  const { start, end } = getMonthRange();
+  const budget = await new AIBudgetsRepo().findByOrg(orgId);
+  const budgetUsd = budget?.monthlyBudgetUsd ?? policyEntry.monthlyBudgetUsd;
+  const alertThresholdPct = budget?.alertThresholdPct ?? 80;
+  const hardStopEnabled = budget?.hardStopEnabled ?? true;
 
-  // Daily aggregation (tokens + cost)
+  const { start, end } = getMonthRange();
   const rows = await prisma.aIUsage.findMany({
     where: { organizationId: orgId, createdAt: { gte: start, lt: end } },
     select: {
@@ -35,42 +47,19 @@ export async function GET() {
     orderBy: { createdAt: "asc" },
   });
 
-  // Per user aggregation
-  const byUser = new Map<
-    string,
-    { input: number; output: number; cost: number }
-  >();
-  for (const r of rows) {
-    const cur = byUser.get(r.userId) ?? { input: 0, output: 0, cost: 0 };
-    cur.input += r.inputTokens;
-    cur.output += r.outputTokens;
-    cur.cost += r.costUsd;
-    byUser.set(r.userId, cur);
-  }
-
-  // Resolve emails for top users
-  const userIds = Array.from(byUser.keys());
+  const userIds = Array.from(new Set(rows.map((row) => row.userId)));
   const users = await prisma.user.findMany({
     where: { id: { in: userIds } },
     select: { id: true, email: true },
   });
-  const emailById = new Map(users.map((u) => [u.id, u.email] as const));
 
-  // Daily buckets
-  const dayKey = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  const daily = new Map<
-    string,
-    { day: string; tokens: number; costUsd: number }
-  >();
-
-  for (const r of rows) {
-    const k = dayKey(r.createdAt);
-    const cur = daily.get(k) ?? { day: k, tokens: 0, costUsd: 0 };
-    cur.tokens += r.inputTokens + r.outputTokens;
-    cur.costUsd += r.costUsd;
-    daily.set(k, cur);
-  }
+  const report = buildAIUsageReport({
+    rows,
+    users,
+    budgetUsd,
+    alertThresholdPct,
+    hardStopEnabled,
+  });
 
   return NextResponse.json({
     ok: true,
@@ -78,17 +67,9 @@ export async function GET() {
     model: policyEntry.model,
     rpm: policyEntry.rpm,
     quota,
-    monthly,
-    daily: Array.from(daily.values()).sort((a, b) => (a.day < b.day ? -1 : 1)),
-    users: Array.from(byUser.entries())
-      .map(([userId, v]) => ({
-        userId,
-        email: emailById.get(userId) ?? userId.slice(0, 8) + "…",
-        tokens: v.input + v.output,
-        inputTokens: v.input,
-        outputTokens: v.output,
-        costUsd: v.cost,
-      }))
-      .sort((a, b) => b.tokens - a.tokens),
+    monthly: report.monthly,
+    budget: report.budget,
+    daily: report.daily,
+    users: report.users,
   });
 }

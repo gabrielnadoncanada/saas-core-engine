@@ -1,6 +1,6 @@
 import {
+  BillingWebhookOrchestrator,
   BillingSessionService,
-  StripeWebhookOrchestrator,
   SubscriptionSyncService,
 } from "@billing-core";
 import { BillingSubscriptionCursorsRepo } from "@/server/db-repos/billing-subscription-cursors.repo";
@@ -13,8 +13,8 @@ export function createSubscriptionSyncService() {
   return new SubscriptionSyncService(new SubscriptionsRepo());
 }
 
-export function createStripeWebhookOrchestrator() {
-  return new StripeWebhookOrchestrator(
+export function createBillingWebhookOrchestrator() {
+  return new BillingWebhookOrchestrator(
     new BillingWebhookEventsRepo(),
     new BillingSubscriptionCursorsRepo(),
   );

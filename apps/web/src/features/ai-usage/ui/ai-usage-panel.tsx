@@ -23,6 +23,13 @@ type ApiResponse = {
   plan: "free" | "pro" | string;
   quota: number;
   monthly: { inputTokens: number; outputTokens: number; totalTokens: number; costUsd: number };
+  budget: {
+    monthlyBudgetUsd: number;
+    usagePct: number;
+    inAlert: boolean;
+    alertThresholdPct: number;
+    hardStopEnabled: boolean;
+  };
   daily: DailyPoint[];
   users: UserRow[];
 };
@@ -59,7 +66,11 @@ export function AIUsagePanel() {
       <div className="grid gap-6 md:grid-cols-3">
         <Kpi title="Plan" value={data.plan.toUpperCase()} hint={`Quota: ${fmtInt(data.quota)} tokens/month`} />
         <Kpi title="Tokens used" value={fmtInt(data.monthly.totalTokens)} hint={`${pct}% of quota`} />
-        <Kpi title="Cost (est.)" value={`$${data.monthly.costUsd.toFixed(2)}`} hint="Based on model pricing table" />
+        <Kpi
+          title="Cost (est.)"
+          value={`$${data.monthly.costUsd.toFixed(2)}`}
+          hint={`Budget: $${data.budget.monthlyBudgetUsd.toFixed(2)} (${data.budget.usagePct}%)`}
+        />
       </div>
 
       <Card className="rounded-3xl">
@@ -86,6 +97,32 @@ export function AIUsagePanel() {
               <Button asChild className="rounded-2xl">
                 <Link href={routes.app.billing}>Upgrade</Link>
               </Button>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-3xl">
+        <CardHeader className="space-y-2">
+          <CardTitle className="text-sm font-extrabold">Budget governance</CardTitle>
+          <div className="text-xs text-muted-foreground">
+            ${data.monthly.costUsd.toFixed(2)} / ${data.budget.monthlyBudgetUsd.toFixed(2)} this month
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="h-3 w-full rounded-full bg-muted">
+            <div
+              className="h-3 rounded-full bg-foreground"
+              style={{ width: `${Math.min(100, data.budget.usagePct)}%` }}
+            />
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Alert threshold: {data.budget.alertThresholdPct}%.
+            Hard stop: {data.budget.hardStopEnabled ? " enabled" : " disabled"}.
+          </div>
+          {data.budget.inAlert ? (
+            <div className="rounded-xl border border-amber-400 bg-amber-50 p-3 text-xs">
+              Burn-rate alert: cost usage crossed threshold.
             </div>
           ) : null}
         </CardContent>

@@ -137,8 +137,8 @@ model Subscription {
   plan   SubscriptionPlan   @default(free)
   status SubscriptionStatus @default(inactive)
 
-  stripeCustomerId     String?   @unique @map("stripe_customer_id")
-  stripeSubscriptionId String?   @unique @map("stripe_subscription_id")
+  providerCustomerId     String?   @unique @map("provider_customer_id")
+  providerSubscriptionId String?   @unique @map("provider_subscription_id")
   currentPeriodEnd     DateTime? @map("current_period_end")
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -259,21 +259,24 @@ model BillingWebhookEvent {
   eventType           String   @map("event_type")
   eventCreatedAt      DateTime @map("event_created_at")
   organizationId      String?  @map("organization_id")
-  stripeSubscriptionId String? @map("stripe_subscription_id")
+  providerSubscriptionId String? @map("provider_subscription_id")
   status              String   @default("received")
   errorMessage        String?  @map("error_message")
+  payload             Json?
+  deliveryAttempts    Int      @default(0) @map("delivery_attempts")
+  lastAttemptAt       DateTime? @map("last_attempt_at")
   receivedAt          DateTime @default(now()) @map("received_at")
   processedAt         DateTime? @map("processed_at")
 
   @@index([eventCreatedAt])
   @@index([organizationId, receivedAt])
-  @@index([stripeSubscriptionId, eventCreatedAt])
+  @@index([providerSubscriptionId, eventCreatedAt])
   @@map("billing_webhook_events")
 }
 
 model BillingSubscriptionCursor {
   id                  String   @id @default(cuid())
-  stripeSubscriptionId String  @unique @map("stripe_subscription_id")
+  providerSubscriptionId String  @unique @map("provider_subscription_id")
   lastEventId         String   @map("last_event_id")
   lastEventType       String   @map("last_event_type")
   lastEventCreatedAt  DateTime @map("last_event_created_at")
@@ -345,6 +348,19 @@ model AIUsage {
   outputTokens   Int
   costUsd        Float
   createdAt      DateTime @default(now())
+}
+
+model AIBudget {
+  id               String   @id @default(cuid())
+  organizationId   String   @unique
+  monthlyBudgetUsd Float    @default(0)
+  alertThresholdPct Int     @default(80) @map("alert_threshold_pct")
+  hardStopEnabled  Boolean  @default(true) @map("hard_stop_enabled")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@index([organizationId])
+  @@map("ai_budgets")
 }
 
 model AIRateLimitBucket {

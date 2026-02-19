@@ -17,6 +17,7 @@ export const routes = {
     audit: "/dashboard/audit",
     sessions: "/dashboard/sessions",
     settings: "/dashboard/settings",
+    aiAssistant: "/dashboard/ai-assistant",
     aiUsage: "/dashboard/ai-usage",
     aiAudit: "/dashboard/ai-audit",
     aiPrompts: "/dashboard/ai-prompts",

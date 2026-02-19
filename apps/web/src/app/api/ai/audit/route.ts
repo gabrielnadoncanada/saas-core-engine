@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@db";
 import { getSessionUser } from "@/server/auth/require-user";
+import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
 
 export async function GET(req: Request) {
   const user = await getSessionUser();
@@ -9,6 +10,16 @@ export async function GET(req: Request) {
       { ok: false, error: "Unauthorized" },
       { status: 401 },
     );
+
+  try {
+    await withRequiredOrgScope({
+      organizationId: user.organizationId,
+      action: "ai:audit:read",
+      run: async () => undefined,
+    });
+  } catch {
+    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+  }
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status"); // ok | error | blocked | null

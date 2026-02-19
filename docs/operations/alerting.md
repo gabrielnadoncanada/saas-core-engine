@@ -45,6 +45,18 @@
 - Condition: `action=org.roles.updated` exceeds baseline + 3 sigma over 1h
 - Severity: `P3`
 
+9. AI budget burn rate
+- Condition: `ai budget usage pct` > alert threshold for 15m
+- Severity: `P2`
+
+10. AI hard-stop triggered
+- Condition: AI requests blocked with `error=AI budget exceeded for this month.`
+- Severity: `P2`
+
+11. Billing webhook retry backlog
+- Condition: `billing_webhook_events` with `status=failed` grows continuously for 30m
+- Severity: `P1`
+
 ## Routing
 
 - `P1`: Pager + incident channel + on-call escalation

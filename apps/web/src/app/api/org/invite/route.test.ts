@@ -8,6 +8,7 @@ const enforceOrgActionRateLimit = vi.fn();
 const logInfo = vi.fn();
 const logWarn = vi.fn();
 const logError = vi.fn();
+const enqueueOrgInviteEmail = vi.fn();
 
 vi.mock("@/server/auth/with-org-scope", () => ({
   withRequiredOrgScope,
@@ -45,6 +46,10 @@ vi.mock("@/server/logging/logger", () => ({
   logError,
 }));
 
+vi.mock("@/server/jobs/queues", () => ({
+  enqueueOrgInviteEmail,
+}));
+
 vi.mock("@/server/telemetry/otel", () => ({
   withApiTelemetry: async (_req: Request, _route: string, handler: () => Promise<Response>) =>
     handler(),
@@ -69,6 +74,7 @@ describe("POST /api/org/invite", () => {
     logOrgAudit.mockResolvedValue(undefined);
     sendOrgInvite.mockResolvedValue(undefined);
     enforceOrgActionRateLimit.mockResolvedValue(undefined);
+    enqueueOrgInviteEmail.mockRejectedValue(new Error("QUEUE_DISABLED"));
   });
 
   it("returns 400 for invalid body", async () => {

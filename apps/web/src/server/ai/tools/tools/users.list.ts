@@ -7,6 +7,9 @@ export const usersListTool: AITool = {
   name: "users.list",
   description: "List users in the current organization (email + role).",
   schema: z.object({ limit: z.number().int().min(1).max(50).default(10) }),
+  timeoutMs: 2500,
+  retries: 1,
+  authorize: (ctx) => Boolean(ctx.orgId && ctx.userId),
   async execute(args, ctx) {
     const parsed = z
       .object({ limit: z.number().int().min(1).max(50).default(10) })

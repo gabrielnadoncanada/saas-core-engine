@@ -17,6 +17,7 @@
     "@contracts": "workspace:*",
     "@db": "workspace:*",
     "@email": "workspace:*",
+    "@jobs-core": "workspace:*",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/exporter-metrics-otlp-http": "^0.212.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.212.0",

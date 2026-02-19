@@ -23,6 +23,8 @@
       "@billing-core/*": ["../../packages/billing-core/src/*"],
       "@email": ["../../packages/email/src/index.ts"],
       "@email/*": ["../../packages/email/src/*"],
+      "@jobs-core": ["../../packages/jobs-core/src/index.ts"],
+      "@jobs-core/*": ["../../packages/jobs-core/src/*"],
       "@ui": ["../../packages/ui/src/index.ts"],
       "@ui/*": ["../../packages/ui/src/*"]
     }

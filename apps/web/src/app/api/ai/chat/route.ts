@@ -4,6 +4,7 @@ import { estimateCost } from "@ai-core";
 import { prisma } from "@db";
 import { env } from "@/server/config/env";
 import { getSessionUser } from "@/server/auth/require-user";
+import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
 import { DEFAULT_PROMPTS } from "@/server/ai/prompts/default-prompts";
 import {
   createAIEnforcementService,
@@ -26,6 +27,15 @@ function sseJson(data: unknown) {
 export async function POST(req: Request) {
   const sessionUser = await getSessionUser();
   if (!sessionUser) return new Response("Unauthorized", { status: 401 });
+  try {
+    await withRequiredOrgScope({
+      organizationId: sessionUser.organizationId,
+      action: "ai:assistant:use",
+      run: async () => undefined,
+    });
+  } catch {
+    return new Response("Forbidden", { status: 403 });
+  }
 
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);

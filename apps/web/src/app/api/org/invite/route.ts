@@ -8,6 +8,7 @@ import { getEmailService } from "@/server/services/email.service";
 import { absoluteUrl } from "@/server/services/url.service";
 import { createInviteService } from "@/server/adapters/core/org-core.adapter";
 import { logOrgAudit } from "@/server/services/org-audit.service";
+import { enqueueOrgInviteEmail } from "@/server/jobs/queues";
 import {
   getOrCreateRequestId,
   withRequestId,
@@ -105,8 +106,19 @@ export async function POST(req: Request) {
               where: { id: orgCtx.organizationId },
               select: { name: true },
             });
-            const mail = getEmailService();
-            await mail.sendOrgInvite(email, acceptUrl, organization?.name ?? undefined);
+            try {
+              await enqueueOrgInviteEmail({
+                email,
+                acceptUrl,
+                organizationName: organization?.name ?? undefined,
+              });
+            } catch (error) {
+              if (!(error instanceof Error) || error.message !== "QUEUE_DISABLED") {
+                throw error;
+              }
+              const mail = getEmailService();
+              await mail.sendOrgInvite(email, acceptUrl, organization?.name ?? undefined);
+            }
 
             await logOrgAudit({
               organizationId: orgCtx.organizationId,

@@ -7,6 +7,9 @@ export const subscriptionGetTool: AITool = {
   name: "subscription.get",
   description: "Get subscription status and plan for the current organization.",
   schema: z.object({}),
+  timeoutMs: 2000,
+  retries: 1,
+  authorize: (ctx) => Boolean(ctx.orgId && ctx.userId),
   async execute(_args, ctx) {
     z.object({}).parse(_args);
     const sub = await prisma.subscription.findUnique({

@@ -38,8 +38,8 @@ async function main() {
       organizationId: org.id,
       plan: "pro",
       status: "active",
-      stripeCustomerId: "cus_demo",
-      stripeSubscriptionId: "sub_demo",
+      providerCustomerId: "cus_demo",
+      providerSubscriptionId: "sub_demo",
       currentPeriodEnd: new Date(Date.now() + 1000 * 60 * 60 * 24 * 19),
     },
   });

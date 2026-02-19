@@ -7,13 +7,13 @@ export interface BillingOrganizationRepo {
 export interface BillingSubscriptionRepo {
   findByOrg(
     organizationId: string,
-  ): Promise<{ stripeCustomerId: string | null } | null>;
+  ): Promise<{ providerCustomerId: string | null } | null>;
   upsertOrgSubscription(params: {
     organizationId: string;
     plan: SubscriptionPlan;
     status: SubscriptionStatus;
-    stripeCustomerId?: string | null;
-    stripeSubscriptionId?: string | null;
+    providerCustomerId?: string | null;
+    providerSubscriptionId?: string | null;
     currentPeriodEnd?: Date | null;
   }): Promise<{ id: string }>;
 }
@@ -45,7 +45,7 @@ export class BillingSessionService {
 
   async ensureCustomerForOrg(params: { organizationId: string }) {
     const existing = await this.subs.findByOrg(params.organizationId);
-    if (existing?.stripeCustomerId) return existing.stripeCustomerId;
+    if (existing?.providerCustomerId) return existing.providerCustomerId;
 
     const org = await this.orgs.findById(params.organizationId);
     const customer = await this.provider.createCustomer({
@@ -57,7 +57,7 @@ export class BillingSessionService {
       organizationId: params.organizationId,
       plan: "free",
       status: "inactive",
-      stripeCustomerId: customer.customerId,
+      providerCustomerId: customer.customerId,
     });
 
     return customer.customerId;
@@ -87,15 +87,14 @@ export class BillingSessionService {
     returnUrl: string;
   }) {
     const sub = await this.subs.findByOrg(params.organizationId);
-    if (!sub?.stripeCustomerId) {
+    if (!sub?.providerCustomerId) {
       return null;
     }
 
     return this.provider.createPortalSession({
-      customerId: sub.stripeCustomerId,
+      customerId: sub.providerCustomerId,
       returnUrl: params.returnUrl,
     });
   }
 }
 import type { SubscriptionPlan, SubscriptionStatus } from "@contracts";
-

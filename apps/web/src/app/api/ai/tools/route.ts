@@ -4,17 +4,16 @@ import { prisma } from "@db";
 
 import { getSessionUser } from "@/server/auth/require-user";
 import { env } from "@/server/config/env";
+import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
 import {
   createAIEnforcementService,
   createAIPromptsService,
 } from "@/server/adapters/core/ai-core.adapter";
 import { buildToolRegistry } from "@/server/ai/tools";
-import { executeTool } from "@ai-core";
+import { executeToolWithContract } from "@ai-core";
 
 import { DEFAULT_PROMPTS } from "@/server/ai/prompts/default-prompts";
 import {
-  time,
-  withTimeout,
   redact,
   clampJsonSize,
 } from "@/server/ai/tools/telemetry";
@@ -32,6 +31,15 @@ type ToolPick = z.infer<typeof ToolPickSchema>;
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return new Response("Unauthorized", { status: 401 });
+  try {
+    await withRequiredOrgScope({
+      organizationId: user.organizationId,
+      action: "ai:tools:execute",
+      run: async () => undefined,
+    });
+  } catch {
+    return new Response("Forbidden", { status: 403 });
+  }
 
   const raw = await req.json().catch(() => null);
   const body = BodySchema.safeParse(raw);
@@ -120,20 +128,18 @@ export async function POST(req: Request) {
     });
 
     // Step 2: Execute the tool
-    const exec = await time(async () => {
-      const res = await withTimeout(
-        executeTool(registry, pick.data.tool, pick.data.args, {
-          userId: user.id,
-          orgId: user.organizationId,
-        }),
-        2000,
-      );
-      return clampJsonSize(redact(res));
-    });
+    const exec = await executeToolWithContract(
+      registry,
+      pick.data.tool,
+      pick.data.args,
+      {
+        userId: user.id,
+        orgId: user.organizationId,
+      },
+    );
 
-    const result = exec.error ? null : exec.value;
-
-    const toolError = exec.error;
+    const result = clampJsonSize(redact(exec.result));
+    const toolError = null;
 
     const resultJson = JSON.stringify(result);
     if (resultJson.length > 20_000) {

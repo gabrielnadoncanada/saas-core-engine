@@ -13,8 +13,8 @@ export class SubscriptionsRepo {
       organizationId: string;
       plan: SubscriptionPlan;
       status: SubscriptionStatus;
-      stripeCustomerId?: string | null;
-      stripeSubscriptionId?: string | null;
+      providerCustomerId?: string | null;
+      providerSubscriptionId?: string | null;
       currentPeriodEnd?: Date | null;
     },
     tx?: DbTx,
@@ -25,15 +25,15 @@ export class SubscriptionsRepo {
         organizationId: params.organizationId,
         plan: params.plan,
         status: params.status,
-        stripeCustomerId: params.stripeCustomerId ?? null,
-        stripeSubscriptionId: params.stripeSubscriptionId ?? null,
+        providerCustomerId: params.providerCustomerId ?? null,
+        providerSubscriptionId: params.providerSubscriptionId ?? null,
         currentPeriodEnd: params.currentPeriodEnd ?? null,
       },
       update: {
         plan: params.plan,
         status: params.status,
-        stripeCustomerId: params.stripeCustomerId ?? null,
-        stripeSubscriptionId: params.stripeSubscriptionId ?? null,
+        providerCustomerId: params.providerCustomerId ?? null,
+        providerSubscriptionId: params.providerSubscriptionId ?? null,
         currentPeriodEnd: params.currentPeriodEnd ?? null,
       },
     });
@@ -46,12 +46,12 @@ export class SubscriptionsRepo {
     return db(tx).subscription.findUnique({ where: { organizationId } });
   }
 
-  async findByStripeSubscriptionId(
-    stripeSubscriptionId: string,
+  async findByProviderSubscriptionId(
+    providerSubscriptionId: string,
     tx?: DbTx,
   ): Promise<Subscription | null> {
     return db(tx).subscription.findFirst({
-      where: { stripeSubscriptionId },
+      where: { providerSubscriptionId },
     });
   }
 }

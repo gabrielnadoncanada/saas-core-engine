@@ -34,7 +34,7 @@ export interface OrganizationSubscription {
   organizationId: string;
   plan: SubscriptionPlan;
   status: SubscriptionStatus;
-  stripeCustomerId: string | null;
-  stripeSubscriptionId: string | null;
+  providerCustomerId: string | null;
+  providerSubscriptionId: string | null;
   currentPeriodEnd: Date | null;
 }

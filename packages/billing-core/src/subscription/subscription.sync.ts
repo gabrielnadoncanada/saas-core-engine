@@ -10,18 +10,18 @@ export interface SubscriptionsRepo {
     organizationId: string;
     plan: SubscriptionPlan;
     status: SubscriptionStatus;
-    stripeCustomerId?: string | null;
-    stripeSubscriptionId?: string | null;
+    providerCustomerId?: string | null;
+    providerSubscriptionId?: string | null;
     currentPeriodEnd?: Date | null;
   }): Promise<{ id: string }>;
 
-  findByStripeSubscriptionId(
-    stripeSubscriptionId: string,
+  findByProviderSubscriptionId(
+    providerSubscriptionId: string,
   ): Promise<{
     organizationId: string;
     plan: SubscriptionPlan;
-    stripeCustomerId: string | null;
-    stripeSubscriptionId: string | null;
+    providerCustomerId: string | null;
+    providerSubscriptionId: string | null;
     currentPeriodEnd: Date | null;
   } | null>;
 }
@@ -49,7 +49,7 @@ export class SubscriptionSyncService {
   async syncFromProviderSubscription(params: {
     organizationId: string;
     subscription: BillingProviderSubscriptionSnapshot;
-    stripeCustomerId: string | null;
+    providerCustomerId: string | null;
     proMonthlyPriceId: string;
   }) {
     const plan = planFromPriceId(
@@ -66,15 +66,15 @@ export class SubscriptionSyncService {
       organizationId: params.organizationId,
       plan,
       status,
-      stripeCustomerId: params.stripeCustomerId ?? null,
-      stripeSubscriptionId: params.subscription.id,
+      providerCustomerId: params.providerCustomerId ?? null,
+      providerSubscriptionId: params.subscription.id,
       currentPeriodEnd,
     });
   }
 
-  async markCanceled(params: { stripeSubscriptionId: string }) {
-    const existing = await this.subs.findByStripeSubscriptionId(
-      params.stripeSubscriptionId,
+  async markCanceled(params: { providerSubscriptionId: string }) {
+    const existing = await this.subs.findByProviderSubscriptionId(
+      params.providerSubscriptionId,
     );
     if (!existing) return;
 
@@ -82,8 +82,8 @@ export class SubscriptionSyncService {
       organizationId: existing.organizationId,
       plan: existing.plan,
       status: "canceled",
-      stripeCustomerId: existing.stripeCustomerId ?? null,
-      stripeSubscriptionId: existing.stripeSubscriptionId ?? null,
+      providerCustomerId: existing.providerCustomerId ?? null,
+      providerSubscriptionId: existing.providerSubscriptionId ?? null,
       currentPeriodEnd: existing.currentPeriodEnd ?? null,
     });
   }

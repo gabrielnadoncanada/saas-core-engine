@@ -219,6 +219,33 @@ function run(): number {
       "Impersonation active",
       "Impersonation banner exists",
     ),
+    checkFile("packages/jobs-core/src/index.ts", "Jobs core package exists"),
+    checkFile("apps/worker/src/worker.ts", "Worker app exists"),
+    checkFile(
+      "apps/web/src/app/(app)/dashboard/ai-assistant/page.tsx",
+      "AI assistant dashboard page exists",
+    ),
+    checkContains(
+      "packages/ai-core/src/tools/types.ts",
+      "authorize?:",
+      "Tool contract includes authz",
+    ),
+    checkContains(
+      "packages/ai-core/src/tools/types.ts",
+      "timeoutMs?:",
+      "Tool contract includes timeout",
+    ),
+    checkContains(
+      "packages/ai-core/src/tools/types.ts",
+      "retries?:",
+      "Tool contract includes retries",
+    ),
+    checkFile("apps/web/src/app/api/ai/budget/route.ts", "AI budget endpoint exists"),
+    checkFile("tooling/scripts/webhook-replay.ts", "Webhook replay CLI exists"),
+    checkFile("docs/operations/runbook-tool-registry-v3.md", "V3 tool runbook exists"),
+    checkFile("docs/operations/runbook-async-jobs-v3.md", "V3 async jobs runbook exists"),
+    checkFile("docs/operations/runbook-webhook-retry-v3.md", "V3 webhook runbook exists"),
+    checkFile("docs/operations/runbook-ai-budget-v3.md", "V3 AI budget runbook exists"),
   ];
 
   let failed = 0;

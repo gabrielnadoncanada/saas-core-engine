@@ -16,7 +16,7 @@ export async function POST(req: Request) {
 
     if (!portal) {
       return NextResponse.json(
-        { ok: false, error: "No Stripe customer" },
+        { ok: false, error: "No billing customer" },
         { status: 400 },
       );
     }

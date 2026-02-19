@@ -4,6 +4,7 @@ import { prisma } from "@db";
 import { z } from "zod";
 
 import { getSessionUser } from "@/server/auth/require-user";
+import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
 import { env } from "@/server/config/env";
 import {
   createAIEnforcementService,
@@ -38,6 +39,15 @@ const ContactSchema = z.object({
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return new Response("Unauthorized", { status: 401 });
+  try {
+    await withRequiredOrgScope({
+      organizationId: user.organizationId,
+      action: "ai:assistant:use",
+      run: async () => undefined,
+    });
+  } catch {
+    return new Response("Forbidden", { status: 403 });
+  }
 
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
