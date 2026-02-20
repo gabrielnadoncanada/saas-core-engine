@@ -1,6 +1,6 @@
 import "server-only";
 
-import { SessionsPanel } from "@/features/sessions/ui/sessions-panel";
+import { SessionsPanel } from "@/features/sessions/ui";
 import { requireUser } from "@/server/auth/require-user";
 
 export default async function SessionsPage() {

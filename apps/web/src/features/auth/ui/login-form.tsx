@@ -1,131 +1,157 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 
-import { routes } from "@/shared/constants/routes";
+import {
+  DEMO_CREDENTIALS,
+  getDashboardRedirectPath,
+  getOAuthStartUrl,
+  loginFormSchema,
+  loginWithPassword,
+  sendMagicLink,
+  type LoginFormValues,
+} from "@/features/auth/model";
 import { Button } from "@/shared/components/ui/button";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 import { Separator } from "@/shared/components/ui/separator";
-import { toast } from "sonner";
 
 type LoginFormProps = {
   demoMode?: boolean;
 };
 
-const DEMO_EMAIL = "demo@saastemplate.dev";
-const DEMO_PASSWORD = "DemoPassw0rd!";
-
 export function LoginForm({ demoMode = false }: LoginFormProps) {
-  const [email, setEmail] = useState(demoMode ? DEMO_EMAIL : "");
-  const [password, setPassword] = useState(demoMode ? DEMO_PASSWORD : "");
-  const [busy, setBusy] = useState<null | "password" | "magic" | "google" | "github">(null);
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginFormSchema),
+    defaultValues: {
+      email: demoMode ? DEMO_CREDENTIALS.email : "",
+      password: demoMode ? DEMO_CREDENTIALS.password : "",
+    },
+  });
 
-  async function loginPassword(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy("password");
+  const [busyAction, setBusyAction] = useState<null | "magic" | "google" | "github">(null);
+  const emailValue = form.watch("email");
+  const isBusy = form.formState.isSubmitting || busyAction !== null;
+
+  async function onSubmit(values: LoginFormValues) {
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const json = (await res.json()) as { ok?: boolean; error?: string };
-
-      if (!res.ok) throw new Error(json.error ?? "Login failed");
-
-      window.location.href = routes.app.dashboard;
+      await loginWithPassword(values);
+      window.location.href = getDashboardRedirectPath();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Login failed");
-    } finally {
-      setBusy(null);
     }
   }
 
-  async function sendMagic() {
-    setBusy("magic");
+  async function onSendMagic() {
+    const valid = await form.trigger("email");
+    if (!valid) return;
+
+    setBusyAction("magic");
     try {
-      await fetch("/api/auth/magic/request", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+      await sendMagicLink({ email: form.getValues("email") });
       toast.success("If the email exists, a magic link was sent.");
-    } catch {
-      toast.error("Failed to send magic link.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send magic link.");
     } finally {
-      setBusy(null);
+      setBusyAction(null);
     }
   }
 
-  function google() {
-    setBusy("google");
-    window.location.href = `/api/auth/oauth/google/start?redirect=${encodeURIComponent(routes.app.dashboard)}`;
-  }
-
-  function github() {
-    setBusy("github");
-    window.location.href = `/api/auth/oauth/github/start?redirect=${encodeURIComponent(routes.app.dashboard)}`;
+  function onOAuth(provider: "google" | "github") {
+    setBusyAction(provider);
+    window.location.href = getOAuthStartUrl(provider);
   }
 
   return (
-    <>
-      <form
-        onSubmit={(e) => {
-          void loginPassword(e);
-        }}
-        className="grid gap-3"
+    <form
+      onSubmit={(e) => {
+        void form.handleSubmit(onSubmit)(e);
+      }}
+      className="grid gap-3"
+    >
+      <FieldGroup>
+        <Controller
+          name="email"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="login-email">Email</FieldLabel>
+              <Input
+                {...field}
+                id="login-email"
+                placeholder="you@company.com"
+                type="email"
+                autoComplete="email"
+                aria-invalid={fieldState.invalid}
+              />
+              {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+            </Field>
+          )}
+        />
+
+        <Controller
+          name="password"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="login-password">Password</FieldLabel>
+              <Input
+                {...field}
+                id="login-password"
+                placeholder="********"
+                type="password"
+                autoComplete="current-password"
+                aria-invalid={fieldState.invalid}
+              />
+              {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+            </Field>
+          )}
+        />
+      </FieldGroup>
+
+      <Button className="rounded-xl" disabled={isBusy}>
+        {form.formState.isSubmitting ? "Signing in..." : "Sign in"}
+      </Button>
+
+      <div className="flex justify-between text-sm">
+        <a className="underline text-muted-foreground" href="/forgot-password">
+          Forgot password?
+        </a>
+        <button
+          type="button"
+          className="underline text-muted-foreground"
+          onClick={() => {
+            void onSendMagic();
+          }}
+          disabled={isBusy || !emailValue}
+        >
+          {busyAction === "magic" ? "Sending..." : "Send magic link"}
+        </button>
+      </div>
+
+      <Separator />
+
+      <Button
+        type="button"
+        variant="outline"
+        className="rounded-xl"
+        onClick={() => onOAuth("google")}
+        disabled={isBusy}
       >
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">Email</label>
-          <Input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@company.com"
-            type="email"
-            autoComplete="email"
-          />
-        </div>
-
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">Password</label>
-          <Input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            type="password"
-            autoComplete="current-password"
-          />
-        </div>
-
-        <Button className="rounded-xl" disabled={busy !== null}>
-          {busy === "password" ? "Signing in…" : "Sign in"}
-        </Button>
-
-        <div className="flex justify-between text-sm">
-          <a className="underline text-muted-foreground" href="/forgot-password">
-            Forgot password?
-          </a>
-          <button
-            type="button"
-            className="underline text-muted-foreground"
-            onClick={() => {
-              void sendMagic();
-            }}
-            disabled={busy !== null || !email}
-          >
-            {busy === "magic" ? "Sending…" : "Send magic link"}
-          </button>
-        </div>
-
-        <Separator />
-
-        <Button type="button" variant="outline" className="rounded-xl" onClick={google} disabled={busy !== null}>
-          {busy === "google" ? "Redirecting…" : "Continue with Google"}
-        </Button>
-        <Button type="button" variant="outline" className="rounded-xl" onClick={github} disabled={busy !== null}>
-          {busy === "github" ? "Redirecting…" : "Continue with GitHub"}
-        </Button>
-      </form>
-    </>
+        {busyAction === "google" ? "Redirecting..." : "Continue with Google"}
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        className="rounded-xl"
+        onClick={() => onOAuth("github")}
+        disabled={isBusy}
+      >
+        {busyAction === "github" ? "Redirecting..." : "Continue with GitHub"}
+      </Button>
+    </form>
   );
 }

@@ -1,5 +1,5 @@
 import "server-only";
-import { AIToolsDemo } from "@/features/ai-tools/ui/ai-tools-demo";
+import { AIToolsDemo } from "@/features/ai-tools/ui";
 import { requireUser } from "@/server/auth/require-user";
 
 export default async function AIToolsPage() {

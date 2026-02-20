@@ -116,6 +116,35 @@ describe("MembershipService", () => {
     ).rejects.toMatchObject({ code: "forbidden" } as Partial<OrgCoreError>);
   });
 
+  it("prevents admin from assigning super_admin", async () => {
+    const memberships = mockMembershipsRepo();
+    vi.mocked(memberships.findUserMembership).mockResolvedValue({
+      id: "m-admin",
+      userId: "u-admin",
+      organizationId: "org1",
+      role: "admin",
+      createdAt: new Date(),
+    });
+    vi.mocked(memberships.findById).mockResolvedValue({
+      id: "m-member",
+      userId: "u-member",
+      organizationId: "org1",
+      role: "member",
+      createdAt: new Date(),
+    });
+
+    const svc = new MembershipService(memberships, passThroughTxRunner());
+
+    await expect(
+      svc.changeMemberRole({
+        actorUserId: "u-admin",
+        organizationId: "org1",
+        membershipId: "m-member",
+        role: "super_admin",
+      }),
+    ).rejects.toMatchObject({ code: "forbidden" } as Partial<OrgCoreError>);
+  });
+
   it("transfers ownership and demotes previous owner to admin", async () => {
     const memberships = mockMembershipsRepo();
     vi.mocked(memberships.findUserMembership).mockResolvedValue({

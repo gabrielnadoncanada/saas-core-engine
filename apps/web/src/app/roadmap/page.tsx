@@ -1,4 +1,4 @@
-import { DocsLayout } from "@/features/docs/ui/docs-layout";
+import { DocsLayout } from "@/features/docs/ui";
 
 export default function RoadmapPage() {
   return (

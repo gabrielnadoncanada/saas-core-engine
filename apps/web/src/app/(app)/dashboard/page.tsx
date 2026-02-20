@@ -3,8 +3,7 @@ import "server-only";
 import { prisma } from "@db";
 import Link from "next/link";
 
-import { ActivityFeed } from "@/features/dashboard/ui/activity-feed";
-import { MetricsChart } from "@/features/dashboard/ui/metrics-chart";
+import { ActivityFeed, MetricsChart } from "@/features/dashboard/ui";
 import { getDefaultOrgIdForUser } from "@/server/auth/require-org";
 import { requireUser } from "@/server/auth/require-user";
 import { env } from "@/server/config/env";

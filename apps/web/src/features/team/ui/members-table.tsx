@@ -1,5 +1,6 @@
 "use client";
 
+import type { MembershipRole } from "@contracts";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -7,7 +8,7 @@ type Member = {
   id: string;
   userId: string;
   email: string;
-  role: "owner" | "admin" | "member";
+  role: MembershipRole;
   joinedAt: string;
 };
 
@@ -70,7 +71,12 @@ export function TeamMembersTable(props: {
         <tbody>
           {props.members.map((m) => {
             const isSelf = m.userId === props.currentUserId;
-            const canManageRoles = actorRole === "owner" || (actorRole === "admin" && m.role === "member");
+            const canManageRoles =
+              actorRole === "owner" ||
+              actorRole === "super_admin" ||
+              (actorRole === "admin" && m.role === "member");
+            const canToggleAdminMember =
+              canManageRoles && (m.role === "member" || m.role === "admin");
             const canRemove = !isSelf && canManageRoles;
             const canTransferOwnership = actorRole === "owner" && m.role !== "owner";
 
@@ -81,7 +87,7 @@ export function TeamMembersTable(props: {
                 <td style={td}>{formatIsoDate(m.joinedAt)}</td>
                 <td style={td}>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    {canManageRoles && m.role !== "owner" ? (
+                    {canToggleAdminMember ? (
                       <>
                         <button
                           style={btnGhost}

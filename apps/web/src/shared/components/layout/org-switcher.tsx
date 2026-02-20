@@ -1,12 +1,13 @@
 "use client";
 
+import type { MembershipRole } from "@contracts";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type OrgOption = {
   organizationId: string;
   name: string;
-  role: "owner" | "admin" | "member";
+  role: MembershipRole;
 };
 
 type OrgListResponse = {

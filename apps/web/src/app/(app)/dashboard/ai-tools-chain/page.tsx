@@ -1,5 +1,5 @@
 import "server-only";
-import { AIToolsChainDemo } from "@/features/ai-tools-chain/ui/ai-tools-chain-demo";
+import { AIToolsChainDemo } from "@/features/ai-tools-chain/ui";
 import { requireUser } from "@/server/auth/require-user";
 
 export default async function AIToolsChainPage() {

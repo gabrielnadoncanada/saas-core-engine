@@ -1,4 +1,4 @@
-import type { MembershipRole } from "@contracts";
+import { type MembershipRole } from "@contracts";
 
 export type RbacAction =
   | "org:create"
@@ -95,6 +95,25 @@ const ROLE_MATRIX: Record<MembershipRole, Set<RbacAction>> = {
     "ai:audit:read",
     "ai:prompts:manage",
   ]),
+  super_admin: new Set<RbacAction>([
+    "org:create",
+    "org:list",
+    "org:switch",
+    "org:invite:create",
+    "org:member:role:change",
+    "org:member:remove",
+    "org:member:transfer_ownership",
+    "org:rbac:manage",
+    "org:audit:read",
+    "org:audit:export",
+    "org:impersonation:start",
+    "org:impersonation:stop",
+    "ai:assistant:use",
+    "ai:tools:execute",
+    "ai:usage:read",
+    "ai:audit:read",
+    "ai:prompts:manage",
+  ]),
   admin: new Set<RbacAction>([
     "org:create",
     "org:list",
@@ -154,6 +173,7 @@ export function can(
   if (
     resource.targetRole === "owner" &&
     user.role !== "owner" &&
+    user.role !== "super_admin" &&
     !decision.allowOwnerTargetActions
   ) {
     return false;

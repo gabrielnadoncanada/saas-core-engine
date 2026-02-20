@@ -1,5 +1,5 @@
 import "server-only";
-import { AIStructuredDemo } from "@/features/ai-structured/ui/ai-structured-demo";
+import { AIStructuredDemo } from "@/features/ai-structured/ui";
 import { requireUser } from "@/server/auth/require-user";
 
 export default async function AIStructuredPage() {

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { MembershipRole } from "@contracts";
 import { OrgCoreError } from "./errors";
 import { InviteService } from "./invite.service";
 import type {
@@ -99,7 +100,7 @@ describe("InviteService", () => {
     vi.mocked(invites.create).mockImplementation(async (params: {
       organizationId: string;
       email: string;
-      role: "owner" | "admin" | "member";
+      role: MembershipRole;
       tokenHash: string;
       expiresAt: Date;
     }) => ({
@@ -133,6 +134,46 @@ describe("InviteService", () => {
     expect(call).toBeTruthy();
     const deltaMs = call!.expiresAt.getTime() - before;
     expect(deltaMs).toBeGreaterThanOrEqual(59 * 60 * 1000);
+  });
+
+  it("allows super_admin to create invites", async () => {
+    const invites = mockInvitesRepo();
+    const users = mockUsersRepo();
+    const memberships = mockMembershipsRepo();
+    vi.mocked(memberships.findUserMembership).mockResolvedValue({
+      id: "m1",
+      userId: "u1",
+      organizationId: "org1",
+      role: "super_admin",
+      createdAt: new Date(),
+    });
+    vi.mocked(invites.create).mockResolvedValue({
+      id: "i1",
+      organizationId: "org1",
+      email: "test@example.com",
+      role: "super_admin",
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 1000),
+      acceptedAt: null,
+    });
+
+    const svc = new InviteService(
+      invites,
+      users,
+      memberships,
+      passThroughTxRunner(),
+      fixedInviteToken(),
+    );
+
+    await expect(
+      svc.createInvite({
+        organizationId: "org1",
+        inviterUserId: "u1",
+        email: "test@example.com",
+        role: "super_admin",
+        ttlMinutes: 60,
+      }),
+    ).resolves.toMatchObject({ inviteId: "i1" });
   });
 
   it("accepts invite, ensures membership and activates organization", async () => {

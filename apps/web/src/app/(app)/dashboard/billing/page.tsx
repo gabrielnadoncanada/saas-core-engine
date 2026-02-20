@@ -2,7 +2,7 @@ import "server-only";
 
 import { prisma } from "@db";
 
-import { BillingActions } from "@/features/billing/ui/billing-actions";
+import { BillingActions } from "@/features/billing/ui";
 import { getDefaultOrgIdForUser } from "@/server/auth/require-org";
 
 export default async function BillingPage() {

@@ -1,4 +1,4 @@
-import { LoginForm } from "@/features/auth/ui/login-form";
+import { LoginForm } from "@/features/auth/ui";
 import { env } from "@/server/config/env";
 import { AuthCard } from "@/shared/components/auth/auth-card";
 

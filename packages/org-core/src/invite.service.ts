@@ -28,8 +28,8 @@ export class InviteService<TTx = unknown> {
       userId: params.inviterUserId,
       organizationId: params.organizationId,
     });
-    if (!inviterMembership || !["owner", "admin"].includes(inviterMembership.role)) {
-      throw orgErr("forbidden", "Only owner/admin can invite members");
+    if (!inviterMembership || inviterMembership.role === "member") {
+      throw orgErr("forbidden", "Only elevated roles can invite members");
     }
 
     const rawToken = this.inviteToken.randomToken();

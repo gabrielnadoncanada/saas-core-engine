@@ -1,6 +1,6 @@
 import "server-only";
 
-import { AIUsagePanel } from "@/features/ai-usage/ui/ai-usage-panel";
+import { AIUsagePanel } from "@/features/ai-usage/ui";
 import { requireUser } from "@/server/auth/require-user";
 
 export default async function AIUsagePage() {

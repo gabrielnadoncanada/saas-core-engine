@@ -3,6 +3,7 @@ import { can, RbacForbiddenError, requirePermission } from "./index";
 
 describe("rbac-core", () => {
   const owner = { userId: "u1", role: "owner" as const, organizationId: "org1" };
+  const superAdmin = { userId: "u4", role: "super_admin" as const, organizationId: "org1" };
   const admin = { userId: "u2", role: "admin" as const, organizationId: "org1" };
   const member = { userId: "u3", role: "member" as const, organizationId: "org1" };
 
@@ -51,6 +52,16 @@ describe("rbac-core", () => {
         targetRole: "owner",
       }),
     ).toBe(false);
+  });
+
+  it("allows super_admin for owner-targeted actions", () => {
+    expect(
+      can(superAdmin, "org:member:role:change", {
+        resource: "membership",
+        organizationId: "org1",
+        targetRole: "owner",
+      }),
+    ).toBe(true);
   });
 
   it("allows custom permission from DB role", () => {

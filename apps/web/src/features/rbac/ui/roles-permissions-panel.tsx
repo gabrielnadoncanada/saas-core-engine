@@ -1,5 +1,6 @@
 "use client";
 
+import type { MembershipRole } from "@contracts";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -20,7 +21,7 @@ type Member = {
   id: string;
   userId: string;
   email: string;
-  role: "owner" | "admin" | "member";
+  role: MembershipRole;
   customRoleIds: string[];
 };
 
@@ -210,7 +211,7 @@ export function RolesPermissionsPanel(props: {
     [props.members, props.currentUserId],
   );
 
-  const canManage = current?.role === "owner";
+  const canManage = current?.role === "owner" || current?.role === "super_admin";
 
   async function createRole() {
     setError(null);

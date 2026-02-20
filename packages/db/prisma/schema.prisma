@@ -9,6 +9,7 @@ datasource db {
 
 enum MembershipRole {
   owner
+  super_admin
   admin
   member
 }

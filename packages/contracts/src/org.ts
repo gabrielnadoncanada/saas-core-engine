@@ -6,10 +6,14 @@ export type OrgErrorCode =
   | "invite_email_mismatch"
   | "unauthorized";
 
-export const membershipRoleSchema = z.enum(["owner", "admin", "member"]);
+export const MEMBERSHIP_ROLES = ["owner", "super_admin", "admin", "member"] as const;
+export const INVITABLE_ROLES = ["super_admin", "admin", "member"] as const;
+export const MUTABLE_MEMBER_ROLES = ["super_admin", "admin", "member"] as const;
+
+export const membershipRoleSchema = z.enum(MEMBERSHIP_ROLES);
 export type MembershipRole = z.infer<typeof membershipRoleSchema>;
 
-export const inviteRoleSchema = z.enum(["admin", "member"]);
+export const inviteRoleSchema = z.enum(INVITABLE_ROLES);
 export type InviteRole = z.infer<typeof inviteRoleSchema>;
 
 export const orgInviteBodySchema = z.object({
@@ -31,7 +35,7 @@ export const orgMembershipIdBodySchema = z.object({
 
 export const orgMemberRoleChangeBodySchema = z.object({
   membershipId: z.string().trim().min(1),
-  role: inviteRoleSchema,
+  role: z.enum(MUTABLE_MEMBER_ROLES),
 });
 
 export const orgRoleCreateBodySchema = z.object({

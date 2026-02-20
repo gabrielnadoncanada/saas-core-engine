@@ -1,14 +1,17 @@
 "use client";
 
+import type { InviteRole } from "@contracts";
 import { useState } from "react";
 
-function parseRole(value: string): "admin" | "member" {
-  return value === "admin" ? "admin" : "member";
+function parseRole(value: string): InviteRole {
+  if (value === "super_admin") return "super_admin";
+  if (value === "admin") return "admin";
+  return "member";
 }
 
 export function InviteMemberForm() {
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"admin" | "member">("member");
+  const [role, setRole] = useState<InviteRole>("member");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
@@ -76,6 +79,7 @@ export function InviteMemberForm() {
         <select value={role} onChange={(e) => setRole(parseRole(e.target.value))} style={input}>
           <option value="member">Member</option>
           <option value="admin">Admin</option>
+          <option value="super_admin">Super admin</option>
         </select>
       </div>
 

@@ -1,5 +1,4 @@
-import { CodeBlock } from "@/features/docs/ui/code-block";
-import { DocsLayout } from "@/features/docs/ui/docs-layout";
+import { CodeBlock, DocsLayout } from "@/features/docs/ui";
 
 export default function GettingStartedPage() {
   return (

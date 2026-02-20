@@ -1,49 +1,64 @@
 "use client";
 
-import { useState } from "react";
-
-import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-export function ForgotPasswordForm() {
-  const [email, setEmail] = useState("");
-  const [busy, setBusy] = useState(false);
+import {
+  forgotPasswordFormSchema,
+  sendPasswordResetLink,
+  type ForgotPasswordValues,
+} from "@/features/auth/model";
+import { Button } from "@/shared/components/ui/button";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
+import { Input } from "@/shared/components/ui/input";
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
+export function ForgotPasswordForm() {
+  const form = useForm<ForgotPasswordValues>({
+    resolver: zodResolver(forgotPasswordFormSchema),
+    defaultValues: { email: "" },
+  });
+
+  async function onSubmit(values: ForgotPasswordValues) {
     try {
-      await fetch("/api/auth/password/forgot", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+      await sendPasswordResetLink({ email: values.email });
       toast.success("If the email exists, a reset link was sent.");
-    } catch {
-      toast.error("Failed to send reset link.");
-    } finally {
-      setBusy(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send reset link.");
     }
   }
 
   return (
-    <>
-      <form
-        onSubmit={(e) => {
-          void submit(e);
-        }}
-        className="grid gap-3"
-      >
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">Email</label>
-          <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="you@company.com" />
-        </div>
+    <form
+      onSubmit={(e) => {
+        void form.handleSubmit(onSubmit)(e);
+      }}
+      className="grid gap-3"
+    >
+      <FieldGroup>
+        <Controller
+          name="email"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="forgot-password-email">Email</FieldLabel>
+              <Input
+                {...field}
+                id="forgot-password-email"
+                type="email"
+                placeholder="you@company.com"
+                autoComplete="email"
+                aria-invalid={fieldState.invalid}
+              />
+              {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+            </Field>
+          )}
+        />
+      </FieldGroup>
 
-        <Button className="rounded-xl" disabled={busy}>
-          {busy ? "Sending…" : "Send reset link"}
-        </Button>
-      </form>
-    </>
+      <Button className="rounded-xl" disabled={form.formState.isSubmitting}>
+        {form.formState.isSubmitting ? "Sending..." : "Send reset link"}
+      </Button>
+    </form>
   );
 }

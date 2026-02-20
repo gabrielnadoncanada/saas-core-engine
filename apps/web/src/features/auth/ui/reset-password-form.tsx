@@ -1,72 +1,78 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import { routes } from "@/shared/constants/routes";
+import {
+  getDashboardRedirectPath,
+  resetPasswordFormSchema,
+  resetUserPassword,
+  type ResetPasswordValues,
+} from "@/features/auth/model";
 import { Button } from "@/shared/components/ui/button";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 
 export function ResetPasswordForm() {
   const params = useSearchParams();
   const token = params.get("token") ?? "";
 
-  const [pw, setPw] = useState("");
-  const [busy, setBusy] = useState(false);
+  const form = useForm<ResetPasswordValues>({
+    resolver: zodResolver(resetPasswordFormSchema),
+    defaultValues: { password: "" },
+  });
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function onSubmit(values: ResetPasswordValues) {
     if (!token) {
       toast.error("Missing token.");
       return;
     }
 
-    setBusy(true);
     try {
-      const res = await fetch("/api/auth/password/reset", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ token, newPassword: pw }),
-      });
-
-      const json = (await res.json()) as { ok?: boolean; error?: string };
-      if (!res.ok) throw new Error(json.error ?? "Reset failed");
-
+      await resetUserPassword({ token, newPassword: values.password });
       toast.success("Password updated. Redirecting...");
-      window.setTimeout(() => (window.location.href = routes.app.dashboard), 600);
+      window.setTimeout(() => (window.location.href = getDashboardRedirectPath()), 600);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Reset failed");
-    } finally {
-      setBusy(false);
     }
   }
 
   return (
     <form
       onSubmit={(e) => {
-        void submit(e);
+        void form.handleSubmit(onSubmit)(e);
       }}
       className="grid gap-3"
     >
-      <div className="grid gap-2">
-        <label className="text-sm font-medium">New password</label>
-        <Input
-          value={pw}
-          onChange={(e) => setPw(e.target.value)}
-          placeholder="Minimum 8 characters"
-          type="password"
+      <FieldGroup>
+        <Controller
+          name="password"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="reset-password-input">New password</FieldLabel>
+              <Input
+                {...field}
+                id="reset-password-input"
+                placeholder="Minimum 8 characters"
+                type="password"
+                autoComplete="new-password"
+                aria-invalid={fieldState.invalid}
+              />
+              {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+            </Field>
+          )}
         />
-      </div>
+      </FieldGroup>
 
-      <Button className="rounded-xl" disabled={busy}>
-        {busy ? "Updating..." : "Update password"}
+      <Button className="rounded-xl" disabled={form.formState.isSubmitting}>
+        {form.formState.isSubmitting ? "Updating..." : "Update password"}
       </Button>
 
       {!token ? (
-        <div className="text-xs text-destructive">
-          Missing token. Use the link from your email.
-        </div>
+        <div className="text-xs text-destructive">Missing token. Use the link from your email.</div>
       ) : null}
     </form>
   );

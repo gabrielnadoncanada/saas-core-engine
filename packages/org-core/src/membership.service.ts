@@ -1,4 +1,4 @@
-import type { MembershipRole } from "@contracts";
+import { MUTABLE_MEMBER_ROLES, type MembershipRole } from "@contracts";
 import { orgErr } from "./errors";
 import type { MembershipsRepo, TxRunner } from "./org.ports";
 
@@ -34,7 +34,7 @@ export class MembershipService<TTx = unknown> {
     actorUserId: string;
     organizationId: string;
     membershipId: string;
-    role: Extract<MembershipRole, "admin" | "member">;
+    role: (typeof MUTABLE_MEMBER_ROLES)[number];
   }) {
     return this.txRunner.withTx(async (tx) => {
       const actor = await this.memberships.findUserMembership(
@@ -52,6 +52,9 @@ export class MembershipService<TTx = unknown> {
 
       if (actor.role === "admin" && target.role !== "member") {
         throw orgErr("forbidden", "Admin can only change members");
+      }
+      if (actor.role === "admin" && params.role === "super_admin") {
+        throw orgErr("forbidden", "Admin cannot assign super admin role");
       }
 
       if (target.role === "owner") {

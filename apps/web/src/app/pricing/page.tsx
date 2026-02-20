@@ -1,10 +1,10 @@
 import Link from "next/link";
 
-import { PricingCheckoutButton } from "@/features/marketing/ui/pricing-checkout-button";
-import { routes } from "@/shared/constants/routes";
+import { PricingCheckoutButton } from "@/features/marketing/ui";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Separator } from "@/shared/components/ui/separator";
+import { routes } from "@/shared/constants/routes";
 
 export default function PricingPage() {
   return (

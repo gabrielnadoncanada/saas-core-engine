@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { MembershipRole } from "@contracts";
 import { requirePermission, type RbacAction } from "@rbac-core";
 
 import { requireOrgContext, type OrgContext } from "@/server/auth/require-org";
@@ -8,7 +9,7 @@ import { getMembershipCustomPermissionKeys } from "@/server/services/org-rbac.se
 export async function withRequiredOrgScope<T>(params: {
   organizationId?: string;
   action?: RbacAction;
-  targetRole?: "owner" | "admin" | "member";
+  targetRole?: MembershipRole;
   run: (ctx: OrgContext) => Promise<T>;
 }): Promise<T> {
   const ctx = await requireOrgContext({ organizationId: params.organizationId });

@@ -2,8 +2,7 @@ import "server-only";
 
 import { prisma } from "@db";
 
-import { ProfileEmailForm } from "@/features/settings/ui/profile-email-form";
-import { SecurityActions } from "@/features/settings/ui/security-actions";
+import { ProfileEmailForm, SecurityActions } from "@/features/settings/ui";
 import { requireUser } from "@/server/auth/require-user";
 
 export default async function SettingsPage() {

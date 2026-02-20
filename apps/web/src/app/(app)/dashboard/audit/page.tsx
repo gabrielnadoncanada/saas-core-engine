@@ -1,6 +1,6 @@
 import "server-only";
 
-import { OrgAuditPanel } from "@/features/audit/ui/org-audit-panel";
+import { OrgAuditPanel } from "@/features/audit/ui";
 
 export default function AuditPage() {
   return (

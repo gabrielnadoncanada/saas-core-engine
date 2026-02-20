@@ -1,72 +1,106 @@
 "use client";
 
-import { useState } from "react";
-
-import { routes } from "@/shared/constants/routes";
-import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import {
+  getDashboardRedirectPath,
+  signupFormSchema,
+  signupWithWorkspace,
+  type SignupFormValues,
+} from "@/features/auth/model";
+import { Button } from "@/shared/components/ui/button";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
+import { Input } from "@/shared/components/ui/input";
+
 export function SignupForm() {
-  const [orgName, setOrgName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
+  const form = useForm<SignupFormValues>({
+    resolver: zodResolver(signupFormSchema),
+    defaultValues: {
+      orgName: "",
+      email: "",
+      password: "",
+    },
+  });
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-
+  async function submit(values: SignupFormValues) {
     try {
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ orgName, email, password }),
-      });
-      const json = (await res.json()) as { ok?: boolean; error?: string };
-
-      if (!res.ok) throw new Error(json.error ?? "Signup failed");
-
-      window.location.href = routes.app.dashboard;
+      await signupWithWorkspace(values);
+      window.location.href = getDashboardRedirectPath();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Signup failed");
-    } finally {
-      setBusy(false);
     }
   }
 
   return (
-    <>
-      <form
-        onSubmit={(e) => {
-          void submit(e);
-        }}
-        className="grid gap-3"
-      >
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">Workspace name</label>
-          <Input value={orgName} onChange={(e) => setOrgName(e.target.value)} placeholder="Acme Inc." />
-        </div>
+    <form
+      onSubmit={(e) => {
+        void form.handleSubmit(submit)(e);
+      }}
+      className="grid gap-3"
+    >
+      <FieldGroup>
+        <Controller
+          name="orgName"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="signup-org-name">Workspace name</FieldLabel>
+              <Input
+                {...field}
+                id="signup-org-name"
+                placeholder="Acme Inc."
+                autoComplete="organization"
+                aria-invalid={fieldState.invalid}
+              />
+              {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+            </Field>
+          )}
+        />
 
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">Email</label>
-          <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" type="email" />
-        </div>
+        <Controller
+          name="email"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="signup-email">Email</FieldLabel>
+              <Input
+                {...field}
+                id="signup-email"
+                placeholder="you@company.com"
+                type="email"
+                autoComplete="email"
+                aria-invalid={fieldState.invalid}
+              />
+              {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+            </Field>
+          )}
+        />
 
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">Password</label>
-          <Input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Minimum 8 characters"
-            type="password"
-          />
-        </div>
+        <Controller
+          name="password"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="signup-password">Password</FieldLabel>
+              <Input
+                {...field}
+                id="signup-password"
+                placeholder="Minimum 8 characters"
+                type="password"
+                autoComplete="new-password"
+                aria-invalid={fieldState.invalid}
+              />
+              {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+            </Field>
+          )}
+        />
+      </FieldGroup>
 
-        <Button className="rounded-xl" disabled={busy}>
-          {busy ? "Creating…" : "Create account"}
-        </Button>
-      </form>
-    </>
+      <Button className="rounded-xl" disabled={form.formState.isSubmitting}>
+        {form.formState.isSubmitting ? "Creating..." : "Create account"}
+      </Button>
+    </form>
   );
 }

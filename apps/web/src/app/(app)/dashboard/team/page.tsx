@@ -1,7 +1,6 @@
 import "server-only";
 
-import { InviteMemberForm } from "@/features/team/ui/invite-member-form";
-import { TeamMembersTable } from "@/features/team/ui/members-table";
+import { InviteMemberForm, TeamMembersTable } from "@/features/team/ui";
 import {
   createInviteService,
   createMembershipService,
