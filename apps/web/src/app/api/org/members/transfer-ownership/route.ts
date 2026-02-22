@@ -4,7 +4,6 @@ import { NextResponse } from "next/server";
 import { createMembershipService } from "@/server/adapters/core/org-core.adapter";
 import { orgErrorResponse } from "@/server/auth/org-error-response";
 import { withRequiredOrgScope } from "@/server/auth/with-org-scope";
-import { logOrgAudit } from "@/server/services/org-audit.service";
 import { withApiTelemetry } from "@/server/telemetry/otel";
 
 export async function POST(req: Request) {
@@ -28,22 +27,6 @@ export async function POST(req: Request) {
             nextOwnerMembershipId: membershipId,
           });
 
-          await logOrgAudit({
-            organizationId: orgCtx.organizationId,
-            actorUserId: orgCtx.userId,
-            action: "org.member.ownership_transferred",
-            targetType: "membership",
-            targetId: membershipId,
-            metadata: {
-              impersonation: orgCtx.impersonation
-                ? {
-                    actorUserId: orgCtx.impersonation.actorUserId,
-                    targetUserId: orgCtx.impersonation.targetUserId,
-                  }
-                : null,
-            },
-          });
-
           return NextResponse.json({ ok: true });
         },
       });
@@ -52,3 +35,4 @@ export async function POST(req: Request) {
     }
   });
 }
+

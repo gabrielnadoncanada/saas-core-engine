@@ -8,8 +8,8 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 
 import { env } from "@/server/config/env";
+import { processBillingWebhookEventById } from "@/server/billing/process-billing-webhook-event";
 import { BillingWebhookEventsRepo } from "@/server/db-repos/billing-webhook-events.repo";
-import { enqueueBillingWebhookProcess } from "@/server/jobs/queues";
 import { stripe } from "@/server/services/stripe.service";
 import { withApiTelemetry } from "@/server/telemetry/otel";
 
@@ -59,14 +59,13 @@ export async function POST(req: Request) {
     }
 
     try {
-      await enqueueBillingWebhookProcess({ eventId: event.id });
-      await eventsRepo.markStatus({ eventId: event.id, status: "queued" });
-      return NextResponse.json({ received: true, queued: true });
+      const result = await processBillingWebhookEventById(event.id);
+      return NextResponse.json({ received: true, processed: result === "processed" });
     } catch (error) {
       await eventsRepo.markStatus({
         eventId: event.id,
         status: "failed",
-        errorMessage: error instanceof Error ? error.message : "queue_enqueue_failed",
+        errorMessage: error instanceof Error ? error.message : "webhook_processing_failed",
       });
       return NextResponse.json({ ok: false }, { status: 500 });
     }

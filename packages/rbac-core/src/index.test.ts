@@ -75,14 +75,4 @@ describe("rbac-core", () => {
     ).toBe(true);
   });
 
-  it("blocks owner-guarded actions when impersonating", () => {
-    expect(
-      can(owner, "org:member:remove", {
-        resource: "membership",
-        organizationId: "org1",
-      }, {
-        isImpersonating: true,
-      }),
-    ).toBe(false);
-  });
 });

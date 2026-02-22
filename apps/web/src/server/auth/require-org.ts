@@ -10,11 +10,6 @@ export type OrgContext = {
   organizationId: string;
   userId: string;
   role: MembershipRole;
-  impersonation?: {
-    sessionId: string;
-    actorUserId: string;
-    targetUserId: string;
-  };
 };
 
 export async function getActiveOrgIdForUser(): Promise<string | null> {
@@ -60,6 +55,5 @@ export async function requireOrgContext(params?: {
     organizationId: membership.organizationId,
     userId: user.userId,
     role: membership.role,
-    impersonation: user.impersonation,
   };
 }

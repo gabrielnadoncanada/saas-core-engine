@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { BillingWebhookEventsRepo } from "../../apps/web/src/server/db-repos/billing-webhook-events.repo";
-import { enqueueBillingWebhookProcess } from "../../apps/web/src/server/jobs/queues";
+import { processBillingWebhookEventById } from "../../apps/web/src/server/billing/process-billing-webhook-event";
 
 async function run() {
   const limit = Math.max(1, Number(process.argv[2] ?? "100"));
@@ -13,13 +13,13 @@ async function run() {
   }
 
   for (const row of failed) {
-    await enqueueBillingWebhookProcess({ eventId: row.eventId });
+    await processBillingWebhookEventById(row.eventId);
     await repo.markStatus({
       eventId: row.eventId,
-      status: "queued",
+      status: "processed",
       errorMessage: "replayed_via_cli",
     });
-    console.log(`Requeued ${row.eventId}`);
+    console.log(`Processed ${row.eventId}`);
   }
 }
 

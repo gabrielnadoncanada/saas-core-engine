@@ -23,10 +23,8 @@ Metrics:
 - `/api/org/invite` success/429/5xx split
 - Invite acceptance conversion
 - Member role/remove/transfer action success rates
-- Audit event throughput
 
 Metrics:
-- `org_invite_rate_limited_total`
 - `http_server_requests_total{http_route=~"/api/org/.*"}`
 
 ## Dashboard 4: Billing Reliability

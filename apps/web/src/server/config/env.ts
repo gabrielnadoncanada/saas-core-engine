@@ -77,30 +77,13 @@ const envSchema = z
     RATE_LIMIT_ENABLED: boolFromString.default("true"),
     RATE_LIMIT_WINDOW_SECONDS: boundedNumberFromString(1, 3600, "60"),
     RATE_LIMIT_MAX_REQUESTS: boundedNumberFromString(1, 10_000, "10"),
-    ORG_INVITE_RATE_LIMIT_ENABLED: boolFromString.default("true"),
-    ORG_INVITE_RATE_LIMIT_WINDOW_SECONDS: boundedNumberFromString(1, 3600, "60"),
-    ORG_INVITE_RATE_LIMIT_MAX_REQUESTS_PER_ACTOR: boundedNumberFromString(
-      1,
-      10_000,
-      "20",
-    ),
-    ORG_INVITE_RATE_LIMIT_MAX_REQUESTS_PER_IP: boundedNumberFromString(
-      1,
-      10_000,
-      "60",
-    ),
     TRUST_PROXY_HEADERS: boolFromString.default("false"),
     LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
     HSTS_MAX_AGE_SECONDS: boundedNumberFromString(300, 63_072_000, "31536000"),
     OTEL_ENABLED: boolFromString.default("false"),
     OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
     OTEL_EXPORT_INTERVAL_MS: boundedNumberFromString(1000, 60000, "10000"),
-    QUEUE_ENABLED: boolFromString.default("false"),
-    QUEUE_REDIS_URL: z.string().url().default("redis://127.0.0.1:6379"),
-
     DEMO_MODE: boolFromString.default("false"),
-    OPENAI_API_KEY: z.string().min(1).default("dev-missing-openai-key"),
-    AI_DEFAULT_MODEL: z.string().min(1).default("gpt-4o-mini"),
   })
   .superRefine((value, ctx) => {
     if (value.NODE_ENV === "production" && !value.SESSION_COOKIE_SECURE) {

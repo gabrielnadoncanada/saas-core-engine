@@ -4,14 +4,13 @@
 
 - [ ] `SESSION_COOKIE_SECURE=true` in production
 - [ ] `SESSION_COOKIE_SAME_SITE` explicitly set (`lax` or `strict`)
-- [ ] Auth and org rate limiting enabled
+- [ ] Auth rate limiting enabled
 - [ ] Stripe webhook secret configured and validated
 
 ## Multi-tenant safety
 
 - [ ] Sensitive org routes use centralized org scope guard
 - [ ] RBAC server-side enforced for org actions
-- [ ] Audit logs enabled for org operations
 
 ## Observability
 

@@ -2,13 +2,15 @@ import {
   billingEventCreatedAt,
   extractBillingSubscriptionId,
   extractOrganizationId,
+  shouldIgnoreOutOfOrderEvent,
 } from "@billing-core";
 import { prisma } from "@db";
 
 import type Stripe from "stripe";
 
 import {
-  createBillingWebhookOrchestrator,
+  createBillingWebhookEventsRepo,
+  createBillingSubscriptionCursorsRepo,
   createSubscriptionSyncService,
 } from "@/server/adapters/core/billing-core.adapter";
 import { mapStripeSubscriptionToSnapshot } from "@/server/adapters/stripe/stripe-webhook.adapter";
@@ -24,22 +26,32 @@ export async function processBillingWebhookEventById(eventId: string): Promise<"
 
   const event = payload as unknown as Stripe.Event;
   const sync = createSubscriptionSyncService();
-  const orchestrator = createBillingWebhookOrchestrator();
+  const cursorsRepo = createBillingSubscriptionCursorsRepo();
+  const webhookEventsRepo = createBillingWebhookEventsRepo();
   const s = stripe();
 
   const providerSubscriptionId = extractBillingSubscriptionId(event);
   const organizationId = extractOrganizationId(event);
   const createdAt = billingEventCreatedAt(event);
 
-  const begin = await orchestrator.begin({
-    id: event.id,
-    type: event.type,
-    createdAt,
-    organizationId,
-    providerSubscriptionId,
-  });
-
-  if (begin === "duplicate" || begin === "ignored") return "ignored";
+  if (providerSubscriptionId) {
+    const cursor = await cursorsRepo.findByProviderSubscriptionId(
+      providerSubscriptionId,
+    );
+    if (
+      shouldIgnoreOutOfOrderEvent(cursor, {
+        id: event.id,
+        type: event.type,
+        createdAt,
+      })
+    ) {
+      await webhookEventsRepo.markStatus({
+        eventId: event.id,
+        status: "ignored_out_of_order",
+      });
+      return "ignored";
+    }
+  }
 
   switch (event.type) {
     case "checkout.session.completed": {
@@ -98,12 +110,18 @@ export async function processBillingWebhookEventById(eventId: string): Promise<"
       break;
   }
 
-  await orchestrator.complete({
-    id: event.id,
-    type: event.type,
-    createdAt,
-    organizationId,
-    providerSubscriptionId,
+  if (providerSubscriptionId) {
+    await cursorsRepo.upsert({
+      providerSubscriptionId,
+      lastEventCreatedAt: createdAt,
+      lastEventId: event.id,
+      lastEventType: event.type,
+    });
+  }
+
+  await webhookEventsRepo.markStatus({
+    eventId: event.id,
+    status: "processed",
   });
 
   return "processed";

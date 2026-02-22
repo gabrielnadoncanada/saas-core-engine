@@ -58,10 +58,6 @@ export const orgMembershipRolesBodySchema = z.object({
   roleIds: z.array(z.string().trim().min(1)).max(50),
 });
 
-export const orgImpersonationStartBodySchema = z.object({
-  targetUserId: z.string().trim().min(1),
-});
-
 export interface OrganizationSummary {
   id: string;
   name: string;

@@ -7,8 +7,6 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@ai-core": ["../../packages/ai-core/src/index.ts"],
-      "@ai-core/*": ["../../packages/ai-core/src/*"],
       "@contracts": ["../../packages/contracts/src/index.ts"],
       "@contracts/*": ["../../packages/contracts/src/*"],
       "@db": ["../../packages/db/src/index.ts"],
@@ -23,8 +21,6 @@
       "@billing-core/*": ["../../packages/billing-core/src/*"],
       "@email": ["../../packages/email/src/index.ts"],
       "@email/*": ["../../packages/email/src/*"],
-      "@jobs-core": ["../../packages/jobs-core/src/index.ts"],
-      "@jobs-core/*": ["../../packages/jobs-core/src/*"],
       "@ui": ["../../packages/ui/src/index.ts"],
       "@ui/*": ["../../packages/ui/src/*"]
     }

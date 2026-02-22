@@ -21,7 +21,6 @@ const sections: Array<{ title: string; items: NavItem[] }> = [
       { href: routes.app.billing, label: "Billing" },
       { href: routes.app.team, label: "Team" },
       { href: routes.app.roles, label: "Roles & Permissions" },
-      { href: routes.app.audit, label: "Audit Logs" },
     ],
   },
   {
@@ -29,18 +28,6 @@ const sections: Array<{ title: string; items: NavItem[] }> = [
     items: [
       { href: routes.app.sessions, label: "Sessions" },
       { href: routes.app.settings, label: "Settings" },
-    ],
-  },
-  {
-    title: "AI",
-    items: [
-      { href: routes.app.aiAssistant, label: "AI Assistant" },
-      { href: routes.app.aiUsage, label: "AI Usage" },
-      { href: routes.app.aiAudit, label: "AI Audit" },
-      { href: routes.app.aiPrompts, label: "AI Prompts" },
-      { href: routes.app.aiStructured, label: "AI Structured" },
-      { href: routes.app.aiTools, label: "AI Tools" },
-      { href: routes.app.aiToolsChain, label: "AI Tools Chain" },
     ],
   },
 ];

@@ -170,12 +170,6 @@ function run(): number {
       "model MembershipRoleAssignment {",
       "V2 membership_roles model exists",
     ),
-    checkContains(
-      "packages/db/prisma/schema.prisma",
-      "model ImpersonationSession {",
-      "V2 impersonation model exists",
-    ),
-    checkFile("apps/web/src/server/rate-limit/org-action-rate-limit.ts", "Org action rate-limit exists"),
     checkFile("apps/web/src/app/api/org/rbac/roles/route.ts", "RBAC admin roles endpoint exists"),
     checkFile(
       "apps/web/src/app/api/org/rbac/roles/[roleId]/permissions/route.ts",
@@ -185,22 +179,7 @@ function run(): number {
       "apps/web/src/app/api/org/rbac/memberships/[membershipId]/roles/route.ts",
       "RBAC membership role assignment endpoint exists",
     ),
-    checkFile("apps/web/src/app/api/org/audit/route.ts", "Org audit query/export endpoint exists"),
-    checkFile(
-      "apps/web/src/app/api/org/impersonation/start/route.ts",
-      "Impersonation start endpoint exists",
-    ),
-    checkFile(
-      "apps/web/src/app/api/org/impersonation/stop/route.ts",
-      "Impersonation stop endpoint exists",
-    ),
     checkFile("docs/operations/runbook-rbac-v2.md", "RBAC V2 runbook exists"),
-    checkFile("docs/operations/runbook-audit-v2.md", "Audit V2 runbook exists"),
-    checkFile(
-      "docs/operations/runbook-impersonation-v2.md",
-      "Impersonation V2 runbook exists",
-    ),
-    checkFile("docs/operations/audit-retention.md", "Audit retention policy exists"),
     checkFile("apps/web/src/app/api/health/route.ts", "Health endpoint exists"),
     checkFile("apps/web/src/app/api/ready/route.ts", "Readiness endpoint exists"),
     checkFile("docs/operations/slo.md", "SLO document exists"),
@@ -214,38 +193,8 @@ function run(): number {
       "SESSION_COOKIE_SECURE must be true in production",
       "Production cookie invariant exists",
     ),
-    checkContains(
-      "apps/web/src/shared/ui/layout/topbar.tsx",
-      "Impersonation active",
-      "Impersonation banner exists",
-    ),
-    checkFile("packages/jobs-core/src/index.ts", "Jobs core package exists"),
-    checkFile("apps/worker/src/worker.ts", "Worker app exists"),
-    checkFile(
-      "apps/web/src/app/(app)/dashboard/ai-assistant/page.tsx",
-      "AI assistant dashboard page exists",
-    ),
-    checkContains(
-      "packages/ai-core/src/tools/types.ts",
-      "authorize?:",
-      "Tool contract includes authz",
-    ),
-    checkContains(
-      "packages/ai-core/src/tools/types.ts",
-      "timeoutMs?:",
-      "Tool contract includes timeout",
-    ),
-    checkContains(
-      "packages/ai-core/src/tools/types.ts",
-      "retries?:",
-      "Tool contract includes retries",
-    ),
-    checkFile("apps/web/src/app/api/ai/budget/route.ts", "AI budget endpoint exists"),
     checkFile("tooling/scripts/webhook-replay.ts", "Webhook replay CLI exists"),
-    checkFile("docs/operations/runbook-tool-registry-v3.md", "V3 tool runbook exists"),
-    checkFile("docs/operations/runbook-async-jobs-v3.md", "V3 async jobs runbook exists"),
     checkFile("docs/operations/runbook-webhook-retry-v3.md", "V3 webhook runbook exists"),
-    checkFile("docs/operations/runbook-ai-budget-v3.md", "V3 AI budget runbook exists"),
   ];
 
   let failed = 0;

@@ -21,7 +21,7 @@ Restaurer rapidement les droits d'acces custom org (roles, permissions, membersh
 1. Ouvrir `Dashboard > Roles & Permissions`.
 2. Verifier que la permission `action:resource` existe sur le role cible.
 3. Verifier que le role est assigne au membership cible.
-4. Rejouer l'action et confirmer la ligne dans `org_audit_logs` (`action=org.roles.updated`).
+4. Rejouer l'action et confirmer la mise a jour effective des permissions via l'API.
 
 ## Rollback
 

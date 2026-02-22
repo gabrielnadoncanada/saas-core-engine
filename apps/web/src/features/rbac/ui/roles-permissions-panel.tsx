@@ -98,74 +98,6 @@ const PERMISSION_GROUPS: PermissionGroup[] = [
         label: "Manage RBAC",
         description: "Manage roles and permissions",
       },
-      {
-        key: "org:audit:read:audit",
-        action: "org:audit:read",
-        resource: "audit",
-        label: "Read audit",
-        description: "View audit logs",
-      },
-      {
-        key: "org:audit:export:audit",
-        action: "org:audit:export",
-        resource: "audit",
-        label: "Export audit",
-        description: "Export audit logs",
-      },
-      {
-        key: "org:impersonation:start:impersonation",
-        action: "org:impersonation:start",
-        resource: "impersonation",
-        label: "Start impersonation",
-        description: "Start impersonating a member",
-      },
-      {
-        key: "org:impersonation:stop:impersonation",
-        action: "org:impersonation:stop",
-        resource: "impersonation",
-        label: "Stop impersonation",
-        description: "Stop active impersonation",
-      },
-    ],
-  },
-  {
-    title: "AI",
-    items: [
-      {
-        key: "ai:assistant:use:ai",
-        action: "ai:assistant:use",
-        resource: "ai",
-        label: "Use assistant",
-        description: "Access AI assistant/chat",
-      },
-      {
-        key: "ai:tools:execute:ai",
-        action: "ai:tools:execute",
-        resource: "ai",
-        label: "Execute tools",
-        description: "Run AI tools",
-      },
-      {
-        key: "ai:usage:read:ai",
-        action: "ai:usage:read",
-        resource: "ai",
-        label: "Read usage",
-        description: "View AI usage metrics",
-      },
-      {
-        key: "ai:audit:read:ai",
-        action: "ai:audit:read",
-        resource: "ai",
-        label: "Read AI audit",
-        description: "View AI audit logs",
-      },
-      {
-        key: "ai:prompts:manage:ai",
-        action: "ai:prompts:manage",
-        resource: "ai",
-        label: "Manage prompts",
-        description: "Create/edit prompt templates",
-      },
     ],
   },
 ];
@@ -298,25 +230,6 @@ export function RolesPermissionsPanel(props: {
     }
   }
 
-  async function startImpersonation(targetUserId: string) {
-    setError(null);
-    setBusy(`imp:${targetUserId}`);
-    try {
-      const res = await fetch("/api/org/impersonation/start", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ targetUserId }),
-      });
-      if (!res.ok) {
-        setError("impersonation_start_failed");
-        return;
-      }
-      window.location.reload();
-    } finally {
-      setBusy(null);
-    }
-  }
-
   return (
     <div style={{ display: "grid", gap: 24 }}>
       {error ? <div style={{ color: "crimson" }}>Error: {error}</div> : null}
@@ -435,7 +348,6 @@ export function RolesPermissionsPanel(props: {
                 <th style={th}>Email</th>
                 <th style={th}>Built-in role</th>
                 <th style={th}>Custom roles</th>
-                <th style={th}>Impersonation</th>
               </tr>
             </thead>
             <tbody>
@@ -463,21 +375,6 @@ export function RolesPermissionsPanel(props: {
                       })}
                     </div>
                   </td>
-                  <td style={td}>
-                    {canManage && member.role !== "owner" && member.userId !== props.currentUserId ? (
-                      <button
-                        style={btnGhost}
-                        disabled={busy === `imp:${member.userId}`}
-                        onClick={() => {
-                          void startImpersonation(member.userId);
-                        }}
-                      >
-                        Start
-                      </button>
-                    ) : (
-                      <span style={{ color: "#666", fontSize: 12 }}>N/A</span>
-                    )}
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -504,14 +401,6 @@ const btnPrimary: React.CSSProperties = {
   color: "#fff",
   cursor: "pointer",
   width: "fit-content",
-};
-
-const btnGhost: React.CSSProperties = {
-  border: "1px solid #ddd",
-  borderRadius: 8,
-  padding: "6px 10px",
-  background: "#fff",
-  cursor: "pointer",
 };
 
 const th: React.CSSProperties = {

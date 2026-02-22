@@ -36,7 +36,6 @@ When running Prisma commands without a real database, prefix with `DATABASE_URL=
 @auth-core          ← Auth flows + hashing + sessions. Depends only on @contracts.
 @org-core           ← Org/team/invite logic. Depends only on @contracts.
 @billing-core       ← Stripe subscription sync. Depends only on @contracts.
-@ai-core            ← AI chat/tools/structured output. OpenAI SDK.
 @email              ← Email service (Resend/SMTP) + templates.
 @db                 ← Prisma client singleton, withTx helper.
 @ui                 ← Shared React components (shadcn-style).
@@ -70,7 +69,7 @@ API routes call these factories, never instantiate core classes directly.
 ### Web app structure (`apps/web/src/`)
 
 - `app/` — Next.js App Router: `(marketing)` public pages, `(auth)` auth pages, `(app)` protected routes, `api/` route handlers
-- `server/` — Server-only code: `adapters/`, `db-repos/`, `auth/`, `config/`, `services/`, `ai/`
+- `server/` — Server-only code: `adapters/`, `db-repos/`, `auth/`, `config/`, `services/`
 - `features/` — Feature modules with page components and hooks
 - `shared/` — UI layout, constants (routes), hooks, `lib/cn` utility
 - `entities/` — Domain entity components (user avatar, org switcher)
@@ -88,4 +87,5 @@ All tokens (sessions, email tokens, OAuth state) are hashed with SHA-256 + peppe
 - **Prisma model mapping**: Models use `@@map("snake_case_table")` for DB column/table names.
 - **Tests**: Vitest with constructor-injected mocks (no `vi.mock` globals). Test files live next to source as `*.test.ts`.
 - **Server-only**: Files under `apps/web/src/server/` import `"server-only"` to prevent client bundling.
-- **Rate limiting**: DB-backed windowed buckets (`AuthRateLimitBucket`, `AIRateLimitBucket`). Applied via `enforceAuthRateLimit(req, route)` at route handler start.
+- **Rate limiting**: DB-backed windowed buckets (`AuthRateLimitBucket`). Applied via `enforceAuthRateLimit(req, route)` at route handler start.
+

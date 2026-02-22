@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 
 import { createInviteService } from "@/server/adapters/core/org-core.adapter";
 import { requireUser } from "@/server/auth/require-user";
-import { logOrgAudit } from "@/server/services/org-audit.service";
 import { withApiTelemetry } from "@/server/telemetry/otel";
 
 export async function GET(req: Request) {
@@ -24,26 +23,10 @@ export async function GET(req: Request) {
         token,
         acceptUserId: user.userId,
       });
-      await logOrgAudit({
-        organizationId: accepted.organizationId,
-        actorUserId: user.userId,
-        action: "org.invite.accepted",
-        metadata: {},
-      });
       return NextResponse.redirect(
         new URL("/dashboard/team?invite=accepted", req.url),
       );
     } catch (e) {
-      if (e instanceof OrgCoreError && e.code !== "unauthorized") {
-        const maybeOrgId = user.organizationId;
-        await logOrgAudit({
-          organizationId: maybeOrgId,
-          actorUserId: user.userId,
-          action: "org.invite.accepted",
-          outcome: e.code === "forbidden" ? "forbidden" : "error",
-          metadata: { reason: e.code },
-        });
-      }
       const code =
         e instanceof OrgCoreError
           ? e.code === "invite_email_mismatch"
@@ -59,3 +42,4 @@ export async function GET(req: Request) {
     }
   });
 }
+

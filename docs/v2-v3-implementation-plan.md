@@ -5,7 +5,7 @@ Ce document sert de reference unique pour implementer les evolutions V2 et V3 de
 ## Objectif
 
 - V2: Agency Pack (RBAC avance, audit avance, impersonation)
-- V3: AI Automation Pack (assistant AI, tool registry, jobs async, webhook retry)
+- V3: AI Automation Pack (assistant AI, tool registry, webhook retry)
 
 ## Regles d'execution
 
@@ -128,22 +128,22 @@ Ce document sert de reference unique pour implementer les evolutions V2 et V3 de
 - Tous les tools critiques conformes au contrat unique.
 - Observabilite par outil (latence, erreurs, succes).
 
-### Epic V3.3 - Jobs async avec BullMQ (2 a 3 semaines)
+### Epic V3.3 - Traitements asynchrones applicatifs (2 a 3 semaines)
 
 #### Scope
 
-- Introduire workers et queue pour traitements asynchrones robustes.
+- Ajouter des traitements asynchrones robustes sans dependance worker dedie.
 
 #### Taches
 
-1. Ajouter app worker + Redis.
-2. Ajouter primitives queue (enqueue, retry, dead-letter).
-3. Migrer emails et traitements longs hors requete synchrone.
+1. Ajouter primitives de retry/reprise cote application.
+2. Migrer les traitements longs hors requete interactive quand necessaire.
+3. Documenter le replay et les incidents operationnels.
 
 #### Done
 
 - Retry/backoff operationnels.
-- Dashboard queue et runbook incidents disponibles.
+- Runbook incidents disponibles.
 
 ### Epic V3.4 - Webhook retry engine (1 a 2 semaines)
 
@@ -153,7 +153,7 @@ Ce document sert de reference unique pour implementer les evolutions V2 et V3 de
 
 #### Taches
 
-1. Ack rapide + traitement async.
+1. Validation signature + traitement direct idempotent.
 2. Idempotency store + replay CLI.
 3. Gestion ordering/duplicates.
 
@@ -185,7 +185,7 @@ Ce document sert de reference unique pour implementer les evolutions V2 et V3 de
 2. V2.2 Audit avance
 3. V2.3 Impersonation
 4. V3.2 Tool Registry
-5. V3.3 BullMQ
+5. V3.3 Traitements asynchrones applicatifs
 6. V3.4 Webhook Retry
 7. V3.1 Assistant Panel
 8. V3.5 Gouvernance couts AI
@@ -196,7 +196,7 @@ Ce document sert de reference unique pour implementer les evolutions V2 et V3 de
 - RBAC custom + audit queryable + impersonation securisee en production.
 
 2. Fin V3:
-- Flows AI metier robustes avec queue/retry, budget control et observabilite complete.
+- Flows AI metier robustes avec retry, budget control et observabilite complete.
 
 ## Commandes de verification recommandees
 

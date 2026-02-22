@@ -14,10 +14,18 @@ export function createSubscriptionSyncService() {
   return new SubscriptionSyncService(new SubscriptionsRepo());
 }
 
+export function createBillingWebhookEventsRepo() {
+  return new BillingWebhookEventsRepo();
+}
+
+export function createBillingSubscriptionCursorsRepo() {
+  return new BillingSubscriptionCursorsRepo();
+}
+
 export function createBillingWebhookOrchestrator() {
   return new BillingWebhookOrchestrator(
-    new BillingWebhookEventsRepo(),
-    new BillingSubscriptionCursorsRepo(),
+    createBillingWebhookEventsRepo(),
+    createBillingSubscriptionCursorsRepo(),
   );
 }
 

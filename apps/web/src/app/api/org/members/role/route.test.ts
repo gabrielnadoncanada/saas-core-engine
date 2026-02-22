@@ -2,7 +2,6 @@ import { OrgCoreError } from "@org-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const changeMemberRole = vi.fn();
-const logOrgAudit = vi.fn();
 const withRequiredOrgScope = vi.fn();
 
 vi.mock("@/server/auth/with-org-scope", () => ({
@@ -15,10 +14,6 @@ vi.mock("@/server/adapters/core/org-core.adapter", () => ({
   }),
 }));
 
-vi.mock("@/server/services/org-audit.service", () => ({
-  logOrgAudit,
-}));
-
 vi.mock("@/server/telemetry/otel", () => ({
   withApiTelemetry: async (_req: Request, _route: string, handler: () => Promise<Response>) =>
     handler(),
@@ -28,7 +23,6 @@ describe("POST /api/org/members/role", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     changeMemberRole.mockResolvedValue(undefined);
-    logOrgAudit.mockResolvedValue(undefined);
     withRequiredOrgScope.mockImplementation(async ({ run }: any) =>
       run({ userId: "u1", organizationId: "org1", role: "owner" }),
     );

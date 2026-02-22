@@ -43,7 +43,6 @@
 
 - `http_server_requests_total{http_route,http_status_code}`
 - `http_server_duration_ms{http_route,http_status_code}`
-- `org_invite_rate_limited_total`
 
 ## Review Cadence
 

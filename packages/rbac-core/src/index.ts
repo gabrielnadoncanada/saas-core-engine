@@ -8,25 +8,13 @@ export type RbacAction =
   | "org:member:role:change"
   | "org:member:remove"
   | "org:member:transfer_ownership"
-  | "org:rbac:manage"
-  | "org:audit:read"
-  | "org:audit:export"
-  | "org:impersonation:start"
-  | "org:impersonation:stop"
-  | "ai:assistant:use"
-  | "ai:tools:execute"
-  | "ai:usage:read"
-  | "ai:audit:read"
-  | "ai:prompts:manage";
+  | "org:rbac:manage";
 
 export type RbacResource =
   | "organization"
   | "membership"
   | "invitation"
-  | "role"
-  | "audit"
-  | "impersonation"
-  | "ai";
+  | "role";
 
 export type Permission = `${RbacAction}:${RbacResource}`;
 
@@ -46,7 +34,6 @@ export type RbacResourceContext = {
 export type RbacDecisionContext = {
   customPermissions?: string[];
   allowOwnerTargetActions?: boolean;
-  isImpersonating?: boolean;
 };
 
 export const PERMISSIONS: Record<RbacAction, RbacResource> = {
@@ -58,15 +45,6 @@ export const PERMISSIONS: Record<RbacAction, RbacResource> = {
   "org:member:remove": "membership",
   "org:member:transfer_ownership": "membership",
   "org:rbac:manage": "role",
-  "org:audit:read": "audit",
-  "org:audit:export": "audit",
-  "org:impersonation:start": "impersonation",
-  "org:impersonation:stop": "impersonation",
-  "ai:assistant:use": "ai",
-  "ai:tools:execute": "ai",
-  "ai:usage:read": "ai",
-  "ai:audit:read": "ai",
-  "ai:prompts:manage": "ai",
 };
 
 const OWNER_GUARDED_ACTIONS = new Set<RbacAction>([
@@ -85,15 +63,6 @@ const ROLE_MATRIX: Record<MembershipRole, Set<RbacAction>> = {
     "org:member:remove",
     "org:member:transfer_ownership",
     "org:rbac:manage",
-    "org:audit:read",
-    "org:audit:export",
-    "org:impersonation:start",
-    "org:impersonation:stop",
-    "ai:assistant:use",
-    "ai:tools:execute",
-    "ai:usage:read",
-    "ai:audit:read",
-    "ai:prompts:manage",
   ]),
   super_admin: new Set<RbacAction>([
     "org:create",
@@ -104,15 +73,6 @@ const ROLE_MATRIX: Record<MembershipRole, Set<RbacAction>> = {
     "org:member:remove",
     "org:member:transfer_ownership",
     "org:rbac:manage",
-    "org:audit:read",
-    "org:audit:export",
-    "org:impersonation:start",
-    "org:impersonation:stop",
-    "ai:assistant:use",
-    "ai:tools:execute",
-    "ai:usage:read",
-    "ai:audit:read",
-    "ai:prompts:manage",
   ]),
   admin: new Set<RbacAction>([
     "org:create",
@@ -121,25 +81,8 @@ const ROLE_MATRIX: Record<MembershipRole, Set<RbacAction>> = {
     "org:invite:create",
     "org:member:role:change",
     "org:member:remove",
-    "org:audit:read",
-    "org:audit:export",
-    "org:impersonation:start",
-    "org:impersonation:stop",
-    "ai:assistant:use",
-    "ai:tools:execute",
-    "ai:usage:read",
-    "ai:audit:read",
-    "ai:prompts:manage",
   ]),
-  member: new Set<RbacAction>([
-    "org:create",
-    "org:list",
-    "org:switch",
-    "ai:assistant:use",
-    "ai:tools:execute",
-    "ai:usage:read",
-    "ai:audit:read",
-  ]),
+  member: new Set<RbacAction>(["org:create", "org:list", "org:switch"]),
 };
 
 export function can(
@@ -156,10 +99,6 @@ export function can(
   const customAllowed = decision.customPermissions?.includes(permissionKey) ?? false;
 
   if (!defaultAllowed && !customAllowed) return false;
-
-  if (decision.isImpersonating && OWNER_GUARDED_ACTIONS.has(action)) {
-    return false;
-  }
 
   if (user.role === "admin") {
     if (

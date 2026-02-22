@@ -3,8 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const withRequiredOrgScope = vi.fn();
 const createOrgRole = vi.fn();
 const listOrgRoles = vi.fn();
-const logOrgAudit = vi.fn();
-const extractClientIp = vi.fn();
 
 vi.mock("@/server/auth/with-org-scope", () => ({
   withRequiredOrgScope,
@@ -15,18 +13,9 @@ vi.mock("@/server/services/org-rbac.service", () => ({
   listOrgRoles,
 }));
 
-vi.mock("@/server/services/org-audit.service", () => ({
-  logOrgAudit,
-}));
-
-vi.mock("@/server/http/request-ip", () => ({
-  extractClientIp,
-}));
-
 vi.mock("@/server/telemetry/otel", () => ({
   withApiTelemetry: async (_req: Request, _route: string, handler: () => Promise<Response>) =>
     handler(),
-  getActiveTraceContext: () => ({ traceId: "trace-1", spanId: "span-1" }),
 }));
 
 describe("org rbac roles route", () => {
@@ -41,8 +30,6 @@ describe("org rbac roles route", () => {
       name: "Support Agent",
     });
     listOrgRoles.mockResolvedValue([{ id: "role-1" }]);
-    logOrgAudit.mockResolvedValue(undefined);
-    extractClientIp.mockReturnValue("127.0.0.1");
   });
 
   it("returns roles list on GET", async () => {
@@ -72,7 +59,7 @@ describe("org rbac roles route", () => {
     expect(createOrgRole).not.toHaveBeenCalled();
   });
 
-  it("creates role and audits on POST", async () => {
+  it("creates role on POST", async () => {
     const { POST } = await import("./route");
     const res = await POST(
       new Request("http://localhost/api/org/rbac/roles", {
@@ -94,6 +81,5 @@ describe("org rbac roles route", () => {
       description: "ops role",
       createdByUserId: "u1",
     });
-    expect(logOrgAudit).toHaveBeenCalled();
   });
 });

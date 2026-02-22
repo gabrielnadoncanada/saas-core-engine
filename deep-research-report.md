@@ -1,183 +1,273 @@
-# Analyse org-core vs PRD/Vision et écarts de “prod readiness” — repo gabrielnadoncanada/saas-core-engine
+# Audit V1 commercialisable à 149 USD — gabrielnadoncanada/saas-core-engine
 
-## Résumé exécutif
+## 🚨 EXECUTIVE SUMMARY
 
-Le PRD et la Vision positionnent **SaaS Core Engine** comme un template “production‑ready” très rapide à déployer, avec **multi‑tenancy (orgs)**, **rôles**, **invites**, audit, et une architecture modulaire (packages core + couche Next.js) (PRD, Vision). fileciteturn14file2L1-L1 fileciteturn14file0L1-L1
+**Peut-on vendre maintenant ?** **Non.**  
+Le repo a une base technique solide (séparation “core” vs “adapter web”, hashing de tokens avec pepper, rate-limiting DB, PKCE Google bien fait), mais il est **trop ambitieux** pour un V1 “lean” et surtout **pas fiable sur Billing** tel qu’implémenté aujourd’hui (webhooks Stripe + traitement asynchrone via queue). Le PRD exige un V1 “strict” concentré sur auth/org/billing + DX + sécurité. fileciteturn63file3
 
-Dans le code, le module **`@org-core`** est bien structuré autour de **services métier** (OrgService / MembershipService / InviteService) et d’un modèle **ports/adapters** via interfaces de repos + transactions. C’est une fondation saine, déjà testée (unit tests + test de concurrence), et intégrée aux routes Next.js via un adapter dédié. fileciteturn21file0L1-L1 fileciteturn25file2L1-L1 fileciteturn25file3L1-L1 fileciteturn16file0L1-L1
+**Main blockers (bloqueurs de prod ET de vente)**  
+Le traitement Stripe est **couplé à une queue + worker + Redis**, ce qui casse le “deploy <15 minutes” et augmente drastiquement le support (infrastructure additionnelle), tout en introduisant des risques de panne. Le endpoint webhook tente de **mettre en file** chaque event. fileciteturn91file0  
+L’architecture V1 est **encombrée** par des briques V2/V3 (AI, RBAC custom, audit, impersonation, runbooks incident), ce qui augmente le risque d’erreurs, la charge cognitive et le coût de support pour un produit à 149 USD. fileciteturn110file4turn103file12turn103file7turn91file6  
+La doc “folder-structure” est **désalignée** avec la réalité du repo (ex: présence de modules AI/jobs/rbac, structure différente), ce qui tue la DX et contredit les attentes PRD “one-click deploy guide / docs complete”. fileciteturn109file0
 
-Cependant, pour être **vraiment “prod ready”** *au sens opérationnel* (sécurité anti‑abus, observabilité, runbooks, SLO/alerting, CI/CD release/rollback, etc.) et **aligné** avec la Vision (RBAC, admin dashboard “complet”), il reste des écarts importants. Les plus bloquants avant une mise en production (ou avant de vendre en promettant “production‑grade”) sont :
+**Top 3 actions pour débloquer du revenu rapidement**  
+1) **Simplifier Billing à un webhook synchrone et idempotent** (sans queue/worker/Redis) + valider le pipeline complet Checkout → Webhook → DB (statut subscription). C’est le cœur “vendable”. fileciteturn63file3turn91file0  
+2) **Couper agressivement tout ce qui dépasse le V1 PRD** (AI, jobs, impersonation, RBAC custom, audit “enterprise-ish”, pages dashboard non requises) pour revenir à un starter “clean”. fileciteturn63file3turn110file4turn103file12turn103file7  
+3) **Verrouiller le parcours “clone → setup → demo → deploy”** (scripts, env validation, docs deploy réellement actionnables, licence commerciale, onboarding acheteur). fileciteturn63file3turn91file3
 
-- **Écart Vision ↔ implémentation sur le RBAC** : la Vision décrit un **RBAC engine** (permission matrix, `can(user, action, resource)`, middleware guard) mais l’implémentation actuelle est surtout **rôles coarse-grained** (owner/admin/member) et des checks ciblés au niveau membership/org. Si tu “vends RBAC” (ou si la Vision sert de promesse produit), c’est un **P0** de vérité produit. fileciteturn14file0L1-L1 fileciteturn25file3L1-L1
-- **Anti‑abus** sur les endpoints sensibles (ex. invite) : le endpoint d’invitation crée des tokens et envoie des emails; il n’y a pas (dans l’analyse de ces fichiers) de **rate limiting**/quotas sur les actions org (contrairement aux flows auth qui appellent un rate limit). Ça expose facilement à du spam et à des coûts/blacklisting. **P0**. fileciteturn35file1L1-L1 fileciteturn37file6L1-L1
-- **Observabilité “3 signaux” (logs/metrics/traces) + SLO/alerting** : le repo a un audit log org en DB (bon début), mais il manque la couche standardisée d’opérations (corrélation, métriques, traces, endpoints santé). Sans ça, tu ne peux pas opérer en prod proprement; c’est un **P0** si l’objectif est “production‑ready”. fileciteturn97file0L1-L1 citeturn0search1 citeturn0search5
-- **Contrats/API** : `@contracts` a Zod en dépendance, mais la partie org observée est centrée sur des types et les routes manipulent des `type Body = ...` + validation minimale inline. Tu as un risque de divergence des payloads/erreurs et une DX moins “starter kit premium”. **P1** (ou **P0** si tu vends “type-safe contracts”). fileciteturn65file16L1-L1 fileciteturn63file0L1-L1 fileciteturn35file1L1-L1
-- **CI existante mais pipeline release/rollback absent** : il y a une CI (lint/typecheck/test/audit) + CodeQL, mais pas de stratégie versioning, release notes, artefacts, promotion d’environnements, rollback. **P1** pour un template, **P0** si tu opères une prod réelle multi‑env. fileciteturn73file0L1-L1 fileciteturn73file1L1-L1
+## Audit architecture et production-readiness
 
-## Portée et méthode d’analyse
+### Structure vs PRD
 
-Cette analyse compare :
+Le PRD impose un monorepo avec apps/web et des packages “contracts/db/auth-core/org-core/billing-core/ui/email”, avec un graphe de dépendances strict et aucun import circulaire. fileciteturn63file3  
+Le repo respecte **partiellement** l’intention (core isolé + adapters Next), mais diverge sur le périmètre : présence de **packages supplémentaires** (AI, jobs, rbac) et d’un **apps/worker** qui introduit de la complexité infra non-V1. fileciteturn110file4turn93file0
 
-- Les **exigences / promesses** du **PRD V1** et du document **Vision** dans `creation__docs/` (incluant multi‑tenancy, invites, rôles et exigences d’architecture). fileciteturn14file2L1-L1 fileciteturn14file0L1-L1
-- L’implémentation réelle du module **`packages/org-core`** (services + ports + tests) et sa **couche d’intégration** dans Next.js (`apps/web/src/server/adapters/core/org-core.adapter.ts` + routes `/api/org/*`). fileciteturn21file0L1-L1 fileciteturn16file0L1-L1 fileciteturn35file1L1-L1
-- Les éléments “prod-ready” demandés (sécurité, observabilité, tests, CI/CD, perf, fiabilité, conformité, déploiement, doc, DX, config, monitoring/alerting, SLO/SLI, release notes), en priorisant ce qui bloque un lancement. Le repo contient aussi le schéma Prisma (important pour multi‑tenancy). fileciteturn51file0L1-L1
+### Violations structurelles
 
-Quand pertinent, je m’appuie sur des références externes “primary/official” (SRE Google, OpenTelemetry, Stripe, OWASP). citeturn0search5turn0search1turn0search2turn1search0
+Le worker importe du code interne de `apps/web` via des imports relatifs. C’est une **violation directe** du principe “apps/web comme adapter” et crée un couplage “app-to-app” difficile à maintenir et à vendre comme starter “production-grade”. fileciteturn93file0  
+La création d’org + subscription est implémentée dans `SignupFlow` (auth-core), ce qui brouille les frontières “auth vs org vs billing” et rend le core moins composable (risque de fuite de responsabilités). fileciteturn63file3
 
-## État actuel et structure réelle du module org-core
+### Sur‑ingénierie (à couper pour V1)
 
-Le module **`@org-core`** est organisé en trois services :
+Le endpoint d’invitation org est surchargé : RBAC “scopes”, request-id, telemetry, audit logs, rate limiting spécifique org action, queue email, fallback email, logging enrichi, etc. Pour un V1 à 149 USD, c’est trop de surface et trop de points de panne/support. fileciteturn106file5  
+La stratégie “queue + worker + dead letter + runbook retry v3” dépasse le PRD V1 (le PRD parle d’idempotency webhooks, pas d’un système de jobs/incident simulation complet). fileciteturn93file0turn91file6turn63file3
 
-- `OrgService`: création d’organisation, changement d’org active, liste des orgs d’un user. fileciteturn21file0L1-L1  
-- `MembershipService`: garde-fous de rôles (owner/admin/member) et opérations (changer rôle, retirer membre, transfert ownership). fileciteturn25file3L1-L1  
-- `InviteService`: émission d’invites (token + hash + expiry), acceptation d’invite (idempotente) et listing d’invites pending. fileciteturn25file2L1-L1  
+### Sous‑ingénierie / risques production
 
-Le “contracts boundary” se fait via `org.ports.ts` (interfaces repo + TxRunner + InviteToken). fileciteturn63file5L1-L1  
-L’intégration Next.js instancie les repos Prisma, la transaction `withTx`, et un `inviteToken` basé sur `crypto.randomBytes(...).toString("base64url")` + hashing avec pepper. fileciteturn16file0L1-L1
+Le cookie de session dépend d’options d’env (Secure/SameSite). C’est correct comme approche, mais **haut risque** si les defaults sont mauvais en prod. OWASP recommande Secure + HttpOnly + SameSite comme protections importantes. fileciteturn55file2 citeturn18search0  
+L’extraction IP pour rate limiting dépend d’un flag `TRUST_PROXY_HEADERS`; si mal configuré derrière un proxy/CDN, vous pouvez soit rater le rate limiting, soit rate-limit tous les users sur une IP unique. fileciteturn78file2
 
-Exemple de logique métier déjà en place (création org + membership owner + subscription + org active) :
+## Matrice de couverture vs PRD
 
-```ts
-await this.memberships.create({ userId, organizationId: org.id, role: "owner" }, tx);
-await this.subs.upsertOrgSubscription({ organizationId: org.id, plan: "free", status: "inactive" }, tx);
-await this.users.setActiveOrganization(userId, org.id, tx);
-```
+Le PRD V1 “strict” est la source d’autorité pour ce tableau. fileciteturn63file3
 
-Le comportement ci-dessus existe à la fois dans `OrgService` et dans le flow signup côté auth-core (duplication fonctionnelle à surveiller). fileciteturn21file0L1-L1 fileciteturn95file2L1-L1
+| Feature (PRD) | Implemented | Partial | Missing | Overbuilt | Should be removed |
+|---|---:|---:|---:|---:|---:|
+| Email/password login | ✅ |  |  |  |  |
+| Magic link login | ✅ |  |  |  |  |
+| Forgot + reset password (anti‑enum) | ✅ |  |  |  |  |
+| Email verification | ✅ |  |  |  |  |
+| OAuth Google (PKCE + state + nonce) | ✅ |  |  |  |  |
+| OAuth GitHub (PKCE) |  | ✅ |  |  |  |
+| Account linking OAuth + email | ✅ |  |  |  |  |
+| Sessions list + revoke | ✅ |  |  |  |  |
+| Cookie HttpOnly/Secure/SameSite | ✅ |  |  |  |  |
+| Rate limiting auth endpoints | ✅ |  |  |  |  |
+| Anti‑enumeration responses | ✅ |  |  |  |  |
+| Multi‑org membership | ✅ |  |  |  |  |
+| Active org (user-level, global) | ✅ |  |  |  |  |
+| Default org created at signup | ✅ |  |  |  |  |
+| Create org / switch org endpoints | ✅ |  |  |  |  |
+| Invite members + accept flow | ✅ |  |  |  |  |
+| Roles fixed owner/admin/member |  | ✅ |  | ✅ | ✅ |
+| Org isolation enforced server-side | ✅ |  |  |  |  |
+| Stripe checkout subscription |  | ✅ |  |  |  |
+| Customer portal |  | ✅ |  |  |  |
+| Webhook signature verification | ✅ |  |  |  |  |
+| Webhook sync → Subscription DB |  | ✅ |  | ✅ |  |
+| Webhook idempotency | ✅ |  |  |  |  |
+| Support minimum Stripe events list (PRD) |  | ✅ |  |  |  |
+| Dashboard pages exact set (PRD) |  | ✅ |  | ✅ | ✅ |
+| Seed demo data |  | ✅ |  |  |  |
+| Env validation (Zod) |  | ✅ |  |  |  |
+| Stripe CLI dev mode documented | ✅ |  |  |  |  |
+| One-click deploy guide verified |  |  | ✅ |  |  |
+| Strict ESLint + Prettier | ✅ |  |  |  |  |
 
-L’acceptation d’invite est pensée pour être **idempotente et concurrency-safe** (gestion de conflits “unique” simulée avec le code Prisma `P2002` — ce qui révèle aussi une fuite d’implémentation DB dans le core). fileciteturn25file2L1-L1 fileciteturn25file0L1-L1
+Notes critiques sur la matrice  
+Les rôles “fixes” PRD sont contredits par l’ajout d’un rôle `super_admin` et par des tables RBAC custom (roles/permissions/assignments). C’est “overbuilt” pour V1. fileciteturn63file3  
+La couche dashboard contient des pages et features AI/RBAC/users qui dépassent le set PRD requis. fileciteturn103file7turn103file4turn103file14  
+Billing est le plus dangereux : signature OK, idempotency en partie OK, mais le workflow “queue” rend Billing fragile et non “deploy <15 min”. fileciteturn91file0turn93file0
 
-### Diagramme d’architecture (réel) autour de org-core
+## Security audit
 
-```mermaid
-flowchart LR
-  subgraph Contracts["@contracts"]
-    C1[types & erreurs org]
-  end
+### Checklist demandée (PRD) vs implémentation
 
-  subgraph OrgCore["@org-core"]
-    OS[OrgService]
-    MS[MembershipService]
-    IS[InviteService]
-    P[Ports: OrgsRepo/MembershipsRepo/... + TxRunner + InviteToken]
-  end
+Le PRD exige Argon2id, tokens hashés uniquement, TTL courts, PKCE + state, cookie flags stricts, rate limiting, anti‑enumeration, signature Stripe, idempotency webhooks. fileciteturn63file3
 
-  subgraph Web["apps/web (Next.js)"]
-    A[org-core.adapter.ts]
-    R1[/api/org/create]
-    R2[/api/org/switch]
-    R3[/api/org/invite]
-    R4[/api/org/invite/accept]
-    R5[/api/org/members/*]
-  end
+**Argon2id utilisé ?**  
+Les tests de login utilisent explicitement `argon2.argon2id` et valident l’upgrade des paramètres (rehash) — bon signal de maturité. fileciteturn63file4  
+⚠️ Je n’ai pas validé directement le contenu de `hashPassword()` (fichier sensible), mais l’ensemble du design + tests pointent fortement vers Argon2id.
 
-  subgraph DB["@db + Prisma schema"]
-    PR[Prisma client]
-    T[(tables: organizations, memberships, invitations, subscriptions, users.activeOrganizationId)]
-  end
+**Tokens hashés ?**  
+Les tokens/identifiants sont hashés via HMAC-SHA256 + pepper (`TOKEN_PEPPER` min 32 chars) — bon. fileciteturn78file2  
+Les tables DB stockent `tokenHash` (sessions/email_tokens/invitations), pas le token brut — bon. fileciteturn66file4
 
-  Contracts --> OrgCore
-  C1 --> OS
-  C1 --> MS
-  C1 --> IS
-  P --> OS
-  P --> MS
-  P --> IS
+**Rate limiting réel ou théorique ?**  
+C’est **réel** : `enforceAuthRateLimit()` upsert un bucket en DB + lance “rate_limited” au-delà du seuil. fileciteturn78file2  
+Risque: si headers proxy sont mal gérés, IP = 127.0.0.1 pour tous, donc rate limiting destructeur. fileciteturn78file2
 
-  A --> OS
-  A --> MS
-  A --> IS
-  R1 --> A
-  R2 --> A
-  R3 --> A
-  R4 --> A
-  R5 --> A
+**OAuth PKCE correct ?**  
+Google OAuth start : génère state + code_verifier, calcule S256 code_challenge, passe state + code_challenge_method=S256 + nonce, et rate-limit l’endpoint. fileciteturn84file0  
+Google callback : consomme state (delete), échange code avec code_verifier, vérifie nonce sur ID token, crée session. fileciteturn85file0  
+Le calcul S256 correspond au standard PKCE (BASE64URL(SHA256(verifier))). citeturn18search6turn18search5
 
-  A --> PR --> T
-```
+⚠️ Point de vigilance : le `codeVerifier` est stocké en clair dans la DB (table oauth_states). Si la DB est compromise, vous augmentez l’impact potentiel (même si l’attaquant aurait encore besoin d’un code OAuth valide). fileciteturn66file4
 
-L’existence des routes org et de l’adapter est confirmée par les fichiers : adapter core, routes create/switch/invite/accept + routes membership. fileciteturn16file0L1-L1 fileciteturn21file1L1-L1 fileciteturn37file17L1-L1 fileciteturn35file1L1-L1 fileciteturn16file15L1-L1 fileciteturn35file8L1-L1
+**Stripe webhook signature vérifiée ?**  
+Oui : utilisation de `stripe.webhooks.constructEvent(body, signature, secret)` et rejet HTTP 400 si invalide. fileciteturn91file0
 
-## Tableau PRD/Vision vs implémentation réelle
+**Idempotency safe ?**  
+Le stockage DB a `eventId` unique et `createReceived()` gère la collision via erreur unique (P2002 → duplicate). fileciteturn91file0  
+⚠️ Mais le pipeline actuel “store event → queue → processing → orchestrator.begin(createReceived)” semble introduire un double-enregistrement “duplicate” qui peut court-circuiter le traitement (risque fonctionnel majeur → “billing sync silencieusement cassé”). fileciteturn91file0
 
-Le tableau ci-dessous compare des affirmations **pertinentes pour org-core** (fonctionnel + architecture + sécurité) aux preuves dans le repo.
+**Anti‑enumeration enforced ?**  
+LoginFlow fait une vérif dummy hash quand user inexistant (réduit differences timing / erreur) et retourne toujours `{ ok: false }` — conforme OWASP (messages génériques). fileciteturn63file4 citeturn18search2
 
-| Thème | PRD / Vision (claim) | Implémentation observée | Statut | Preuves |
-|---|---|---|---|---|
-| Création d’org | “Create org” + org auto‑created au signup (PRD) | `OrgService.createOrg(...)` + signup flow crée org + membership owner + subscription + active org | Présent | fileciteturn21file0L1-L1 fileciteturn95file2L1-L1 |
-| Switch org | “Switch org” (PRD) | `switchActiveOrganization` vérifie membership avant `setActiveOrganization` + route `/api/org/switch` | Présent | fileciteturn21file0L1-L1 fileciteturn37file17L1-L1 |
-| Inviter membres | “Invite team members” (PRD/Vision) | `InviteService.createInvite` restreint à owner/admin + route `/api/org/invite` envoie email | Présent | fileciteturn25file2L1-L1 fileciteturn35file1L1-L1 |
-| Accept invite | “Accept invite flow” (PRD/Vision) | `acceptInvite` valide token + email match + membership ensure + active org; route `/api/org/invite/accept` redirect UI | Présent | fileciteturn25file2L1-L1 fileciteturn16file15L1-L1 |
-| Rôles | “Roles fixed: owner/admin/member” (PRD/Vision) | Enum Prisma `MembershipRole` + logique d’autorisation membership service | Présent | fileciteturn51file0L1-L1 fileciteturn25file3L1-L1 |
-| “Org isolation enforced server-side” | PRD l’exige explicitement | Certaines opérations vérifient membership (switch, role change, removal). Mais pas de mécanisme central garantissant que *toutes* les queries app & services sont org‑scoped (pattern global non démontré ici) | Partiel | fileciteturn21file0L1-L1 fileciteturn25file3L1-L1 fileciteturn14file2L1-L1 |
-| RBAC engine | Vision décrit un vrai RBAC (permissions, `can()`, middleware) | Pas de package RBAC dédié dans la portée org-core; on a des checks “owner/admin/member” et des règles spécifiques | Manquant (selon Vision) | fileciteturn14file0L1-L1 fileciteturn25file3L1-L1 |
-| Audit logs | Vision mentionne audit logs | Service `logOrgAudit` écrit en DB + routes org loggent des actions | Partiel (org seulement) | fileciteturn97file0L1-L1 fileciteturn21file1L1-L1 |
-| Contracts Zod (DX) | PRD veut schemas Zod partagés | `@contracts` dépend de Zod mais contrats org observés sont surtout types; routes valident inline | Partiel | fileciteturn65file16L1-L1 fileciteturn63file0L1-L1 fileciteturn35file1L1-L1 |
-| “Framework-agnostic core” | Vision (principe) | org-core a un helper `isUniqueConstraintViolation` qui reconnaît `P2002` (Prisma) → fuite d’implémentation DB | Partiel | fileciteturn25file0L1-L1 fileciteturn14file0L1-L1 |
-| DB schema | PRD décrit tables org/membership/invitations | Prisma schema contient `Organization`, `Membership`, `Invitation`, et `User.activeOrganizationId` | Présent | fileciteturn51file0L1-L1 fileciteturn14file2L1-L1 |
-| CI | Non détaillé dans PRD, mais requis “prod-grade” | GitHub Actions CI lint/typecheck/test/audit + CodeQL | Présent (base) | fileciteturn73file0L1-L1 fileciteturn73file1L1-L1 |
+**Cookie flags correct ?**  
+Le cookie session est `httpOnly: true`, `secure: env.SESSION_COOKIE_SECURE`, `sameSite: env.SESSION_COOKIE_SAME_SITE`, `path: "/"`. fileciteturn55file2  
+OWASP recommande HttpOnly + Secure + SameSite pour protéger les cookies de session. citeturn18search0  
+⚠️ Mais la conformité dépend 100% des valeurs default d’env (non auditées ici).
 
-## Lacunes “prod ready” prioritaires et plan d’implémentation
+### Vulnérabilités / risques concrets (liste claire)
 
-Le backlog ci‑dessous est volontairement **orienté blockers**. Pour chaque item : priorité, étapes concrètes, effort (S/M/L) avec ordre de grandeur en heures, et critères d’acceptation.
+Le webhook Stripe dépend d’une queue : si `QUEUE_ENABLED=false` ou Redis down, le handler renvoie 500 après échec d’enqueue. Stripe va retry, mais vous allez accumuler des échecs + statuts incohérents → support nightmare. fileciteturn91file0turn93file0  
+Pipeline webhook probablement cassé par double `createReceived()` entre route et orchestrator begin (risque “aucun sync subscription en prod”). fileciteturn91file0  
+Stockage en clair de `codeVerifier` dans OAuth state (DB). C’est un “hardening gap”. fileciteturn66file4  
+Surface d’attaque inutilement grande (AI endpoints/pages, impersonation, RBAC custom, audit logs, telemetry). Plus de code = plus de vulnérabilités potentielles et plus de patching. fileciteturn110file4turn103file12turn103file7
 
-> Convention effort : **Small 4–12h**, **Medium 12–40h**, **Large 40–120h** (selon profondeur + intégrations).
+## 🧹 REMOVE FOR V1
 
-| Dimension | Item manquant / à renforcer | Priorité | Effort | Étapes d’implémentation concrètes | Critères d’acceptation |
-|---|---|---:|---:|---|---|
-| Fonctionnel (Vision) | RBAC engine (permissions + `can()` + guards) tel que décrit dans Vision | P0 | Large (60–120h) | Créer `packages/rbac-core` (ou `rbac`) avec : (1) modèle permission (actions/ressources) + matrice, (2) helpers `can(user, action, resource)` et `requirePermission`, (3) intégration dans routes via middleware/util server, (4) tests unit + exemples. | Démo : une action protégée “admin-only” échoue côté server même si UI tente l’appel; `can()` couvert par tests; doc + exemples. fileciteturn14file0L1-L1 |
-| Sécurité (anti-abus) | Rate limiting / quotas pour invites (email) + actions sensibles org | P0 | Medium (16–32h) | (1) Ajouter un “org action rate limit adapter” (DB buckets ou Redis) dédié aux invites, (2) limiter par `orgId + actorUserId` + “global per IP/email”, (3) intégrer dans `/api/org/invite` avant émission token/email, (4) logs + audit outcome. | Tests: burst 50 req/min → 429; quotas distincts par org; pas de spam email; métrique `org_invite_rate_limited_total`. fileciteturn35file1L1-L1 |
-| Sécurité (session/cookies) | Vérification explicite des attributs cookie + guidelines (Secure/HttpOnly/SameSite) et HSTS/TLS en prod | P0 | Small (6–12h) | (1) Documenter et valider `Secure`, `HttpOnly`, `SameSite` selon env, (2) ajouter tests unit sur l’adapter cookie, (3) ajouter en-têtes sécurité (HSTS, etc.) via middleware/next config, (4) doc “production hardening”. | En prod : cookies session toujours `Secure`+`HttpOnly`; SameSite explicit; doc explique pourquoi; aligné recommandations OWASP. citeturn1search0 |
-| Observabilité | Standardiser logs structurés + corrélation (requestId/traceId) | P0 | Medium (20–40h) | (1) Ajouter un logger structuré (pino/winston) + middleware qui injecte `requestId`, (2) inclure `organizationId`, `userId`, `route`, `outcome`, (3) enrichir `logOrgAudit` et erreurs org, (4) exposer format JSON stable. | Un incident peut être investigué via logs filtrés par requestId; logs contiennent orgId/actor; erreurs ont codes stables; pas de données sensibles en clair. fileciteturn97file0L1-L1 |
-| Observabilité | Metrics + tracing (OpenTelemetry) pour endpoints `api/*` | P0 | Large (40–80h) | (1) Instrumenter serveur avec OpenTelemetry (traces + métriques), (2) exporter (OTLP) vers collector, (3) inclure attributs (orgId, route, status, errorCode), (4) dashboards de base : latency p50/p95, error rate, invite sends, auth failures. | Traces visibles bout‑à‑bout; métriques par route; corrélation logs↔traces via traceId/spanId (concept OTel). citeturn0search1 |
-| Fiabilité | Health checks (liveness/readiness) + dépendances (DB, Stripe, Email) | P0 | Medium (12–24h) | (1) Ajouter `/api/health` (liveness) et `/api/ready` (readiness) décidés sur checks DB, (2) timeouts courts + fallback, (3) doc d’exploitation. | `/api/ready` échoue si DB down; monitoring peut pager; tests d’intégration couvrent scénarios DB down. |
-| SLO/SLI | Définir SLI/SLO + error budget + policy de release | P0 | Medium (16–32h) | (1) Choisir SLI : taux succès req, latence, taux erreurs invites, (2) SLOs (ex. 99.9% sur 28 jours) + error budget, (3) lier à policy (freeze release si budget brûlé), (4) documenter. | Un doc SLO existe + calcul budget; dashboard montre burn; règle “freeze hors P0” appliquée (modèle SRE). citeturn0search5turn0search0 |
-| API & contracts | Contrats org en Zod + mapping erreurs stable (server/client) | P1 | Medium (16–40h) | (1) Ajouter schemas Zod pour payloads org (create/switch/invite/role/remove/transfer), (2) types `Result<T, E>` standard, (3) adapter routes pour valider via schema, (4) tests sur invalid payload. | Les routes rejettent payload invalid avec erreurs cohérentes; SDK client réutilise types; pas de validation divergente. fileciteturn65file16L1-L1 |
-| Data & migrations | Versionner/valider migrations Prisma + stratégie migration prod | P1 | Medium (12–32h) | (1) S’assurer que `prisma/migrations` est complet et committé, (2) ajouter CI step “migrate diff” ou “validate migrate deploy dry run”, (3) doc rollback (down migrations) ou stratégie “expand/contract”. | `pnpm setup` fonctionne sur clone propre; CI échoue si migrations manquantes; doc explique comment migrer en prod. fileciteturn96file0L1-L1 fileciteturn96file1L1-L1 |
-| Sécurité (webhooks) | Procédure robuste webhook (replay, tolérance, ack rapide, rotation secrets) | P1 | Medium (16–32h) | (1) Vérifier signature Stripe + tolérance timestamp, (2) ack 2xx rapide + traitement async, (3) rotation secrets documentée, (4) tests sur replay/duplicate. | Webhook rejette signature invalide; gère replay; événements dupliqués idempotents; doc suit recommandations Stripe. citeturn0search2 |
-| Testing | Couverture et niveaux (unit/integration/e2e) + targets | P1 | Medium (20–60h) | (1) Établir target coverage (ex. 80% lines packages core), (2) ajouter tests intégration (DB + routes), (3) e2e Playwright sur flows clés (signup→invite→accept), (4) ajouter job CI coverage gate. | CI échoue si coverage < target; e2e passe en CI; un test d’intégration valide org isolation sur queries DB. fileciteturn73file0L1-L1 |
-| CI/CD | Release pipeline (tags, changelog, artefacts) + rollback | P1 | Medium (20–40h) | (1) Conventional commits + génération changelog, (2) workflow release qui build + archive + tag, (3) notes de release auto, (4) stratégie rollback (revert/tag, env promotion). | Une release crée tag + notes; build Next vérifié; rollback documenté; environnements “preview/staging/prod” définis. fileciteturn73file0L1-L1 |
-| Perf & scalabilité | Benchmarks + load tests (smoke) sur endpoints org | P2 | Medium (16–40h) | (1) k6 (ou autocannon) scripts : invite/create/switch/list, (2) budgets latence p95, (3) test de DB indexes (membership unique/index), (4) doc perf. | Rapport perf versionné; p95 sous budget; pas de régression perf en CI. fileciteturn51file0L1-L1 |
-| Confidentialité | Politique rétention + minimisation données (audit logs, emails) | P2 | Small–Medium (8–24h) | (1) Lister PII (email, ip, userAgent), (2) minimiser + redaction, (3) règles de rétention purge/TTL, (4) doc privacy. | Audit logs ne contiennent pas secrets; purge automatique configurée; doc “privacy-by-design” minimale. |
-| Déploiement | Manifests/IaC (ou guide Vercel complet) | P2 | Medium (16–40h) | (1) Choisir “Vercel-first” : env vars, DB, webhooks, domains, (2) ajouter `vercel.json` si nécessaire, (3) runbook “incident: DB down / Stripe webhook backlog”, (4) checklist go-live. | Un dev suit le guide et déploie sans guess; runbook existe; variables prod listées; scénario de rollback décrit. fileciteturn19file1L1-L1 |
+Le PRD V1 est “lean mais complet sur les fondamentaux”. Tout ce qui augmente la surface/infra/support sans augmenter directement la valeur perçue “auth+org+billing” doit sortir. fileciteturn63file3
 
-### Points d’attention spécifiques à org-core (design/architecture)
+### Modules à supprimer (exact paths)
 
-- **Fuite Prisma (P2002) dans le core** : `isUniqueConstraintViolation` reconnaît explicitement `P2002`, ce qui va à l’encontre du principe “framework‑agnostic core” de la Vision (même si c’est léger). Recommandation : abstraire via un “UniqueViolationError” levé par repos, ou injecter une fonction “isUniqueViolation(err)” depuis l’adapter DB. fileciteturn25file0L1-L1 fileciteturn14file0L1-L1
-- **Duplication “create org”** : la création d’organisation et des artefacts associés existe dans `OrgService` et aussi dans le `SignupFlow` auth-core. Ça augmente le risque de divergence (ex. si tu changes le plan par défaut, tu dois modifier 2 endroits). Recommandation : (a) faire dépendre signup.flow d’`@org-core` via un port (à valider avec tes règles de dépendance), ou (b) extraire une fonction pure partagée dans org-core (sans dépendre auth‑core). fileciteturn21file0L1-L1 fileciteturn95file2L1-L1
-- **Org isolation “global”** : plusieurs actions sont protégées par membership, mais “org isolation” en prod est surtout un **invariant transversal** : *toute requête data doit être automatiquement scopée par orgId* (ou doit prouver pourquoi non). Sans guard central, tu vas inévitablement introduire un endpoint “qui oublie le orgId”. Recommandation : un helper `requireOrgContext()` qui renvoie `{orgId, role}` + un wrapper repo/service qui exige orgId pour les opérations multi‑tenant.
+**Supprimer l’infra Jobs/Queue/Worker (gros gain DX + deploy <15 min)**  
+Supprimer `apps/worker/**` (worker BullMQ + dead-letter), et tout le couplage associé. fileciteturn93file0  
+Supprimer `packages/jobs-core/**` (BullMQ), et les appels queue côté web (`apps/web/src/server/jobs/**`). fileciteturn93file0turn93file0  
+Modifier `apps/web/src/app/api/billing/webhook/route.ts` pour **traiter synchrone** (ou fallback synchrone) au lieu d’enqueue. fileciteturn91file0  
+**Temps sauvé estimé**: 3–6 jours + énorme réduction des tickets “Redis/worker”.
 
-## Checklist prod‑readiness (priorisée)
+**Supprimer AI pack (non essentiel pour 149 USD V1 “starter kit”)**  
+Supprimer pages dashboard AI (`apps/web/src/app/(app)/dashboard/ai-*`) et endpoints API AI si présents. fileciteturn103file5turn103file7turn103file9  
+Nettoyer `packages/contracts` exports AI si inutiles en V1. fileciteturn66file0  
+**Temps sauvé estimé**: 2–4 jours + réduction des risques légaux/couts (OpenAI keys, quotas).
 
-Cette checklist est conçue comme “Go/No‑Go” avant un lancement prod (ou avant de vendre en affirmant “production‑ready”).
+**Supprimer impersonation + audit logs “enterprise-ish”**  
+Supprimer endpoints `apps/web/src/app/api/org/impersonation/**` + services associés. fileciteturn103file12  
+Supprimer `packages/org-core/src/impersonation.service.ts` + utilisation dans require-user/cookies. fileciteturn93file0  
+Alléger `require-user.ts` (retirer impersonation state) et `session-cookie.adapter.ts` (cookie _imp). fileciteturn55file2  
+**Temps sauvé estimé**: 1–3 jours + baisse du risque “support/security”.
 
-- [ ] (P0) RBAC aligné avec la Vision (ou ajuster la Vision/marketing pour refléter la réalité). fileciteturn14file0L1-L1  
-- [ ] (P0) Rate limiting/quotas sur invites + actions org sensibles. fileciteturn35file1L1-L1  
-- [ ] (P0) Observabilité : logs structurés + métriques + traces (OTel) + corrélation. citeturn0search1  
-- [ ] (P0) Health/readiness endpoints et monitoring de base.  
-- [ ] (P0) SLO/SLI définis + error budget + policy de release (freeze hors P0 si budget brûlé). citeturn0search5turn0search0  
-- [ ] (P1) Contracts org en Zod + erreurs/API stables, réutilisables côté client. fileciteturn65file16L1-L1  
-- [ ] (P1) Migrations Prisma versionnées + validation en CI; migration strategy documentée. fileciteturn96file0L1-L1  
-- [ ] (P1) Pipeline release : build Next en CI + release notes + rollback. fileciteturn73file0L1-L1  
-- [ ] (P1) Tests : intégration DB + e2e (signup→invite→accept) + coverage targets. fileciteturn73file0L1-L1  
-- [ ] (P1) Webhooks Stripe : replay/idempotency/rotation secrets/ack rapide (si vendu “prod-grade”). citeturn0search2  
-- [ ] (P2) Benchmarks/load tests + budgets latence (k6).  
-- [ ] (P2) Privacy : PII minimization + rétention/purge + redaction dans logs.  
-- [ ] (P2) Déploiement : guide Vercel/infra + runbooks incident.
+**Supprimer RBAC custom + pages admin inutiles**  
+Supprimer `packages/rbac-core/**` et les tables RBAC custom si non utilisées en V1. fileciteturn103file4turn66file4  
+Supprimer les pages `/dashboard/roles`, `/dashboard/users` et autres admin panels non listés dans le PRD. fileciteturn103file4turn103file14  
+**Temps sauvé estimé**: 2–4 jours.
 
-### Mini‑flowchart recommandé pour “org invite” (hardening)
+### Risque si on ne coupe pas
 
-```mermaid
-flowchart TD
-  A[POST /api/org/invite] --> B{Auth OK?}
-  B -- non --> X[401]
-  B -- oui --> C{Rate limit OK?}
-  C -- non --> Y[429 + audit outcome=forbidden]
-  C -- oui --> D[CreateInvite: token + hash + expires]
-  D --> E[Send email (async)]
-  E --> F[Audit log org.invite.created]
-  F --> G[200 OK]
-```
+Si vous gardez queue/worker + AI/RBAC/impersonation, vous vendez un produit “starter kit $149” qui exige (implicitement) Redis, un worker séparé, un pipeline d’observabilité, et une surface de code digne d’un “platform framework”. Le support va exploser, et la promesse PRD “deploy <15 min” devient mensongère. fileciteturn63file3turn91file0turn93file0
 
-Ce flow formalise ce qui est déjà partiellement en place (auth + core + audit), et ajoute le bloc anti‑abus manquant pour tenir une promesse “production‑grade”. fileciteturn35file1L1-L1 fileciteturn97file0L1-L1
+## 🛠 MISSING FOR V1
 
+### Critical missing (fonctionnel)
+
+Billing V1 n’est pas “safe” tant que :  
+Le webhook ne peut pas survivre sans Redis/queue, ce qui viole l’objectif de déploiement simple. fileciteturn91file0turn93file0  
+Le flux complet checkout → webhook → DB doit être validé sur un DB vierge (seed + migrations) avec un Stripe test-mode réel (ou Stripe CLI). fileciteturn63file3turn91file3
+
+### Security gaps (à corriger avant vente)
+
+Hardening OAuth : éviter de stocker `codeVerifier` en clair (au minimum chiffrer au repos ou dériver autrement), ou documenter explicitement la menace acceptée. fileciteturn66file4  
+CSRF : avec des cookies HttpOnly, SameSite aide mais n’est pas une garantie “universelle” pour tous scénarios; PRD mentionne “CSRF-safe flows” (Vision aussi). Vous devez au minimum documenter et appliquer une stratégie (Origin/Referer checks sur POST sensibles ou token CSRF). fileciteturn63file3turn63file1turn55file2 citeturn18search0  
+Réduire surface d’attaque en supprimant AI/impersonation/extra admin.
+
+### Billing gaps (PRD)
+
+Le PRD liste des events Stripe additionnels (invoice.payment_succeeded/failed). Ils sont acceptés mais non exploités (aucune logique). Soit vous les retirez explicitement du scope V1, soit vous implémentez un minimum (ex: marquer past_due/unpaid). fileciteturn63file3turn91file0
+
+### Org isolation gaps
+
+Org isolation est bien appliquée via lookup membership et requireOrgContext, mais la couche d’invitation est sur‑complexe (RBAC scopes + audit + telemetry). Pour V1, il manque une version minimaliste et facile à comprendre. fileciteturn106file5turn103file3
+
+### Missing commercialization checklist (PRD)
+
+Le PRD exige avant vente : demo live, docs complètes, vidéo walkthrough, deploy 10 minutes vérifié, licence prête. fileciteturn63file3  
+Constats :  
+Le “Deploy page” est un guide partiel, pas un “one-click deploy” éprouvé (pas de bouton, pas de check-list exhaustive). fileciteturn91file3  
+Il n’y a pas de **LICENSE** à la racine; une page `/license` existe mais ce n’est pas une licence de distribution standard et c’est insuffisant pour vendre (Gumroad/LemonSqueezy exigent du clair). fileciteturn110file1turn110file0  
+“Setup tested from zero” n’est pas prouvé par CI (pas d’évidence ici). fileciteturn63file3
+
+## 🗺 30-DAY SHIPPING ROADMAP
+
+Objectif : fastest path to revenue + low support burden + valeur perçue max, sans ajouter du scope.
+
+### Semaine 1
+
+Stabiliser le noyau V1 (scope cut + billing fix)  
+Couper queue/worker: supprimer `apps/worker`, `packages/jobs-core`, et retirer tout “QUEUE_ENABLED/Redis required” du chemin critique. fileciteturn93file0turn91file0  
+Refactor `POST /api/billing/webhook`: traiter sync + idempotent (unique eventId). Garder signature verification. fileciteturn91file0  
+Fixer le traitement webhook pour éviter double `createReceived()` (un seul endroit). fileciteturn91file0  
+Couper AI/impersonation/RBAC custom (code + routes + pages). fileciteturn110file4turn103file12turn103file7  
+Mettre le schéma DB au strict PRD (au minimum roles owner/admin/member + tables PRD, sans AI/RBAC/impersonation). fileciteturn63file3turn66file4
+
+### Semaine 2
+
+Rendre les flows V1 impeccables (auth + org)  
+Valider auth endpoints PRD (signup/login/logout, magic request/confirm, forgot/reset, verify email request/confirm, sessions list/revoke). fileciteturn63file3  
+Vérifier anti-enumeration et rate limiting sur endpoints auth sensibles. fileciteturn78file2turn63file4 citeturn18search2  
+Simplifier org invite endpoint à la version V1 (sans telemetry/audit/rbac scopes) tout en gardant org isolation. fileciteturn106file5turn103file3  
+Assurer que l’accept invite flow mène à une UX claire (au minimum redirect vers dashboard). fileciteturn63file3
+
+### Semaine 3
+
+DX + docs + deploy réel “<15 minutes”  
+Mettre une doc “Deploy in 10 minutes” réellement exécutable (Vercel + Postgres + Stripe webhook + OAuth callbacks) avec étapes exactes + check-list. fileciteturn63file3turn91file3  
+Rendre le setup depuis zéro infaillible: `pnpm setup` + `pnpm dev` + seed demo + migrations propres. fileciteturn63file3  
+Ajouter un **LICENSE commercial clair** à la racine (pas juste une page UI). fileciteturn63file3turn110file0  
+Nettoyer la doc “folder-structure” pour matcher le repo réel. fileciteturn109file0
+
+### Semaine 4
+
+Polish “sellable” (qualité, sécurité, packaging)  
+Audit sécurité final: cookies flags conformes OWASP, stratégie CSRF documentée/appliquée, endpoints auth protégés, pas d’extras dangereux. citeturn18search0turn18search2  
+Déployer une demo live avec un dataset demo, et vérifier les flows end-to-end (auth/org/billing). fileciteturn63file3  
+Préparer onboarding acheteur: README persuasif + “quickstart” + FAQ + modes (demo vs prod) + common pitfalls. fileciteturn63file3  
+Enregistrer le walkthrough 10 minutes (PRD). fileciteturn63file3
+
+## 🎯 MINIMAL SELLABLE CORE DEFINITION
+
+Le produit à 149 USD doit inclure **exactement** (et rien de plus) :
+
+Auth V1  
+Email/password + login (anti-enumeration, Argon2id). fileciteturn63file4  
+Magic link (TTL < 20 min). fileciteturn66file3  
+Reset password (TTL < 20 min + revoke sessions). fileciteturn66file3  
+Email verification. fileciteturn66file3  
+OAuth Google + GitHub avec PKCE + state. fileciteturn84file0  
+Sessions: list + revoke + revoke all. fileciteturn63file3  
+Rate limiting auth endpoints (DB buckets). fileciteturn78file2  
+Cookies session HttpOnly + Secure + SameSite (valeurs prod sûres). fileciteturn55file2 citeturn18search0
+
+Org / Multi-tenant V1  
+User multi-org membership. fileciteturn63file3  
+Active org persistant par user. fileciteturn63file3  
+Create org / switch org. fileciteturn101file0  
+Invite + accept invite (roles owner/admin/member uniquement). fileciteturn63file3turn106file5  
+Org isolation enforced server-side. fileciteturn103file3
+
+Billing V1 (Stripe)  
+Free + Pro monthly via Checkout. fileciteturn63file3  
+Customer portal. fileciteturn63file3  
+Webhooks: signature verification + idempotency + sync vers table subscription. fileciteturn91file0  
+Zéro dépendance à Redis/worker pour fonctionner.
+
+Dashboard/UI V1 (pages PRD)  
+/login /signup /verify-email /forgot-password /reset-password /onboarding /dashboard /dashboard/billing /dashboard/team /dashboard/settings /dashboard/sessions. fileciteturn63file3  
+ShadCN + Tailwind + responsive + toasts. fileciteturn63file3
+
+DX / Commercialisation V1  
+`pnpm setup` + demo seed. fileciteturn63file3  
+Env validation (Zod) + docs env. fileciteturn63file3  
+Guide deploy “10 minutes” vérifié. fileciteturn63file3turn91file3  
+LICENSE commercial clair à la racine. fileciteturn63file3turn110file0
+
+## Pricing justification check
+
+Dans l’état actuel, **ce n’est pas crédible à 149 USD** pour “low support burden”, parce que :  
+Le billing dépend d’une infra additionnelle (Redis + worker) qui n’est pas compatible avec la promesse “deploy <15 min” et qui va générer des tickets (webhooks en erreur, queue down, jobs stuck). fileciteturn91file0turn93file0  
+Le scope V2/V3 (AI/RBAC/audit/impersonation) gonfle le repo, mais n’augmente pas la valeur perçue d’un “starter kit” — ça augmente surtout le risque et la maintenance. fileciteturn110file4turn103file12turn103file7  
+La doc “folder-structure” désalignée avec le repo réel est un red flag immédiat pour un acheteur technique; ça nuit directement à la DX et à la confiance. fileciteturn109file0
+
+**Ce qui doit être corrigé pour justifier 149 USD**  
+Billing stable sans infra additionnelle, flows auth/org sans surprises, docs deploy reproductibles, et un scope minimal clair (pas d’AI pack “half-baked”). fileciteturn63file3turn91file3

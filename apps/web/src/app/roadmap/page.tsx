@@ -6,9 +6,7 @@ export default function RoadmapPage() {
       <h2>Next releases</h2>
       <ul>
         <li>Mobile sidebar drawer</li>
-        <li>Audit logs + activity events</li>
         <li>Org switcher</li>
-        <li>AI Pack (optional)</li>
       </ul>
 
       <p>

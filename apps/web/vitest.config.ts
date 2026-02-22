@@ -19,9 +19,6 @@ export default defineConfig({
       "@rbac-core": fileURLToPath(
         new URL("../../packages/rbac-core/src/index.ts", import.meta.url),
       ),
-      "@jobs-core": fileURLToPath(
-        new URL("../../packages/jobs-core/src/index.ts", import.meta.url),
-      ),
     },
   },
   test: {

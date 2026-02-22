@@ -13,4 +13,4 @@
 - Feature flags system
 
 ## v2.0
-- AI Pack (optional): tool-calling assistant + jobs queue
+- AI Pack (optional): tool-calling assistant

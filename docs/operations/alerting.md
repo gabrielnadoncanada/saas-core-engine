@@ -29,31 +29,19 @@
 - Condition: `billing/webhook` 5xx ratio > 5% for 10m
 - Severity: `P1`
 
-5. Invite abuse spike
-- Condition: `org_invite_rate_limited_total` > normal baseline + 3 sigma
-- Severity: `P2`
-
-6. Impersonation starts spike
-- Condition: `action=org.impersonation.started` exceeds baseline + 3 sigma over 30m
-- Severity: `P2`
-
-7. Forbidden impersonation attempts
-- Condition: `action=org.impersonation.started` with `outcome=forbidden` > 5 in 10m
-- Severity: `P2`
-
-8. RBAC policy churn anomaly
+5. RBAC policy churn anomaly
 - Condition: `action=org.roles.updated` exceeds baseline + 3 sigma over 1h
 - Severity: `P3`
 
-9. AI budget burn rate
+6. AI budget burn rate
 - Condition: `ai budget usage pct` > alert threshold for 15m
 - Severity: `P2`
 
-10. AI hard-stop triggered
+7. AI hard-stop triggered
 - Condition: AI requests blocked with `error=AI budget exceeded for this month.`
 - Severity: `P2`
 
-11. Billing webhook retry backlog
+8. Billing webhook retry backlog
 - Condition: `billing_webhook_events` with `status=failed` grows continuously for 30m
 - Severity: `P1`
 

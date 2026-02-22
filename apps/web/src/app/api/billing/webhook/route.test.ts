@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const constructEvent = vi.fn();
 const createReceived = vi.fn();
 const markStatus = vi.fn();
-const enqueueBillingWebhookProcess = vi.fn();
+const processBillingWebhookEventById = vi.fn();
 
 vi.mock("@/server/services/stripe.service", () => ({
   stripe: () => ({
@@ -26,8 +26,8 @@ vi.mock("@/server/db-repos/billing-webhook-events.repo", () => ({
   },
 }));
 
-vi.mock("@/server/jobs/queues", () => ({
-  enqueueBillingWebhookProcess,
+vi.mock("@/server/billing/process-billing-webhook-event", () => ({
+  processBillingWebhookEventById,
 }));
 
 vi.mock("@/server/telemetry/otel", () => ({
@@ -40,7 +40,7 @@ describe("POST /api/billing/webhook", () => {
     vi.clearAllMocks();
     createReceived.mockResolvedValue("created");
     markStatus.mockResolvedValue(undefined);
-    enqueueBillingWebhookProcess.mockResolvedValue(undefined);
+    processBillingWebhookEventById.mockResolvedValue("processed");
     constructEvent.mockReturnValue({
       id: "evt_1",
       type: "invoice.payment_succeeded",
@@ -65,10 +65,10 @@ describe("POST /api/billing/webhook", () => {
     expect(res.status).toBe(200);
     expect(json.received).toBe(true);
     expect(json.duplicate).toBe(true);
-    expect(enqueueBillingWebhookProcess).not.toHaveBeenCalled();
+    expect(processBillingWebhookEventById).not.toHaveBeenCalled();
   });
 
-  it("acks quickly and queues processing", async () => {
+  it("processes event synchronously", async () => {
     const { POST } = await import("./route");
     const res = await POST(
       new Request("http://localhost/api/billing/webhook", {
@@ -77,11 +77,11 @@ describe("POST /api/billing/webhook", () => {
         body: "{}",
       }),
     );
-    const json = (await res.json()) as { queued?: boolean; received?: boolean };
+    const json = (await res.json()) as { processed?: boolean; received?: boolean };
 
     expect(res.status).toBe(200);
     expect(json.received).toBe(true);
-    expect(json.queued).toBe(true);
-    expect(enqueueBillingWebhookProcess).toHaveBeenCalledWith({ eventId: "evt_1" });
+    expect(json.processed).toBe(true);
+    expect(processBillingWebhookEventById).toHaveBeenCalledWith("evt_1");
   });
 });

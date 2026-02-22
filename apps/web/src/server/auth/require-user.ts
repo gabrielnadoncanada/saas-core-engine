@@ -1,23 +1,14 @@
 import "server-only";
 
-import {
-  getImpersonationTokenFromCookie,
-  getSessionTokenFromCookie,
-} from "@/server/adapters/cookies/session-cookie.adapter";
+import { getSessionTokenFromCookie } from "@/server/adapters/cookies/session-cookie.adapter";
 import { createSessionContextService } from "@/server/adapters/core/auth-core.adapter";
 import { env } from "@/server/config/env";
-import { resolveActiveImpersonation } from "@/server/services/impersonation.service";
 
 export type SessionUser = {
   id: string;
   userId: string;
   sessionId: string;
   organizationId: string;
-  impersonation?: {
-    sessionId: string;
-    actorUserId: string;
-    targetUserId: string;
-  };
 };
 
 export async function getSessionUser(): Promise<SessionUser | null> {
@@ -38,23 +29,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     organizationId: resolved.organizationId,
   };
 
-  const impersonationToken = await getImpersonationTokenFromCookie();
-  if (!impersonationToken) return base;
-
-  const impersonation = await resolveActiveImpersonation(impersonationToken);
-  if (!impersonation) return base;
-  if (impersonation.actorUserId !== resolved.userId) return base;
-
-  return {
-    ...base,
-    id: impersonation.targetUserId,
-    userId: impersonation.targetUserId,
-    impersonation: {
-      sessionId: impersonation.id,
-      actorUserId: impersonation.actorUserId,
-      targetUserId: impersonation.targetUserId,
-    },
-  };
+  return base;
 }
 
 export async function requireUser(): Promise<SessionUser> {

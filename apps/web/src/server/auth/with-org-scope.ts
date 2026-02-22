@@ -32,7 +32,6 @@ export async function withRequiredOrgScope<T>(params: {
       },
       {
         customPermissions,
-        isImpersonating: Boolean(ctx.impersonation),
       },
     );
   }

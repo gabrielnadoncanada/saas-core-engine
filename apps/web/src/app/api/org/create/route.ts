@@ -5,7 +5,6 @@ import { NextResponse } from "next/server";
 import { createOrgService } from "@/server/adapters/core/org-core.adapter";
 import { orgErrorResponse } from "@/server/auth/org-error-response";
 import { requireUser } from "@/server/auth/require-user";
-import { logOrgAudit } from "@/server/services/org-audit.service";
 import { withApiTelemetry } from "@/server/telemetry/otel";
 
 export async function POST(req: Request) {
@@ -28,13 +27,6 @@ export async function POST(req: Request) {
         name,
       });
 
-      await logOrgAudit({
-        organizationId: res.organizationId,
-        actorUserId: user.userId,
-        action: "org.created",
-        metadata: { name },
-      });
-
       return NextResponse.json({ ok: true, organizationId: res.organizationId });
     } catch (error) {
       if (error instanceof OrgCoreError) {
@@ -47,3 +39,4 @@ export async function POST(req: Request) {
     }
   });
 }
+

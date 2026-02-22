@@ -33,25 +33,6 @@ function run(): number {
         mustExist("docs/operations/runbook-rbac-v2.md"),
       ],
     },
-    {
-      id: "DRILL-AUDIT-001",
-      title: "Audit query/export degradation",
-      checks: [
-        mustExist("apps/web/src/app/api/org/audit/route.ts"),
-        mustExist("docs/operations/runbook-audit-v2.md"),
-        mustExist("docs/operations/audit-retention.md"),
-      ],
-    },
-    {
-      id: "DRILL-IMP-001",
-      title: "Impersonation misuse incident",
-      checks: [
-        mustExist("apps/web/src/app/api/org/impersonation/start/route.ts"),
-        mustExist("apps/web/src/app/api/org/impersonation/stop/route.ts"),
-        mustExist("apps/web/src/shared/ui/layout/topbar.tsx"),
-        mustExist("docs/operations/runbook-impersonation-v2.md"),
-      ],
-    },
   ];
 
   for (const drill of drills) {

@@ -13,10 +13,6 @@ const bodySchema = z.object({
 export async function POST(req: Request) {
   return withApiTelemetry(req, "/api/auth/profile/email", async () => {
     const sessionUser = await requireUser();
-    if (sessionUser.impersonation) {
-      return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
-    }
-
     const parsed = bodySchema.safeParse(await req.json());
     if (!parsed.success) {
       return NextResponse.json({ ok: false, error: "invalid_input" }, { status: 400 });

@@ -151,30 +151,6 @@ model Subscription {
   @@map("subscriptions")
 }
 
-model OrgAuditLog {
-  id             String   @id @default(cuid())
-  organizationId String   @map("organization_id")
-  actorUserId    String?  @map("actor_user_id")
-  action         String
-  targetType     String?  @map("target_type")
-  targetId       String?  @map("target_id")
-  target         Json?
-  diff           Json?
-  ip             String?
-  userAgent      String?  @map("user_agent")
-  traceId        String?  @map("trace_id")
-  outcome        String   @default("success")
-  metadata       Json?
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  @@index([organizationId, createdAt])
-  @@index([actorUserId, createdAt])
-  @@index([action, createdAt])
-  @@index([outcome, createdAt])
-  @@index([traceId])
-  @@map("org_audit_logs")
-}
-
 model Role {
   id              String   @id @default(cuid())
   organizationId  String   @map("organization_id")
@@ -231,26 +207,6 @@ model MembershipRoleAssignment {
   @@id([membershipId, roleId])
   @@index([roleId])
   @@map("membership_roles")
-}
-
-model ImpersonationSession {
-  id             String    @id @default(cuid())
-  organizationId String    @map("organization_id")
-  actorUserId    String    @map("actor_user_id")
-  targetUserId   String    @map("target_user_id")
-  tokenHash      String    @unique @map("token_hash")
-  actorIp        String?   @map("actor_ip")
-  actorUserAgent String?   @map("actor_user_agent")
-  traceId        String?   @map("trace_id")
-  startedAt      DateTime  @default(now()) @map("started_at")
-  endedAt        DateTime? @map("ended_at")
-  endReason      String?   @map("end_reason")
-  createdAt      DateTime  @default(now()) @map("created_at")
-
-  @@index([organizationId, startedAt])
-  @@index([actorUserId, endedAt])
-  @@index([targetUserId, endedAt])
-  @@map("impersonation_sessions")
 }
 
 model BillingWebhookEvent {
@@ -340,40 +296,6 @@ model OAuthState {
   @@map("oauth_states")
 }
 
-model AIUsage {
-  id             String   @id @default(cuid())
-  userId         String
-  organizationId String
-  model          String
-  inputTokens    Int
-  outputTokens   Int
-  costUsd        Float
-  createdAt      DateTime @default(now())
-}
-
-model AIBudget {
-  id               String   @id @default(cuid())
-  organizationId   String   @unique
-  monthlyBudgetUsd Float    @default(0)
-  alertThresholdPct Int     @default(80) @map("alert_threshold_pct")
-  hardStopEnabled  Boolean  @default(true) @map("hard_stop_enabled")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
-
-  @@index([organizationId])
-  @@map("ai_budgets")
-}
-
-model AIRateLimitBucket {
-  id             String   @id @default(cuid())
-  organizationId String
-  windowStart    DateTime
-  count          Int      @default(0)
-
-  @@unique([organizationId, windowStart])
-  @@index([organizationId, windowStart])
-}
-
 model AuthRateLimitBucket {
   id          String   @id @default(cuid())
   key         String
@@ -383,93 +305,4 @@ model AuthRateLimitBucket {
   @@unique([key, windowStart])
   @@index([key, windowStart])
   @@map("auth_rate_limit_buckets")
-}
-
-model OrgActionRateLimitBucket {
-  id          String   @id @default(cuid())
-  scope       String
-  windowStart DateTime @map("window_start")
-  count       Int      @default(0)
-
-  @@unique([scope, windowStart])
-  @@index([scope, windowStart])
-  @@map("org_action_rate_limit_buckets")
-}
-
-model AIAuditLog {
-  id             String   @id @default(cuid())
-  organizationId String
-  userId         String
-
-  // request
-  model          String
-  plan           String
-  route          String
-  promptChars    Int
-  messageCount   Int
-
-  // response
-  inputTokens    Int
-  outputTokens   Int
-  costUsd        Float
-
-  // outcome
-  status         String   // "ok" | "error" | "blocked"
-  errorCode      String?  // e.g. "quota" | "rpm" | "provider"
-  errorMessage   String?
-
-  createdAt      DateTime @default(now())
-
-  toolExecutions AIToolExecution[]
-
-  @@index([organizationId, createdAt])
-  @@index([userId, createdAt])
-}
-
-model AIPrompt {
-  id             String   @id @default(cuid())
-  organizationId String
-
-  key            String   // e.g. "chat.system"
-  activeVersion  Int      @default(1)
-
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  versions       AIPromptVersion[]
-
-  @@unique([organizationId, key])
-  @@index([organizationId, key])
-}
-
-model AIPromptVersion {
-  id          String   @id @default(cuid())
-  promptId    String
-  version     Int
-  content     String
-
-  createdAt   DateTime @default(now())
-  createdById String?
-
-  prompt AIPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
-
-  @@unique([promptId, version])
-  @@index([promptId, version])
-}
-
-model AIToolExecution {
-  id          String   @id @default(cuid())
-  auditLogId  String
-  step        Int
-  toolName    String
-  durationMs  Int
-  status      String   // "ok" | "error"
-  errorMessage String?
-
-  createdAt   DateTime @default(now())
-
-  auditLog AIAuditLog @relation(fields: [auditLogId], references: [id], onDelete: Cascade)
-
-  @@index([auditLogId])
-  @@index([toolName, createdAt])
 }

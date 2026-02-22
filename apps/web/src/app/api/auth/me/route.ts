@@ -8,9 +8,6 @@ export async function GET() {
 
   return NextResponse.json({
     ok: true,
-    user: {
-      ...user,
-      isImpersonating: Boolean(user.impersonation),
-    },
+    user,
   });
 }
