@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useSearchParams } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -15,6 +16,9 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/shared/components/u
 import { Input } from "@/shared/components/ui/input";
 
 export function SignupForm() {
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams.get("redirect");
+
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupFormSchema),
     defaultValues: {
@@ -27,7 +31,7 @@ export function SignupForm() {
   async function submit(values: SignupFormValues) {
     try {
       await signupWithWorkspace(values);
-      window.location.href = getDashboardRedirectPath();
+      window.location.href = getDashboardRedirectPath(redirectPath);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Signup failed");
     }

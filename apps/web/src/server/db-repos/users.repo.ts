@@ -6,11 +6,13 @@ const db = (tx?: DbTx) => tx ?? prisma;
 
 export class UsersRepo {
   async findById(userId: string, tx?: DbTx): Promise<User | null> {
-    return db(tx).user.findUnique({ where: { id: userId } });
+    return db(tx).user.findFirst({ where: { id: userId, deletedAt: null } });
   }
 
   async findByEmail(email: string, tx?: DbTx): Promise<User | null> {
-    return db(tx).user.findUnique({ where: { email: email.toLowerCase() } });
+    return db(tx).user.findFirst({
+      where: { email: email.toLowerCase(), deletedAt: null },
+    });
   }
 
   async create(
@@ -26,8 +28,8 @@ export class UsersRepo {
   }
 
   async markEmailVerified(userId: string, tx?: DbTx): Promise<void> {
-    await db(tx).user.update({
-      where: { id: userId },
+    await db(tx).user.updateMany({
+      where: { id: userId, deletedAt: null },
       data: { emailVerifiedAt: new Date() },
     });
   }
@@ -37,15 +39,15 @@ export class UsersRepo {
     passwordHash: string,
     tx?: DbTx,
   ): Promise<void> {
-    await db(tx).user.update({
-      where: { id: userId },
+    await db(tx).user.updateMany({
+      where: { id: userId, deletedAt: null },
       data: { passwordHash },
     });
   }
 
   async touchLastLogin(userId: string, tx?: DbTx): Promise<void> {
-    await db(tx).user.update({
-      where: { id: userId },
+    await db(tx).user.updateMany({
+      where: { id: userId, deletedAt: null },
       data: { lastLoginAt: new Date() },
     });
   }
@@ -55,8 +57,8 @@ export class UsersRepo {
     organizationId: string,
     tx?: DbTx,
   ): Promise<void> {
-    await db(tx).user.update({
-      where: { id: userId },
+    await db(tx).user.updateMany({
+      where: { id: userId, deletedAt: null },
       data: { activeOrganizationId: organizationId },
     });
   }
@@ -65,10 +67,20 @@ export class UsersRepo {
     userId: string,
     tx?: DbTx,
   ): Promise<string | null> {
-    const user = await db(tx).user.findUnique({
-      where: { id: userId },
+    const user = await db(tx).user.findFirst({
+      where: { id: userId, deletedAt: null },
       select: { activeOrganizationId: true },
     });
     return user?.activeOrganizationId ?? null;
+  }
+
+  async softDelete(userId: string, tx?: DbTx): Promise<void> {
+    await db(tx).user.updateMany({
+      where: { id: userId, deletedAt: null },
+      data: {
+        deletedAt: new Date(),
+        activeOrganizationId: null,
+      },
+    });
   }
 }

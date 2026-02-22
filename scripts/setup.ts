@@ -10,22 +10,20 @@ function run(cmd: string, args: string[], cwd?: string) {
     const child = spawn(cmd, args, {
       cwd,
       stdio: "inherit",
-      shell: process.platform === "win32", // important for Windows
+      shell: process.platform === "win32",
       env: process.env,
     });
 
     child.on("close", (code) => {
       if (code === 0) resolve();
-      else
-        reject(new Error(`Command failed (${code}): ${cmd} ${args.join(" ")}`));
+      else reject(new Error(`Command failed (${code}): ${cmd} ${args.join(" ")}`));
     });
   });
 }
 
-function readEnvFile(): Record<string, string> {
-  const envPath = path.join(process.cwd(), ".env");
-  if (!fs.existsSync(envPath)) return {};
-  const raw = fs.readFileSync(envPath, "utf8");
+function parseEnvFile(filePath: string): Record<string, string> {
+  if (!fs.existsSync(filePath)) return {};
+  const raw = fs.readFileSync(filePath, "utf8");
 
   const out: Record<string, string> = {};
   for (const line of raw.split("\n")) {
@@ -46,6 +44,23 @@ function readEnvFile(): Record<string, string> {
   return out;
 }
 
+function loadEnvFiles() {
+  const root = process.cwd();
+  const candidates = [
+    path.join(root, ".env"), // legacy fallback
+    path.join(root, "packages", "db", ".env"),
+    path.join(root, "apps", "web", ".env.local"),
+    path.join(root, "apps", "web", ".env"),
+  ];
+
+  for (const envPath of candidates) {
+    const parsed = parseEnvFile(envPath);
+    for (const [k, v] of Object.entries(parsed)) {
+      if (!process.env[k]) process.env[k] = v;
+    }
+  }
+}
+
 function getBool(v: string | undefined) {
   return (v ?? "").toLowerCase() === "true";
 }
@@ -58,19 +73,16 @@ function requireEnv(keys: string[]) {
   if (missing.length) {
     console.error("\nMissing required env vars:");
     for (const k of missing) console.error(`- ${k}`);
-    console.error("\nFix your .env then re-run: pnpm setup\n");
+    console.error(
+      "\nConfigure apps/web/.env.local and packages/db/.env, then re-run: pnpm setup\n",
+    );
     process.exit(1);
   }
 }
 
 async function main() {
-  // Load .env into process.env (simple)
-  const parsed = readEnvFile();
-  for (const [k, v] of Object.entries(parsed)) {
-    if (!process.env[k]) process.env[k] = v;
-  }
+  loadEnvFiles();
 
-  // Minimal requirements for local boot
   requireEnv(["DATABASE_URL", "TOKEN_PEPPER", "APP_URL"]);
 
   const demo = getBool(process.env.DEMO_MODE);
@@ -101,11 +113,11 @@ async function main() {
   console.log(`Demo mode: ${demo ? "ON" : "OFF"}\n`);
 
   for (const s of steps) {
-    console.log(`\n▶ ${s.name}`);
+    console.log(`\n> ${s.name}`);
     await run(s.cmd, s.args, s.cwd);
   }
 
-  console.log("\n✅ Setup complete!");
+  console.log("\nSetup complete.");
   console.log("\nNext:");
   console.log("- pnpm dev");
   if (demo) {
@@ -114,6 +126,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error("\n❌ Setup failed:", e instanceof Error ? e.message : e);
+  console.error("\nSetup failed:", e instanceof Error ? e.message : e);
   process.exit(1);
 });

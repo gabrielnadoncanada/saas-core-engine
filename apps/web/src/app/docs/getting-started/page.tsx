@@ -11,7 +11,8 @@ export default function GettingStartedPage() {
 
       <h2>2) Configure env</h2>
       <p>
-        Copy <code>.env.example</code> to <code>.env</code> and set the required variables (see Configuration docs).
+        Copy <code>apps/web/.env.example</code> to <code>apps/web/.env.local</code> and{" "}
+        <code>packages/db/.env.example</code> to <code>packages/db/.env</code>.
       </p>
 
       <h2>3) Sync database schema</h2>

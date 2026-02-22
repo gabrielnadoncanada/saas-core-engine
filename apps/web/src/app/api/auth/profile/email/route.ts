@@ -19,8 +19,8 @@ export async function POST(req: Request) {
     }
 
     const nextEmail = parsed.data.email.toLowerCase();
-    const current = await prisma.user.findUnique({
-      where: { id: sessionUser.userId },
+    const current = await prisma.user.findFirst({
+      where: { id: sessionUser.userId, deletedAt: null },
       select: { email: true },
     });
 
@@ -33,13 +33,16 @@ export async function POST(req: Request) {
     }
 
     try {
-      await prisma.user.update({
-        where: { id: sessionUser.userId },
+      const updated = await prisma.user.updateMany({
+        where: { id: sessionUser.userId, deletedAt: null },
         data: {
           email: nextEmail,
           emailVerifiedAt: null,
         },
       });
+      if (updated.count === 0) {
+        return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+      }
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&

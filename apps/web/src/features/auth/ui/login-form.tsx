@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { useSearchParams } from "next/navigation";
 
 import {
   DEMO_CREDENTIALS,
@@ -24,6 +25,9 @@ type LoginFormProps = {
 };
 
 export function LoginForm({ demoMode = false }: LoginFormProps) {
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams.get("redirect");
+
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
@@ -39,7 +43,7 @@ export function LoginForm({ demoMode = false }: LoginFormProps) {
   async function onSubmit(values: LoginFormValues) {
     try {
       await loginWithPassword(values);
-      window.location.href = getDashboardRedirectPath();
+      window.location.href = getDashboardRedirectPath(redirectPath);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Login failed");
     }
@@ -62,7 +66,7 @@ export function LoginForm({ demoMode = false }: LoginFormProps) {
 
   function onOAuth(provider: "google" | "github") {
     setBusyAction(provider);
-    window.location.href = getOAuthStartUrl(provider);
+    window.location.href = getOAuthStartUrl(provider, redirectPath);
   }
 
   return (

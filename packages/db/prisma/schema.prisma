@@ -41,6 +41,12 @@ enum SubscriptionStatus {
 model User {
   id              String    @id @default(uuid())
   email           String    @unique
+  firstName       String?   @map("first_name")
+  lastName        String?   @map("last_name")
+  avatarUrl       String?   @map("avatar_url")
+  phoneNumber     String?   @map("phone_number")
+  country         String?
+  deletedAt       DateTime? @map("deleted_at")
   passwordHash    String?   @map("password_hash")
   activeOrganizationId String? @map("active_organization_id")
   emailVerifiedAt DateTime? @map("email_verified_at")
@@ -55,6 +61,7 @@ model User {
   emailTokens   EmailToken[]
 
   @@index([activeOrganizationId])
+  @@index([deletedAt])
   @@map("users")
 }
 

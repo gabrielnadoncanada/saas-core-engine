@@ -4,8 +4,12 @@ export default function ConfigurationPage() {
   return (
     <DocsLayout
       title="Configuration"
-      subtitle="Environment variables for auth, email, OAuth, and billing."
+      subtitle="Environment variables for auth, email, OAuth, billing, and DB."
     >
+      <h2>File locations</h2>
+      <CodeBlock>{`apps/web/.env.local   # Next.js app runtime
+packages/db/.env      # Prisma CLI and DB package`}</CodeBlock>
+
       <h2>Required</h2>
       <CodeBlock>{`# App
 APP_URL=http://localhost:3000

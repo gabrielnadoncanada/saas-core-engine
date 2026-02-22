@@ -15,7 +15,11 @@ async function main() {
   const passwordHash = await hashPassword("DemoPassw0rd!");
 
   const owner = await prisma.user.create({
-    data: { email: "demo@saastemplate.dev", passwordHash },
+    data: {
+      email: "demo@saastemplate.dev",
+      passwordHash,
+      emailVerifiedAt: new Date(),
+    },
   });
 
   const member = await prisma.user.create({
