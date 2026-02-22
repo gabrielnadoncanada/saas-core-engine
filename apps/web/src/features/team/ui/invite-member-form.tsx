@@ -4,7 +4,6 @@ import type { InviteRole } from "@contracts";
 import { useState } from "react";
 
 function parseRole(value: string): InviteRole {
-  if (value === "super_admin") return "super_admin";
   if (value === "admin") return "admin";
   return "member";
 }
@@ -79,7 +78,6 @@ export function InviteMemberForm() {
         <select value={role} onChange={(e) => setRole(parseRole(e.target.value))} style={input}>
           <option value="member">Member</option>
           <option value="admin">Admin</option>
-          <option value="super_admin">Super admin</option>
         </select>
       </div>
 

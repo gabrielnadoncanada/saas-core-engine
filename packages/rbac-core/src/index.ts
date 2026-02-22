@@ -64,16 +64,6 @@ const ROLE_MATRIX: Record<MembershipRole, Set<RbacAction>> = {
     "org:member:transfer_ownership",
     "org:rbac:manage",
   ]),
-  super_admin: new Set<RbacAction>([
-    "org:create",
-    "org:list",
-    "org:switch",
-    "org:invite:create",
-    "org:member:role:change",
-    "org:member:remove",
-    "org:member:transfer_ownership",
-    "org:rbac:manage",
-  ]),
   admin: new Set<RbacAction>([
     "org:create",
     "org:list",
@@ -112,7 +102,6 @@ export function can(
   if (
     resource.targetRole === "owner" &&
     user.role !== "owner" &&
-    user.role !== "super_admin" &&
     !decision.allowOwnerTargetActions
   ) {
     return false;

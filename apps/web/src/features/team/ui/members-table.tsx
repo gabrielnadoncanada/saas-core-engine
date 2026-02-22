@@ -73,7 +73,6 @@ export function TeamMembersTable(props: {
             const isSelf = m.userId === props.currentUserId;
             const canManageRoles =
               actorRole === "owner" ||
-              actorRole === "super_admin" ||
               (actorRole === "admin" && m.role === "member");
             const canToggleAdminMember =
               canManageRoles && (m.role === "member" || m.role === "admin");

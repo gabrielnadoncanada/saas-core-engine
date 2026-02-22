@@ -53,9 +53,6 @@ export class MembershipService<TTx = unknown> {
       if (actor.role === "admin" && target.role !== "member") {
         throw orgErr("forbidden", "Admin can only change members");
       }
-      if (actor.role === "admin" && params.role === "super_admin") {
-        throw orgErr("forbidden", "Admin cannot assign super admin role");
-      }
 
       if (target.role === "owner") {
         const ownerCount = await this.memberships.countByRole(

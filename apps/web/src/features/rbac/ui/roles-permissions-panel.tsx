@@ -143,7 +143,7 @@ export function RolesPermissionsPanel(props: {
     [props.members, props.currentUserId],
   );
 
-  const canManage = current?.role === "owner" || current?.role === "super_admin";
+  const canManage = current?.role === "owner";
 
   async function createRole() {
     setError(null);

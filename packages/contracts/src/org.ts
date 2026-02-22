@@ -6,9 +6,9 @@ export type OrgErrorCode =
   | "invite_email_mismatch"
   | "unauthorized";
 
-export const MEMBERSHIP_ROLES = ["owner", "super_admin", "admin", "member"] as const;
-export const INVITABLE_ROLES = ["super_admin", "admin", "member"] as const;
-export const MUTABLE_MEMBER_ROLES = ["super_admin", "admin", "member"] as const;
+export const MEMBERSHIP_ROLES = ["owner", "admin", "member"] as const;
+export const INVITABLE_ROLES = ["admin", "member"] as const;
+export const MUTABLE_MEMBER_ROLES = ["admin", "member"] as const;
 
 export const membershipRoleSchema = z.enum(MEMBERSHIP_ROLES);
 export type MembershipRole = z.infer<typeof membershipRoleSchema>;

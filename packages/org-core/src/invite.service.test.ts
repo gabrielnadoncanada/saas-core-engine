@@ -136,7 +136,7 @@ describe("InviteService", () => {
     expect(deltaMs).toBeGreaterThanOrEqual(59 * 60 * 1000);
   });
 
-  it("allows super_admin to create invites", async () => {
+  it("allows admin to create invites", async () => {
     const invites = mockInvitesRepo();
     const users = mockUsersRepo();
     const memberships = mockMembershipsRepo();
@@ -144,14 +144,14 @@ describe("InviteService", () => {
       id: "m1",
       userId: "u1",
       organizationId: "org1",
-      role: "super_admin",
+      role: "admin",
       createdAt: new Date(),
     });
     vi.mocked(invites.create).mockResolvedValue({
       id: "i1",
       organizationId: "org1",
       email: "test@example.com",
-      role: "super_admin",
+      role: "admin",
       createdAt: new Date(),
       expiresAt: new Date(Date.now() + 1000),
       acceptedAt: null,
@@ -170,7 +170,7 @@ describe("InviteService", () => {
         organizationId: "org1",
         inviterUserId: "u1",
         email: "test@example.com",
-        role: "super_admin",
+        role: "admin",
         ttlMinutes: 60,
       }),
     ).resolves.toMatchObject({ inviteId: "i1" });
