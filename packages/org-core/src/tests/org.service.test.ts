@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { OrgService } from "./org.service";
+import { OrgService } from "../org.service";
 import type {
   MembershipsRepo,
   OrgsRepo,
   SubscriptionsRepo,
   TxRunner,
   UsersRepo,
-} from "./org.ports";
+} from "../org.ports";
 
 function passThroughTxRunner(): TxRunner {
   return {

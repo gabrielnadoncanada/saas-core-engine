@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
-import { SignupFlow } from "./signup.flow";
+import { SignupFlow } from "../../flows/signup.flow";
 import type {
   MembershipsRepo,
   OrgsRepo,
   SubscriptionsRepo,
   TxRunner,
   UsersRepo,
-} from "../auth.ports";
+} from "../../auth.ports";
 
 function mockUsersRepo(overrides: Partial<UsersRepo> = {}): UsersRepo {
   return {

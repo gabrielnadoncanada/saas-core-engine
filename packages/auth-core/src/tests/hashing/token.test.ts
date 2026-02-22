@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { hashIdentifier, hashToken, sha256Hex } from "./token";
+import { hashIdentifier, hashToken, sha256Hex } from "../../hashing/token";
 
 describe("hashToken", () => {
   it("produces a deterministic hex hash", () => {

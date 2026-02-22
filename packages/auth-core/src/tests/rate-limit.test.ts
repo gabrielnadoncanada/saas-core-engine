@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildAuthRateLimitKey } from "./rate-limit";
+import { buildAuthRateLimitKey } from "../rate-limit";
 
 describe("buildAuthRateLimitKey", () => {
   it("builds a stable key from ip and route", () => {

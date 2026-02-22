@@ -200,7 +200,7 @@ Org-based subscription
 - Clone repo
 - Add `.env`
 - `pnpm install`
-- `pnpm db:migrate`
+- `pnpm db:push`
 - `pnpm dev`
 - Deploy to Vercel
 

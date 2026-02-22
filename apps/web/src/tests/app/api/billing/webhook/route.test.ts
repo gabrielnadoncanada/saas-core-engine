@@ -52,7 +52,7 @@ describe("POST /api/billing/webhook", () => {
   it("returns duplicate=true when event already exists", async () => {
     createReceived.mockResolvedValueOnce("duplicate");
 
-    const { POST } = await import("./route");
+    const { POST } = await import("../../../../../app/api/billing/webhook/route");
     const res = await POST(
       new Request("http://localhost/api/billing/webhook", {
         method: "POST",
@@ -69,7 +69,7 @@ describe("POST /api/billing/webhook", () => {
   });
 
   it("processes event synchronously", async () => {
-    const { POST } = await import("./route");
+    const { POST } = await import("../../../../../app/api/billing/webhook/route");
     const res = await POST(
       new Request("http://localhost/api/billing/webhook", {
         method: "POST",

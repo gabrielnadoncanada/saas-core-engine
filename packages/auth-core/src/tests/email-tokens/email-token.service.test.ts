@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { EmailTokenService } from "./email-token.service";
-import type { EmailTokenRepo } from "../auth.ports";
+import { EmailTokenService } from "../../email-tokens/email-token.service";
+import type { EmailTokenRepo } from "../../auth.ports";
 
 function mockEmailTokenRepo(): EmailTokenRepo {
   return {

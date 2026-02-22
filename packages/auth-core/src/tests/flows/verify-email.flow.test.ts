@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
-import { VerifyEmailFlow } from "./verify-email.flow";
-import type { EmailTokenService } from "../email-tokens/email-token.service";
-import type { TxRunner, UsersRepo } from "../auth.ports";
+import { VerifyEmailFlow } from "../../flows/verify-email.flow";
+import type { EmailTokenService } from "../../email-tokens/email-token.service";
+import type { TxRunner, UsersRepo } from "../../auth.ports";
 
 function mockTokens(overrides: Partial<EmailTokenService> = {}): EmailTokenService {
   return {

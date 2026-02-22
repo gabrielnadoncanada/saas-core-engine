@@ -9,7 +9,7 @@ export default function DocsIndexPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <DocCard
           title="Getting started"
-          desc="Install deps, run migrations, start dev server."
+          desc="Install deps, sync schema, start dev server."
           href="/docs/getting-started"
         />
         <DocCard

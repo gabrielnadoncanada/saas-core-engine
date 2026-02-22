@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { can, RbacForbiddenError, requirePermission } from "./index";
+import { can, RbacForbiddenError, requirePermission } from "../index";
 
 describe("rbac-core", () => {
   const owner = { userId: "u1", role: "owner" as const, organizationId: "org1" };

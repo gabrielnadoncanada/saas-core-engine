@@ -20,9 +20,7 @@
       "@billing-core": ["../../packages/billing-core/src/index.ts"],
       "@billing-core/*": ["../../packages/billing-core/src/*"],
       "@email": ["../../packages/email/src/index.ts"],
-      "@email/*": ["../../packages/email/src/*"],
-      "@ui": ["../../packages/ui/src/index.ts"],
-      "@ui/*": ["../../packages/ui/src/*"]
+      "@email/*": ["../../packages/email/src/*"]
     }
   },
   "include": [

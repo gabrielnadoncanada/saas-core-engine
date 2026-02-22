@@ -13,10 +13,10 @@ pnpm test             # Run all tests (Turbo)
 pnpm clean            # Remove dist/, .next/, node_modules/
 
 # Database (Prisma, schema at packages/db/prisma/schema.prisma)
-pnpm db:migrate       # Run Prisma migrations
+pnpm db:push          # Sync DB schema from prisma/schema.prisma
 pnpm db:seed          # Seed the database
-pnpm --filter @db exec prisma validate   # Validate schema (needs DATABASE_URL)
-pnpm --filter @db exec prisma generate   # Regenerate Prisma client
+pnpm --filter ./packages/db exec prisma validate   # Validate schema (needs DATABASE_URL)
+pnpm --filter ./packages/db exec prisma generate   # Regenerate Prisma client
 
 # Single-package commands
 pnpm --filter @auth-core run test        # Run auth-core tests only
@@ -38,7 +38,6 @@ When running Prisma commands without a real database, prefix with `DATABASE_URL=
 @billing-core       ← Stripe subscription sync. Depends only on @contracts.
 @email              ← Email service (Resend/SMTP) + templates.
 @db                 ← Prisma client singleton, withTx helper.
-@ui                 ← Shared React components (shadcn-style).
 apps/web            ← Next.js 16 (App Router). Wires everything together.
 ```
 
@@ -63,7 +62,6 @@ API routes call these factories, never instantiate core classes directly.
 
 - `packages/*-core` and `@contracts` **cannot** import `@db`, `@prisma/client`, or `next/*`
 - `@contracts` cannot import any other package
-- `@ui` cannot import `@db`, `@auth-core`, `@billing-core`, `@org-core`
 - No package under `packages/` can import from `apps/`
 
 ### Web app structure (`apps/web/src/`)

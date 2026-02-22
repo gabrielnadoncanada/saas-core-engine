@@ -8,7 +8,7 @@
     "lint": "echo \"lint @db\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "tsc -p tsconfig.json",
-    "migrate": "prisma migrate deploy",
+    "db:push": "prisma db push",
     "seed": "tsx prisma/seed.ts",
     "seed:demo": "tsx prisma/seed-demo.ts"
   },

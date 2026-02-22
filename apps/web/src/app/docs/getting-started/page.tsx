@@ -14,8 +14,8 @@ export default function GettingStartedPage() {
         Copy <code>.env.example</code> to <code>.env</code> and set the required variables (see Configuration docs).
       </p>
 
-      <h2>3) Migrate database</h2>
-      <CodeBlock>{`pnpm --filter @db exec prisma migrate dev`}</CodeBlock>
+      <h2>3) Sync database schema</h2>
+      <CodeBlock>{`pnpm --filter ./packages/db exec prisma db push`}</CodeBlock>
 
       <h2>4) Run dev</h2>
       <CodeBlock>{`pnpm dev`}</CodeBlock>

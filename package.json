@@ -15,8 +15,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
 
-    "db:migrate": "pnpm --filter @db run migrate",
-    "db:seed": "pnpm --filter @db run seed"
+    "db:push": "pnpm --filter ./packages/db run db:push",
+    "db:seed": "pnpm --filter ./packages/db run seed"
   },
   "devDependencies": {
     "turbo": "^2.0.0",

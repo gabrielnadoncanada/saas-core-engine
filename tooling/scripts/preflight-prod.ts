@@ -47,31 +47,27 @@ function checkContains(rel: string, pattern: string, name: string): CheckResult 
   };
 }
 
-function checkMigrations(): CheckResult {
-  const migrationsDir = abs("packages/db/prisma/migrations");
-  if (!fs.existsSync(migrationsDir)) {
+function checkSchemaOnlyPrisma(): CheckResult {
+  const schemaPath = "packages/db/prisma/schema.prisma";
+  if (!fileExists(schemaPath)) {
     return {
-      name: "Prisma migrations folder exists",
+      name: "Prisma schema exists",
       ok: false,
-      details: "Missing packages/db/prisma/migrations",
+      details: `Missing ${schemaPath}`,
     };
   }
 
-  const entries = fs
-    .readdirSync(migrationsDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name);
-
-  if (entries.length === 0) {
+  const migrationsDir = abs("packages/db/prisma/migrations");
+  if (fs.existsSync(migrationsDir)) {
     return {
-      name: "At least one Prisma migration is versioned",
+      name: "Prisma schema-only mode (no migrations folder)",
       ok: false,
-      details: "No migration directories found",
+      details: "Remove packages/db/prisma/migrations to keep schema-only workflow.",
     };
   }
 
   return {
-    name: "At least one Prisma migration is versioned",
+    name: "Prisma schema-only mode (no migrations folder)",
     ok: true,
   };
 }
@@ -185,7 +181,7 @@ function run(): number {
     checkFile("docs/operations/slo.md", "SLO document exists"),
     checkFile("docs/operations/alerting.md", "Alerting policy exists"),
     checkFile("docs/operations/dashboards.md", "Dashboard spec exists"),
-    checkMigrations(),
+    checkSchemaOnlyPrisma(),
     checkTelemetryCoverage(),
     checkOrgScopeEnforcement(),
     checkContains(

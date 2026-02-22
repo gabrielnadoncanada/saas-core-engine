@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { OAuthLoginFlow } from "./oauth-login.flow";
-import type { OAuthAccountsRepo, UsersRepo } from "../auth.ports";
+import { OAuthLoginFlow } from "../../flows/oauth-login.flow";
+import type { OAuthAccountsRepo, UsersRepo } from "../../auth.ports";
 
 function mockUsers(overrides: Partial<UsersRepo> = {}): UsersRepo {
   return {

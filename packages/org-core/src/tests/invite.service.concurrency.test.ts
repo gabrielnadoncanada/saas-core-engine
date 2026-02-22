@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { InvitationSummary } from "@contracts";
-import { InviteService } from "./invite.service";
+import { InviteService } from "../invite.service";
 import type {
   InviteToken,
   InvitationsRepo,
   MembershipsRepo,
   TxRunner,
   UsersRepo,
-} from "./org.ports";
+} from "../org.ports";
 
 class Barrier {
   private count = 0;

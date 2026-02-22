@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { OAuthStateService } from "./state.service";
-import type { OAuthStatesRepo } from "../auth.ports";
+import { OAuthStateService } from "../../oauth/state.service";
+import type { OAuthStatesRepo } from "../../auth.ports";
 
 const PEPPER = "test-pepper-long-enough-for-validation";
 

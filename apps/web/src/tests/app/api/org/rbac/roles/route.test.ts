@@ -33,7 +33,7 @@ describe("org rbac roles route", () => {
   });
 
   it("returns roles list on GET", async () => {
-    const { GET } = await import("./route");
+    const { GET } = await import("../../../../../../app/api/org/rbac/roles/route");
     const res = await GET(new Request("http://localhost/api/org/rbac/roles"));
     const json = (await res.json()) as { ok: boolean; roles: Array<{ id: string }> };
 
@@ -46,7 +46,7 @@ describe("org rbac roles route", () => {
   });
 
   it("returns 400 on invalid payload", async () => {
-    const { POST } = await import("./route");
+    const { POST } = await import("../../../../../../app/api/org/rbac/roles/route");
     const res = await POST(
       new Request("http://localhost/api/org/rbac/roles", {
         method: "POST",
@@ -60,7 +60,7 @@ describe("org rbac roles route", () => {
   });
 
   it("creates role on POST", async () => {
-    const { POST } = await import("./route");
+    const { POST } = await import("../../../../../../app/api/org/rbac/roles/route");
     const res = await POST(
       new Request("http://localhost/api/org/rbac/roles", {
         method: "POST",

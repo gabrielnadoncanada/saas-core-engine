@@ -58,7 +58,7 @@ describe("POST /api/org/invite", () => {
   });
 
   it("returns 400 for invalid body", async () => {
-    const { POST } = await import("./route");
+    const { POST } = await import("../../../../../app/api/org/invite/route");
     const req = new Request("http://localhost/api/org/invite", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -71,7 +71,7 @@ describe("POST /api/org/invite", () => {
   });
 
   it("returns 200 for valid request", async () => {
-    const { POST } = await import("./route");
+    const { POST } = await import("../../../../../app/api/org/invite/route");
     const req = new Request("http://localhost/api/org/invite", {
       method: "POST",
       headers: { "content-type": "application/json", "x-request-id": "rid-1" },

@@ -29,7 +29,7 @@ describe("POST /api/org/members/role", () => {
   });
 
   it("returns 400 for invalid input", async () => {
-    const { POST } = await import("./route");
+    const { POST } = await import("../../../../../../app/api/org/members/role/route");
 
     const req = new Request("http://localhost/api/org/members/role", {
       method: "POST",
@@ -42,7 +42,7 @@ describe("POST /api/org/members/role", () => {
   });
 
   it("returns 200 and delegates to membership service", async () => {
-    const { POST } = await import("./route");
+    const { POST } = await import("../../../../../../app/api/org/members/role/route");
 
     const req = new Request("http://localhost/api/org/members/role", {
       method: "POST",
@@ -67,7 +67,7 @@ describe("POST /api/org/members/role", () => {
     changeMemberRole.mockRejectedValueOnce(
       new OrgCoreError("forbidden", "nope"),
     );
-    const { POST } = await import("./route");
+    const { POST } = await import("../../../../../../app/api/org/members/role/route");
 
     const req = new Request("http://localhost/api/org/members/role", {
       method: "POST",

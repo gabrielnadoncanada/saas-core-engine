@@ -120,7 +120,7 @@ export default function HomePage() {
                 <div className="text-sm font-semibold">Quick start</div>
                 <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
                   <CodeLine>pnpm i</CodeLine>
-                  <CodeLine>pnpm --filter @db exec prisma migrate dev</CodeLine>
+                  <CodeLine>pnpm --filter ./packages/db exec prisma db push</CodeLine>
                   <CodeLine>pnpm dev</CodeLine>
                 </div>
                 <div className="mt-6 flex gap-3">

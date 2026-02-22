@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import type { MembershipRole } from "@contracts";
-import { OrgCoreError } from "./errors";
-import { InviteService } from "./invite.service";
+import { OrgCoreError } from "../errors";
+import { InviteService } from "../invite.service";
 import type {
   InviteToken,
   InvitationsRepo,
   MembershipsRepo,
   TxRunner,
   UsersRepo,
-} from "./org.ports";
+} from "../org.ports";
 
 function passThroughTxRunner(): TxRunner {
   return {

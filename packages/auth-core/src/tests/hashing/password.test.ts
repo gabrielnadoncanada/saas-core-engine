@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { hashPassword, verifyPassword } from "./password";
+import { hashPassword, verifyPassword } from "../../hashing/password";
 
 describe("hashPassword", () => {
   it("rejects passwords shorter than 8 characters", async () => {

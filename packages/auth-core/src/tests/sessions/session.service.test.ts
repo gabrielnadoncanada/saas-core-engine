@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { SessionService } from "./session.service";
-import type { SessionsRepo, TxRunner } from "../auth.ports";
+import { SessionService } from "../../sessions/session.service";
+import type { SessionsRepo, TxRunner } from "../../auth.ports";
 
 function mockSessionsRepo(): SessionsRepo {
   return {

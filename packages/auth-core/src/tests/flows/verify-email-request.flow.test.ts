@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { VerifyEmailRequestFlow } from "./verify-email-request.flow";
-import type { UsersRepo } from "../auth.ports";
-import type { VerifyEmailFlow } from "./verify-email.flow";
+import { VerifyEmailRequestFlow } from "../../flows/verify-email-request.flow";
+import type { UsersRepo } from "../../auth.ports";
+import type { VerifyEmailFlow } from "../../flows/verify-email.flow";
 
 function mockUsers(overrides: Partial<UsersRepo> = {}): UsersRepo {
   return {

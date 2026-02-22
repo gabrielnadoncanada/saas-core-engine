@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import argon2 from "argon2";
-import { LoginFlow } from "./login.flow";
-import { hashPassword } from "../hashing/password";
-import type { UsersRepo } from "../auth.ports";
+import { LoginFlow } from "../../flows/login.flow";
+import { hashPassword } from "../../hashing/password";
+import type { UsersRepo } from "../../auth.ports";
 
 const PEPPER = "test-pepper-long-enough-for-validation";
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
-import { MagicLoginFlow } from "./magic-login.flow";
-import type { EmailTokenService } from "../email-tokens/email-token.service";
-import type { TxRunner, UsersRepo } from "../auth.ports";
+import { MagicLoginFlow } from "../../flows/magic-login.flow";
+import type { EmailTokenService } from "../../email-tokens/email-token.service";
+import type { TxRunner, UsersRepo } from "../../auth.ports";
 
 function mockTokens(overrides: Partial<EmailTokenService> = {}): EmailTokenService {
   return {

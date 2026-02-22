@@ -16,8 +16,7 @@ const nextConfig = {
     "@auth-core",
     "@org-core",
     "@billing-core",
-    "@email",
-    "@ui"
+    "@email"
   ],
 
   // Keep secrets server-side; avoid bundling server libs into client by mistake

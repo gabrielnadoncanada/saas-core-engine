@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { codeChallengeS256, oidcNonceFromCodeVerifier } from "./pkce";
+import { codeChallengeS256, oidcNonceFromCodeVerifier } from "../../oauth/pkce";
 
 describe("codeChallengeS256", () => {
   it("produces a base64url string", () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { randomTokenBase64Url } from "./random";
+import { randomTokenBase64Url } from "../../hashing/random";
 
 describe("randomTokenBase64Url", () => {
   it("returns a base64url string of expected length", () => {

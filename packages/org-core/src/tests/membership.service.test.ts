@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { OrgCoreError } from "./errors";
-import { MembershipService } from "./membership.service";
-import type { MembershipsRepo, TxRunner } from "./org.ports";
+import { OrgCoreError } from "../errors";
+import { MembershipService } from "../membership.service";
+import type { MembershipsRepo, TxRunner } from "../org.ports";
 
 function passThroughTxRunner(): TxRunner {
   return {

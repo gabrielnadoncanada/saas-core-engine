@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
-import { PasswordResetFlow } from "./password-reset.flow";
-import type { EmailTokenService } from "../email-tokens/email-token.service";
-import type { SessionService } from "../sessions/session.service";
-import type { TxRunner, UsersRepo } from "../auth.ports";
+import { PasswordResetFlow } from "../../flows/password-reset.flow";
+import type { EmailTokenService } from "../../email-tokens/email-token.service";
+import type { SessionService } from "../../sessions/session.service";
+import type { TxRunner, UsersRepo } from "../../auth.ports";
 
 function mockUsers(overrides: Partial<UsersRepo> = {}): UsersRepo {
   return {

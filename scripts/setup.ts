@@ -80,12 +80,12 @@ async function main() {
     {
       name: "Prisma generate",
       cmd: "pnpm",
-      args: ["--filter", "@db", "exec", "prisma", "generate"],
+      args: ["--filter", "./packages/db", "exec", "prisma", "generate"],
     },
     {
-      name: "Migrate database (deploy)",
+      name: "Sync database schema (db push)",
       cmd: "pnpm",
-      args: ["--filter", "@db", "exec", "prisma", "migrate", "deploy"],
+      args: ["--filter", "./packages/db", "exec", "prisma", "db", "push"],
     },
   ];
 
@@ -93,7 +93,7 @@ async function main() {
     steps.push({
       name: "Seed demo data",
       cmd: "pnpm",
-      args: ["--filter", "@db", "run", "seed:demo"],
+      args: ["--filter", "./packages/db", "run", "seed:demo"],
     });
   }
 
