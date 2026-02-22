@@ -80,9 +80,6 @@ const envSchema = z
     TRUST_PROXY_HEADERS: boolFromString.default("false"),
     LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
     HSTS_MAX_AGE_SECONDS: boundedNumberFromString(300, 63_072_000, "31536000"),
-    OTEL_ENABLED: boolFromString.default("false"),
-    OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
-    OTEL_EXPORT_INTERVAL_MS: boundedNumberFromString(1000, 60000, "10000"),
     DEMO_MODE: boolFromString.default("false"),
   })
   .superRefine((value, ctx) => {

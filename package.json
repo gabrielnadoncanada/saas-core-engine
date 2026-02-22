@@ -14,7 +14,6 @@
     "simulate:v3:incidents": "tsx tooling/scripts/v3-incident-sim.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "clean": "turbo clean && rimraf node_modules **/node_modules **/.next **/dist",
 
     "db:migrate": "pnpm --filter @db run migrate",
     "db:seed": "pnpm --filter @db run seed"

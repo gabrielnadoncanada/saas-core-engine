@@ -14,8 +14,6 @@
 
 ## Observability
 
-- [ ] OTel enabled in production (`OTEL_ENABLED=true`)
-- [ ] OTLP endpoint configured (`OTEL_EXPORTER_OTLP_ENDPOINT`)
 - [ ] Dashboards created from `docs/operations/dashboards.md`
 - [ ] Alerts configured from `docs/operations/alerting.md`
 - [ ] SLO policy adopted from `docs/operations/slo.md`
