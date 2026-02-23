@@ -1,6 +1,5 @@
 import {
   login,
-  requestMagicLink,
   requestPasswordReset,
   resetPassword,
   signup,
@@ -14,12 +13,9 @@ export async function signupWithWorkspace(params: {
   orgName: string;
   email: string;
   password: string;
+  inviteToken?: string;
 }) {
-  return signup(params.email, params.password, params.orgName);
-}
-
-export async function sendMagicLink(params: { email: string }) {
-  return requestMagicLink(params.email);
+  return signup(params.email, params.password, params.orgName, params.inviteToken);
 }
 
 export async function sendPasswordResetLink(params: { email: string }) {

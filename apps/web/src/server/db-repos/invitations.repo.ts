@@ -41,6 +41,12 @@ export class InvitationsRepo {
     });
   }
 
+  async findById(invitationId: string, tx?: DbTx): Promise<Invitation | null> {
+    return db(tx).invitation.findUnique({
+      where: { id: invitationId },
+    });
+  }
+
   async markAcceptedIfPending(invitationId: string, tx?: DbTx): Promise<boolean> {
     const result = await db(tx).invitation.updateMany({
       where: { id: invitationId, acceptedAt: null },
@@ -58,5 +64,32 @@ export class InvitationsRepo {
       },
       orderBy: { createdAt: "desc" },
     });
+  }
+
+  async findPendingByEmail(
+    params: { organizationId: string; email: string },
+    tx?: DbTx,
+  ): Promise<Invitation | null> {
+    return db(tx).invitation.findFirst({
+      where: {
+        organizationId: params.organizationId,
+        email: params.email.toLowerCase(),
+        acceptedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async revokeIfPending(invitationId: string, tx?: DbTx): Promise<boolean> {
+    const result = await db(tx).invitation.updateMany({
+      where: {
+        id: invitationId,
+        acceptedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      data: { expiresAt: new Date() },
+    });
+    return result.count > 0;
   }
 }

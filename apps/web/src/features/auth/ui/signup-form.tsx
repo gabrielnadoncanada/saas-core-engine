@@ -1,23 +1,30 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import {
-  getDashboardRedirectPath,
   signupFormSchema,
   signupWithWorkspace,
   type SignupFormValues,
 } from "@/features/auth/model";
+import { routes } from "@/shared/constants/routes";
 import { Button } from "@/shared/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 
+type InviteLookupState = "idle" | "loading" | "ready" | "error";
+
 export function SignupForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get("redirect");
+  const redirectParam = searchParams.get("redirect");
+  const inviteToken = searchParams.get("invite");
+  const [inviteState, setInviteState] = useState<InviteLookupState>(inviteToken ? "loading" : "idle");
+  const [inviteEmail, setInviteEmail] = useState<string | null>(null);
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupFormSchema),
@@ -28,14 +35,74 @@ export function SignupForm() {
     },
   });
 
+  useEffect(() => {
+    const token = inviteToken;
+    if (!token) {
+      setInviteState("idle");
+      setInviteEmail(null);
+      return;
+    }
+
+    let disposed = false;
+
+    async function loadInvite() {
+      setInviteState("loading");
+      try {
+        const res = await fetch(`/api/org/invite/token?token=${encodeURIComponent(token!)}`);
+        const json = (await res.json()) as {
+          ok?: boolean;
+          error?: string;
+          invite?: { email: string };
+        };
+        if (!res.ok || !json.ok || !json.invite?.email) {
+          throw new Error(json.error ?? "invalid_invite");
+        }
+        if (disposed) return;
+        setInviteEmail(json.invite.email);
+        form.setValue("email", json.invite.email, { shouldValidate: true });
+        form.setValue("orgName", "Invited workspace", { shouldValidate: true });
+        setInviteState("ready");
+      } catch {
+        if (disposed) return;
+        setInviteState("error");
+        setInviteEmail(null);
+      }
+    }
+
+    void loadInvite();
+
+    return () => {
+      disposed = true;
+    };
+  }, [inviteToken, form]);
+
   async function submit(values: SignupFormValues) {
     try {
-      await signupWithWorkspace(values);
-      window.location.href = getDashboardRedirectPath(redirectPath);
+      const invitedSignup = Boolean(inviteToken && inviteEmail && inviteState === "ready");
+      await signupWithWorkspace({
+        ...values,
+        orgName: invitedSignup ? "Invited workspace" : values.orgName,
+        inviteToken: invitedSignup ? inviteToken ?? undefined : undefined,
+      });
+
+      if (invitedSignup) {
+        toast.success("Account created. Invitation accepted.");
+        router.push(routes.app.dashboard);
+        return;
+      }
+
+      const loginHref = redirectParam
+        ? `${routes.auth.login}?redirect=${encodeURIComponent(redirectParam)}`
+        : routes.auth.login;
+      toast.success("Compte cree. Verifie ton email, puis connecte-toi.");
+      router.push(loginHref);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Signup failed");
     }
   }
+
+  const isInvited = Boolean(inviteToken && inviteEmail && inviteState === "ready");
+  const inviteBlocked = Boolean(inviteToken && inviteState !== "ready");
 
   return (
     <form
@@ -45,23 +112,25 @@ export function SignupForm() {
       className="grid gap-3"
     >
       <FieldGroup>
-        <Controller
-          name="orgName"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="signup-org-name">Workspace name</FieldLabel>
-              <Input
-                {...field}
-                id="signup-org-name"
-                placeholder="Acme Inc."
-                autoComplete="organization"
-                aria-invalid={fieldState.invalid}
-              />
-              {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-            </Field>
-          )}
-        />
+        {!isInvited ? (
+          <Controller
+            name="orgName"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor="signup-org-name">Workspace name</FieldLabel>
+                <Input
+                  {...field}
+                  id="signup-org-name"
+                  placeholder="Acme Inc."
+                  autoComplete="organization"
+                  aria-invalid={fieldState.invalid}
+                />
+                {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
+              </Field>
+            )}
+          />
+        ) : null}
 
         <Controller
           name="email"
@@ -76,6 +145,8 @@ export function SignupForm() {
                 type="email"
                 autoComplete="email"
                 aria-invalid={fieldState.invalid}
+                disabled={isInvited}
+                readOnly={isInvited}
               />
               {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
             </Field>
@@ -102,7 +173,14 @@ export function SignupForm() {
         />
       </FieldGroup>
 
-      <Button className="rounded-xl" disabled={form.formState.isSubmitting}>
+      {inviteToken && inviteState === "loading" ? (
+        <p className="text-sm text-muted-foreground">Checking invitation...</p>
+      ) : null}
+      {inviteToken && inviteState === "error" ? (
+        <p className="text-sm text-red-600">Invitation is invalid or expired.</p>
+      ) : null}
+
+      <Button className="rounded-xl" disabled={form.formState.isSubmitting || inviteBlocked}>
         {form.formState.isSubmitting ? "Creating..." : "Create account"}
       </Button>
     </form>

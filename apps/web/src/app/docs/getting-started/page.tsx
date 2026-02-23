@@ -25,7 +25,6 @@ export default function GettingStartedPage() {
       <ul>
         <li>Signup → dashboard</li>
         <li>Login → sessions page</li>
-        <li>Magic link (Resend or dev console)</li>
         <li>Google OAuth</li>
         <li>Invite teammate → accept invite</li>
         <li>Stripe checkout → webhook sync</li>

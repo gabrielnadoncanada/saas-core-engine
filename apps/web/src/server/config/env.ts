@@ -77,6 +77,7 @@ const envSchema = z
     RATE_LIMIT_ENABLED: boolFromString.default("true"),
     RATE_LIMIT_WINDOW_SECONDS: boundedNumberFromString(1, 3600, "60"),
     RATE_LIMIT_MAX_REQUESTS: boundedNumberFromString(1, 10_000, "10"),
+    RATE_LIMIT_RETENTION_SECONDS: boundedNumberFromString(300, 2_592_000, "86400"),
     TRUST_PROXY_HEADERS: boolFromString.default("false"),
     LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
     HSTS_MAX_AGE_SECONDS: boundedNumberFromString(300, 63_072_000, "31536000"),

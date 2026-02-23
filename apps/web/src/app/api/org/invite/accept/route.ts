@@ -25,25 +25,32 @@ export async function GET(req: Request) {
     if (!user) {
       const redirectPath = `/api/org/invite/accept?token=${encodeURIComponent(token)}`;
       return NextResponse.redirect(
-        new URL(`/login?redirect=${encodeURIComponent(redirectPath)}`, req.url),
+        new URL(
+          `/signup?invite=${encodeURIComponent(token)}&redirect=${encodeURIComponent(redirectPath)}`,
+          req.url,
+        ),
       );
     }
 
     const invites = createInviteService();
 
     try {
-      const accepted = await invites.acceptInvite({
+      await invites.acceptInvite({
         token,
         acceptUserId: user.userId,
       });
       return NextResponse.redirect(
-        new URL("/dashboard/team?invite=accepted", req.url),
+        new URL("/dashboard", req.url),
       );
     } catch (e) {
       const code =
         e instanceof OrgCoreError
           ? e.code === "invite_email_mismatch"
             ? "email_mismatch"
+            : e.code === "invite_expired"
+              ? "expired"
+              : e.code === "invite_already_accepted"
+                ? "already_accepted"
             : e.code === "invalid_invite"
               ? "invalid"
               : "failed"

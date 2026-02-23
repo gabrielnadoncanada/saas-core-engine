@@ -23,7 +23,7 @@ export default function HomePage() {
               </h1>
 
               <p className="mt-4 text-lg text-muted-foreground">
-                A production-ready starter with authentication (password, magic link, Google/GitHub OAuth),
+                A production-ready starter with authentication (password, Google/GitHub OAuth),
                 organizations & invites, sessions/security, and Stripe subscriptions with webhooks.
               </p>
 
@@ -49,7 +49,7 @@ export default function HomePage() {
               <CardContent className="p-6">
                 <div className="grid gap-4">
                   <div className="text-sm font-semibold">What’s inside</div>
-                  <FeatureRow title="Auth" desc="Password, magic link, Google/GitHub OAuth, reset password." />
+                  <FeatureRow title="Auth" desc="Password, Google/GitHub OAuth, reset password." />
                   <FeatureRow title="Workspace" desc="Organizations, roles, team invites, members." />
                   <FeatureRow title="Security" desc="Sessions list + revoke all, reset password." />
                   <FeatureRow title="Billing" desc="Stripe Checkout + Portal + webhook sync." />

@@ -1,7 +1,6 @@
 export {
   login,
   signup,
-  requestMagicLink,
   requestPasswordReset,
   resetPassword,
   logout,

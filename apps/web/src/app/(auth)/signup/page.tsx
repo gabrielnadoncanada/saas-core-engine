@@ -2,12 +2,13 @@ import { SignupForm } from "@/features/auth/ui";
 import { AuthCard } from "@/shared/components/auth/auth-card";
 import { routes } from "@/shared/constants/routes";
 
-export default function SignupPage(props: {
-  searchParams?: { redirect?: string | string[] };
+export default async function SignupPage(props: {
+  searchParams?: Promise<{ redirect?: string | string[] }>;
 }) {
-  const redirectParam = Array.isArray(props.searchParams?.redirect)
-    ? props.searchParams?.redirect[0]
-    : props.searchParams?.redirect;
+  const searchParams = props.searchParams ? await props.searchParams : undefined;
+  const redirectParam = Array.isArray(searchParams?.redirect)
+    ? searchParams?.redirect[0]
+    : searchParams?.redirect;
   const loginHref = redirectParam
     ? `${routes.auth.login}?redirect=${encodeURIComponent(redirectParam)}`
     : routes.auth.login;

@@ -31,7 +31,7 @@ export default function DocsIndexPage() {
 
       <h2 className="mt-10 text-xl font-extrabold">What’s included</h2>
       <ul className="mt-3 text-muted-foreground">
-        <li>Auth: password, magic link, reset, Google/GitHub OAuth</li>
+        <li>Auth: password, reset, Google/GitHub OAuth</li>
         <li>Organizations: roles, invites, team page</li>
         <li>Security: session list + revoke</li>
         <li>Billing: Stripe Checkout + Portal + webhooks sync</li>

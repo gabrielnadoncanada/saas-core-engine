@@ -1,8 +1,11 @@
 import "server-only";
 
+import { redirect } from "next/navigation";
+
 import { getSessionTokenFromCookie } from "@/server/adapters/cookies/session-cookie.adapter";
 import { createSessionContextService } from "@/server/adapters/core/auth-core.adapter";
 import { env } from "@/server/config/env";
+import { routes } from "@/shared/constants/routes";
 
 export type SessionUser = {
   id: string;
@@ -32,8 +35,11 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   return base;
 }
 
-export async function requireUser(): Promise<SessionUser> {
+export async function requireUser(opts?: { redirect?: boolean }): Promise<SessionUser> {
   const user = await getSessionUser();
-  if (!user) throw new Error("UNAUTHORIZED");
+  if (!user) {
+    if (opts?.redirect) redirect(routes.auth.login);
+    throw new Error("UNAUTHORIZED");
+  }
   return user;
 }

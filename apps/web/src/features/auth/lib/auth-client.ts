@@ -10,25 +10,21 @@ export async function login(email: string, password: string) {
   return json;
 }
 
-export async function signup(email: string, password: string, orgName: string) {
+export async function signup(
+  email: string,
+  password: string,
+  orgName: string,
+  inviteToken?: string,
+) {
   const res = await fetch("/api/auth/signup", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ email, password, orgName }),
+    body: JSON.stringify({ email, password, orgName, inviteToken }),
   });
 
   const json = (await res.json()) as { ok?: boolean; error?: string };
   if (!res.ok) throw new Error(json.error ?? "Signup failed");
   return json;
-}
-
-export async function requestMagicLink(email: string) {
-  const res = await fetch("/api/auth/magic/request", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ email }),
-  });
-  if (!res.ok) throw new Error("Failed to send magic link.");
 }
 
 export async function requestPasswordReset(email: string) {

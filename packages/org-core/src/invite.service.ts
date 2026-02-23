@@ -32,6 +32,14 @@ export class InviteService<TTx = unknown> {
       throw orgErr("forbidden", "Only elevated roles can invite members");
     }
 
+    const existingPending = await this.invites.findPendingByEmail({
+      organizationId: params.organizationId,
+      email: params.email,
+    });
+    if (existingPending) {
+      await this.invites.revokeIfPending(existingPending.id);
+    }
+
     const rawToken = this.inviteToken.randomToken();
     const tokenHash = this.inviteToken.hashToken(rawToken);
 
@@ -59,8 +67,14 @@ export class InviteService<TTx = unknown> {
       const invite =
         (await this.invites.findValidByTokenHash(tokenHash, tx)) ??
         (await this.invites.findByTokenHash(tokenHash, tx));
-      if (!invite || invite.expiresAt <= new Date()) {
-        throw orgErr("invalid_invite", "Invite is invalid or expired");
+      if (!invite) {
+        throw orgErr("invalid_invite", "Invite is invalid");
+      }
+      if (invite.acceptedAt) {
+        throw orgErr("invite_already_accepted", "Invite was already accepted");
+      }
+      if (invite.expiresAt <= new Date()) {
+        throw orgErr("invite_expired", "Invite has expired");
       }
 
       if (user.email.toLowerCase() !== invite.email.toLowerCase()) {
@@ -89,5 +103,47 @@ export class InviteService<TTx = unknown> {
 
   async listPendingInvites(organizationId: string) {
     return this.invites.listPending(organizationId);
+  }
+
+  async revokeInvite(params: {
+    actorUserId: string;
+    organizationId: string;
+    invitationId: string;
+  }) {
+    const actorMembership = await this.memberships.findUserMembership({
+      userId: params.actorUserId,
+      organizationId: params.organizationId,
+    });
+    if (!actorMembership || actorMembership.role === "member") {
+      throw orgErr("forbidden", "Only elevated roles can revoke invites");
+    }
+
+    const invite = await this.invites.findById(params.invitationId);
+    if (!invite || invite.organizationId !== params.organizationId) {
+      throw orgErr("forbidden", "Invitation not found in organization");
+    }
+    if (invite.acceptedAt) {
+      throw orgErr("invalid_invite", "Invitation is already accepted");
+    }
+
+    await this.invites.revokeIfPending(invite.id);
+  }
+
+  async getInviteForToken(token: string) {
+    const tokenHash = this.inviteToken.hashToken(token);
+    const invite = await this.invites.findByTokenHash(tokenHash);
+    if (!invite) {
+      return { status: "invalid" as const };
+    }
+    if (invite.acceptedAt) {
+      return { status: "accepted" as const };
+    }
+    if (invite.expiresAt <= new Date()) {
+      return { status: "expired" as const };
+    }
+    return {
+      status: "pending" as const,
+      invite,
+    };
   }
 }

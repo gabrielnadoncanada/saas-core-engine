@@ -21,8 +21,11 @@ function mockInvitesRepo(): InvitationsRepo {
     create: vi.fn(),
     findValidByTokenHash: vi.fn(),
     findByTokenHash: vi.fn(),
+    findById: vi.fn(),
     markAcceptedIfPending: vi.fn(),
     listPending: vi.fn(),
+    findPendingByEmail: vi.fn(),
+    revokeIfPending: vi.fn(),
   };
 }
 
@@ -75,6 +78,8 @@ describe("InviteService", () => {
       fixedInviteToken(),
     );
 
+    vi.mocked(invites.findPendingByEmail).mockResolvedValue(null);
+
     await expect(
       svc.createInvite({
         organizationId: "org1",
@@ -121,6 +126,8 @@ describe("InviteService", () => {
       fixedInviteToken(),
     );
 
+    vi.mocked(invites.findPendingByEmail).mockResolvedValue(null);
+
     const before = Date.now();
     await svc.createInvite({
       organizationId: "org1",
@@ -164,6 +171,8 @@ describe("InviteService", () => {
       passThroughTxRunner(),
       fixedInviteToken(),
     );
+
+    vi.mocked(invites.findPendingByEmail).mockResolvedValue(null);
 
     await expect(
       svc.createInvite({
@@ -218,7 +227,7 @@ describe("InviteService", () => {
     );
   });
 
-  it("treats an already accepted invite as idempotent for the same email", async () => {
+  it("returns invite_already_accepted when invite was already used", async () => {
     const invites = mockInvitesRepo();
     const users = mockUsersRepo();
     const memberships = mockMembershipsRepo();
@@ -234,9 +243,50 @@ describe("InviteService", () => {
       acceptedAt: new Date(),
     });
     vi.mocked(users.findById).mockResolvedValue({ id: "u1", email: "test@example.com" });
-    vi.mocked(memberships.ensureMembership).mockResolvedValue({ id: "m1" });
-    vi.mocked(invites.markAcceptedIfPending).mockResolvedValue(false);
-    vi.mocked(users.setActiveOrganization).mockResolvedValue(undefined);
+    const svc = new InviteService(
+      invites,
+      users,
+      memberships,
+      passThroughTxRunner(),
+      fixedInviteToken(),
+    );
+
+    await expect(
+      svc.acceptInvite({ token: "raw-token", acceptUserId: "u1" }),
+    ).rejects.toMatchObject({ code: "invite_already_accepted" });
+  });
+
+  it("revokes an existing pending invite before creating a new one", async () => {
+    const invites = mockInvitesRepo();
+    const users = mockUsersRepo();
+    const memberships = mockMembershipsRepo();
+
+    vi.mocked(memberships.findUserMembership).mockResolvedValue({
+      id: "m1",
+      userId: "u1",
+      organizationId: "org1",
+      role: "admin",
+      createdAt: new Date(),
+    });
+    vi.mocked(invites.findPendingByEmail).mockResolvedValue({
+      id: "old-invite",
+      organizationId: "org1",
+      email: "test@example.com",
+      role: "member",
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 1000),
+      acceptedAt: null,
+    });
+    vi.mocked(invites.revokeIfPending).mockResolvedValue(true);
+    vi.mocked(invites.create).mockResolvedValue({
+      id: "new-invite",
+      organizationId: "org1",
+      email: "test@example.com",
+      role: "member",
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 1000),
+      acceptedAt: null,
+    });
 
     const svc = new InviteService(
       invites,
@@ -246,7 +296,14 @@ describe("InviteService", () => {
       fixedInviteToken(),
     );
 
-    const result = await svc.acceptInvite({ token: "raw-token", acceptUserId: "u1" });
-    expect(result.organizationId).toBe("org1");
+    await svc.createInvite({
+      organizationId: "org1",
+      inviterUserId: "u1",
+      email: "test@example.com",
+      role: "member",
+      ttlMinutes: 60,
+    });
+
+    expect(invites.revokeIfPending).toHaveBeenCalledWith("old-invite");
   });
 });

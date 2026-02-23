@@ -7,7 +7,7 @@ import { AuthCard } from "@/shared/components/auth/auth-card";
 import { routes } from "@/shared/constants/routes";
 
 export default async function VerifyEmailPage() {
-  const session = await requireUser();
+  const session = await requireUser({ redirect: true });
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
     select: { email: true, emailVerifiedAt: true },

@@ -19,6 +19,13 @@ export function orgErrorResponse(
         return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
       case "invalid_invite":
         return NextResponse.json({ ok: false, error: "invalid_invite" }, { status: 400 });
+      case "invite_expired":
+        return NextResponse.json({ ok: false, error: "invite_expired" }, { status: 400 });
+      case "invite_already_accepted":
+        return NextResponse.json(
+          { ok: false, error: "invite_already_accepted" },
+          { status: 400 },
+        );
       case "invite_email_mismatch":
         return NextResponse.json(
           { ok: false, error: "invite_email_mismatch" },

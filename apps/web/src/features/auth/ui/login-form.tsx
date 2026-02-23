@@ -12,7 +12,6 @@ import {
   getOAuthStartUrl,
   loginFormSchema,
   loginWithPassword,
-  sendMagicLink,
   type LoginFormValues,
 } from "@/features/auth/model";
 import { Button } from "@/shared/components/ui/button";
@@ -36,8 +35,7 @@ export function LoginForm({ demoMode = false }: LoginFormProps) {
     },
   });
 
-  const [busyAction, setBusyAction] = useState<null | "magic" | "google" | "github">(null);
-  const emailValue = form.watch("email");
+  const [busyAction, setBusyAction] = useState<null | "google" | "github">(null);
   const isBusy = form.formState.isSubmitting || busyAction !== null;
 
   async function onSubmit(values: LoginFormValues) {
@@ -46,21 +44,6 @@ export function LoginForm({ demoMode = false }: LoginFormProps) {
       window.location.href = getDashboardRedirectPath(redirectPath);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Login failed");
-    }
-  }
-
-  async function onSendMagic() {
-    const valid = await form.trigger("email");
-    if (!valid) return;
-
-    setBusyAction("magic");
-    try {
-      await sendMagicLink({ email: form.getValues("email") });
-      toast.success("If the email exists, a magic link was sent.");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to send magic link.");
-    } finally {
-      setBusyAction(null);
     }
   }
 
@@ -124,16 +107,6 @@ export function LoginForm({ demoMode = false }: LoginFormProps) {
         <a className="underline text-muted-foreground" href="/forgot-password">
           Forgot password?
         </a>
-        <button
-          type="button"
-          className="underline text-muted-foreground"
-          onClick={() => {
-            void onSendMagic();
-          }}
-          disabled={isBusy || !emailValue}
-        >
-          {busyAction === "magic" ? "Sending..." : "Send magic link"}
-        </button>
       </div>
 
       <Separator />

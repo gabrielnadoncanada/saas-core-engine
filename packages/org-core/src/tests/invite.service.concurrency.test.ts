@@ -63,12 +63,15 @@ describe("InviteService concurrency", () => {
         if (tokenHash !== "hash:token") return null;
         return inviteRecord;
       },
+      findById: async () => inviteRecord,
       markAcceptedIfPending: async () => {
         if (inviteRecord.acceptedAt) return false;
         inviteRecord.acceptedAt = new Date();
         return true;
       },
       listPending: async () => [],
+      findPendingByEmail: async () => null,
+      revokeIfPending: async () => true,
     };
 
     const users: UsersRepo = {

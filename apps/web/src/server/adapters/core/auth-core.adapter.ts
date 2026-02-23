@@ -1,7 +1,6 @@
 import {
   EmailTokenService,
   LoginFlow,
-  MagicLoginFlow,
   OAuthLoginFlow,
   OAuthStateService,
   PasswordResetFlow,
@@ -55,10 +54,6 @@ export function createSignupFlow() {
 
 export function createLoginFlow() {
   return new LoginFlow(new UsersRepo(), authEventEmitter, env.TOKEN_PEPPER);
-}
-
-export function createMagicLoginFlow() {
-  return new MagicLoginFlow(createEmailTokenService(), new UsersRepo(), txRunner);
 }
 
 export function createPasswordResetFlow() {

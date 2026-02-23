@@ -32,6 +32,7 @@ export type {
 
 export { EmailTokenService } from "./email-tokens/email-token.service";
 export { AuthCoreError, authErr } from "./errors";
+export { isUniqueConstraintViolation } from "./errors";
 export type { AuthEvent, AuthEventEmitter } from "./events";
 
 export { SignupFlow } from "./flows/signup.flow";

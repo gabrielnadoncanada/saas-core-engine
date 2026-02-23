@@ -3,6 +3,8 @@ import { z } from "zod";
 export type OrgErrorCode =
   | "forbidden"
   | "invalid_invite"
+  | "invite_expired"
+  | "invite_already_accepted"
   | "invite_email_mismatch"
   | "unauthorized";
 
@@ -19,6 +21,10 @@ export type InviteRole = z.infer<typeof inviteRoleSchema>;
 export const orgInviteBodySchema = z.object({
   email: z.string().trim().email().max(320),
   role: inviteRoleSchema,
+});
+
+export const orgInviteRevokeBodySchema = z.object({
+  invitationId: z.string().trim().min(1),
 });
 
 export const orgCreateBodySchema = z.object({

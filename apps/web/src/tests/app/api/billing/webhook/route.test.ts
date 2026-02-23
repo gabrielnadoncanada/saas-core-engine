@@ -68,6 +68,39 @@ describe("POST /api/billing/webhook", () => {
     expect(processBillingWebhookEventById).not.toHaveBeenCalled();
   });
 
+  it("returns 400 when stripe signature header is missing", async () => {
+    const { POST } = await import("../../../../../app/api/billing/webhook/route");
+    const res = await POST(
+      new Request("http://localhost/api/billing/webhook", {
+        method: "POST",
+        body: "{}",
+      }),
+    );
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ ok: false });
+    expect(processBillingWebhookEventById).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when signature verification fails", async () => {
+    constructEvent.mockImplementationOnce(() => {
+      throw new Error("bad sig");
+    });
+
+    const { POST } = await import("../../../../../app/api/billing/webhook/route");
+    const res = await POST(
+      new Request("http://localhost/api/billing/webhook", {
+        method: "POST",
+        headers: { "stripe-signature": "sig" },
+        body: "{}",
+      }),
+    );
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ ok: false });
+    expect(processBillingWebhookEventById).not.toHaveBeenCalled();
+  });
+
   it("processes event synchronously", async () => {
     const { POST } = await import("../../../../../app/api/billing/webhook/route");
     const res = await POST(
@@ -83,5 +116,26 @@ describe("POST /api/billing/webhook", () => {
     expect(json.received).toBe(true);
     expect(json.processed).toBe(true);
     expect(processBillingWebhookEventById).toHaveBeenCalledWith("evt_1");
+  });
+
+  it("marks event as failed when processing throws", async () => {
+    processBillingWebhookEventById.mockRejectedValueOnce(new Error("boom"));
+
+    const { POST } = await import("../../../../../app/api/billing/webhook/route");
+    const res = await POST(
+      new Request("http://localhost/api/billing/webhook", {
+        method: "POST",
+        headers: { "stripe-signature": "sig" },
+        body: "{}",
+      }),
+    );
+
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ ok: false });
+    expect(markStatus).toHaveBeenCalledWith({
+      eventId: "evt_1",
+      status: "failed",
+      errorMessage: "boom",
+    });
   });
 });

@@ -40,7 +40,7 @@ export default function PricingPage() {
             price="$0"
             subtitle="Perfect to evaluate the foundation."
             items={[
-              "Auth: password + magic link + reset",
+              "Auth: password + reset",
               "Google OAuth",
               "Organizations + roles",
               "Team invites",

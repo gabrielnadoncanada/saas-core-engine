@@ -5,7 +5,7 @@ export default function ChangelogPage() {
     <DocsLayout title="Changelog" subtitle="Template updates and releases.">
       <h2>v1.0.0</h2>
       <ul>
-        <li>Auth: password, magic link, reset</li>
+        <li>Auth: password, reset</li>
         <li>Google OAuth + account linking</li>
         <li>Organizations + invites</li>
         <li>Stripe subscriptions + portal</li>

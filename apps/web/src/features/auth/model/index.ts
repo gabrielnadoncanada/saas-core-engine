@@ -1,7 +1,6 @@
 export {
   loginWithPassword,
   signupWithWorkspace,
-  sendMagicLink,
   sendPasswordResetLink,
   resetUserPassword,
 } from "./auth-flows";

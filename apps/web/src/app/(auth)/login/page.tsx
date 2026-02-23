@@ -3,12 +3,13 @@ import { env } from "@/server/config/env";
 import { AuthCard } from "@/shared/components/auth/auth-card";
 import { routes } from "@/shared/constants/routes";
 
-export default function LoginPage(props: {
-  searchParams?: { redirect?: string | string[] };
+export default async function LoginPage(props: {
+  searchParams?: Promise<{ redirect?: string | string[] }>;
 }) {
-  const redirectParam = Array.isArray(props.searchParams?.redirect)
-    ? props.searchParams?.redirect[0]
-    : props.searchParams?.redirect;
+  const searchParams = props.searchParams ? await props.searchParams : undefined;
+  const redirectParam = Array.isArray(searchParams?.redirect)
+    ? searchParams?.redirect[0]
+    : searchParams?.redirect;
   const signupHref = redirectParam
     ? `${routes.auth.signup}?redirect=${encodeURIComponent(redirectParam)}`
     : routes.auth.signup;
@@ -16,7 +17,7 @@ export default function LoginPage(props: {
   return (
     <AuthCard
       title="Welcome back"
-      subtitle="Sign in with email/password, Google, GitHub, or a magic link."
+      subtitle="Sign in with email/password, Google, or GitHub."
       footer={<LoginFormFooter signupHref={signupHref} />}
     >
       <LoginForm demoMode={env.DEMO_MODE} />

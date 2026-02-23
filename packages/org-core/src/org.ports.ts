@@ -70,8 +70,14 @@ export interface InvitationsRepo<TTx = unknown> {
     tx?: TTx,
   ): Promise<InvitationSummary | null>;
   findByTokenHash(tokenHash: string, tx?: TTx): Promise<InvitationSummary | null>;
+  findById(invitationId: string, tx?: TTx): Promise<InvitationSummary | null>;
   markAcceptedIfPending(invitationId: string, tx?: TTx): Promise<boolean>;
   listPending(organizationId: string, tx?: TTx): Promise<InvitationSummary[]>;
+  findPendingByEmail(
+    params: { organizationId: string; email: string },
+    tx?: TTx,
+  ): Promise<InvitationSummary | null>;
+  revokeIfPending(invitationId: string, tx?: TTx): Promise<boolean>;
 }
 
 export interface UsersRepo<TTx = unknown> {

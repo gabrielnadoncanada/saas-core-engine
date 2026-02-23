@@ -1,6 +1,15 @@
-import { safeRedirectPath } from "@auth-core";
-
-import { routes } from "@/shared/constants/routes";
+/** Mirrors @auth-core safeRedirectPath. Kept local to avoid pulling argon2/node-gyp into client bundle. */
+function safeRedirectPath(input: string | null): string {
+  if (!input) return "/dashboard";
+  if (!input.startsWith("/")) return "/dashboard";
+  if (input.startsWith("//")) return "/dashboard";
+  if (input.includes("..")) return "/dashboard";
+  if (input.includes("\\")) return "/dashboard";
+  if (input.includes("http://") || input.includes("https://")) {
+    return "/dashboard";
+  }
+  return input;
+}
 
 export function getDashboardRedirectPath(redirect?: string | null) {
   return safeRedirectPath(redirect ?? null);

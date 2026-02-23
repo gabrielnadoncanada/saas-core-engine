@@ -8,7 +8,7 @@ import { routes } from "@/shared/constants/routes";
 import { AppShell } from "@/shared/components/layout/app-shell";
 
 export default async function DashboardLayout(props: { children: React.ReactNode }) {
-  const session = await requireUser();
+  const session = await requireUser({ redirect: true });
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
     select: { emailVerifiedAt: true },
