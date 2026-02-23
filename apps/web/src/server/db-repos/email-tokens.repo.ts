@@ -1,6 +1,6 @@
 import { prisma, type DbTx } from "@db";
 
-import type { EmailToken, EmailTokenType } from "@prisma/client";
+import type { EmailToken, EmailTokenType } from "@db";
 
 const db = (tx?: DbTx) => tx ?? prisma;
 

@@ -1,6 +1,6 @@
 import { prisma, type DbTx } from "@db";
 
-import type { Invitation, MembershipRole } from "@prisma/client";
+import type { Invitation, MembershipRole } from "@db";
 
 const db = (tx?: DbTx) => tx ?? prisma;
 

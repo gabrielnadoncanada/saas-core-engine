@@ -6,19 +6,26 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "lint": "echo \"lint @db\"",
+    "postinstall": "prisma generate",
+    "pretypecheck": "prisma generate",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prebuild": "prisma generate",
     "build": "tsc -p tsconfig.json",
+    "prisma:generate": "prisma generate",
     "db:push": "prisma db push",
     "seed": "tsx prisma/seed.ts",
     "seed:demo": "tsx prisma/seed-demo.ts"
   },
   "dependencies": {
     "@contracts": "workspace:*",
-    "@prisma/client": "^6.0.0"
+    "@prisma/adapter-pg": "^7.4.1",
+    "@prisma/client": "^7.4.1",
+    "pg": "^8.18.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "prisma": "^6.0.0",
+    "dotenv": "^17.2.3",
+    "prisma": "^7.4.1",
     "tsx": "^4.0.0"
   }
 }

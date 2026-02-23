@@ -13,7 +13,8 @@
         "dist/**",
         ".next/**",
         "build/**",
-        "prisma/generated/**"
+        "prisma/generated/**",
+        "src/generated/prisma/**"
       ]
     },
     "lint": {

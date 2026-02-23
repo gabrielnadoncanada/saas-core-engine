@@ -42,6 +42,7 @@ Thumbs.db
 # Prisma (generated client - built from schema)
 # migrations/ is typically committed; uncomment if you want to ignore
 # packages/db/prisma/migrations/
+packages/db/src/generated/
 
 # AI / Editor temp
 .claude/

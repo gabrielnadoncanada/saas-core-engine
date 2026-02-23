@@ -1,6 +1,6 @@
 import { prisma, type DbTx } from "@db";
 
-import type { Session } from "@prisma/client";
+import type { Session } from "@db";
 
 const db = (tx?: DbTx) => tx ?? prisma;
 

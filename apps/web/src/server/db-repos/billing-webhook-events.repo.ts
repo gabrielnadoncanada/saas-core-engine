@@ -4,7 +4,7 @@ import type {
   BillingWebhookEventsRepo as BillingWebhookEventsRepoPort,
   BillingWebhookEnvelope,
 } from "@billing-core";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@db";
 
 
 function isUniqueConstraintViolation(error: unknown): boolean {

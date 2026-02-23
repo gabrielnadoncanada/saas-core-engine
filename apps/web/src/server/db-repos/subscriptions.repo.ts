@@ -4,7 +4,7 @@ import type {
   Subscription,
   SubscriptionPlan,
   SubscriptionStatus,
-} from "@prisma/client";
+} from "@db";
 
 const db = (tx?: DbTx) => tx ?? prisma;
 

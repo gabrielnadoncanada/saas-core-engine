@@ -1,5 +1,5 @@
 import { prisma } from "@db";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@db";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 

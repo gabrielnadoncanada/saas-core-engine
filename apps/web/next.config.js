@@ -13,7 +13,7 @@ const nextConfig = {
   ],
 
   // Keep secrets server-side; avoid bundling server libs into client by mistake
-  serverExternalPackages: ["@prisma/client"],
+  serverExternalPackages: ["pg"],
 };
 
 export default nextConfig;
