@@ -5,6 +5,7 @@ import { useState } from "react";
 
 type Props = {
   currentEmail: string;
+  emailVerified: boolean;
 };
 
 type ApiResult = {
@@ -13,7 +14,7 @@ type ApiResult = {
   error?: string;
 };
 
-export function ProfileEmailForm({ currentEmail }: Props) {
+export function ProfileEmailForm({ currentEmail, emailVerified }: Props) {
   const router = useRouter();
   const [email, setEmail] = useState(currentEmail);
   const [busy, setBusy] = useState(false);
@@ -88,7 +89,9 @@ export function ProfileEmailForm({ currentEmail }: Props) {
         </button>
       </div>
       <div style={{ marginTop: 6, fontSize: 12, color: "#666" }}>
-        Changing email resets verification status until re-verified.
+        {emailVerified
+          ? "Changing email resets verification status until re-verified."
+          : "Email verification pending."}
       </div>
       {msg ? <div style={{ marginTop: 8, fontSize: 12, color: "#666" }}>{msg}</div> : null}
     </div>

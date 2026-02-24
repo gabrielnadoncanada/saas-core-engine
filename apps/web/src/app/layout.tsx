@@ -1,7 +1,9 @@
-import { ThemeProvider } from "@/shared/components/ThemeProvider";
 import "./globals.css";
-import { Toaster } from "@/shared/components/ui/sonner";
 import { Plus_Jakarta_Sans } from "next/font/google";
+
+import { QueryProvider } from "@/shared/components/query-provider";
+import { Toaster } from "@/shared/components/ui/sonner";
+import { ThemeProvider } from "@/shared/context/theme-provider";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -16,15 +18,12 @@ export default function RootLayout({
   return (
     <html lang="fr-CA" suppressHydrationWarning>
       <body className={plusJakartaSans.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-          <Toaster />
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider defaultTheme="system">
+            {children}
+            <Toaster />
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );

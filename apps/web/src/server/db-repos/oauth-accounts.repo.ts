@@ -44,4 +44,44 @@ export class OAuthAccountsRepo {
       orderBy: { createdAt: "asc" },
     });
   }
+
+  async findByUserAndProvider(
+    params: { userId: string; provider: OAuthProvider },
+    tx?: DbTx,
+  ): Promise<OAuthAccount | null> {
+    return db(tx).oAuthAccount.findFirst({
+      where: {
+        userId: params.userId,
+        provider: params.provider,
+      },
+    });
+  }
+
+  async deleteByUserAndProvider(
+    params: { userId: string; provider: OAuthProvider },
+    tx?: DbTx,
+  ): Promise<number> {
+    const res = await db(tx).oAuthAccount.deleteMany({
+      where: {
+        userId: params.userId,
+        provider: params.provider,
+      },
+    });
+    return res.count;
+  }
+
+  async touchLastUsed(
+    params: { provider: OAuthProvider; providerAccountId: string; at?: Date },
+    tx?: DbTx,
+  ): Promise<void> {
+    await db(tx).oAuthAccount.updateMany({
+      where: {
+        provider: params.provider,
+        providerAccountId: params.providerAccountId,
+      },
+      data: {
+        lastUsedAt: params.at ?? new Date(),
+      },
+    });
+  }
 }

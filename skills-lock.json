@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "prisma-orm-v7-skills": {
+      "source": "gocallum/nextjs16-agent-skills",
+      "sourceType": "github",
+      "computedHash": "31ed4e62967e69619fe62e0f82890eb64ede7f3edd1fa5cac3ca8735d9735d48"
+    }
+  }
+}
