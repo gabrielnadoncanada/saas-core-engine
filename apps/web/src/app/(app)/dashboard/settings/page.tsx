@@ -2,7 +2,7 @@ import "server-only";
 
 import { prisma } from "@db";
 
-import { ProfileEmailForm, SecurityActions, SignInMethods } from "@/features/settings/ui";
+import { ProfileEmailForm, ProfileForm, SecurityActions, SignInMethods } from "@/features/settings/ui";
 import { requireUser } from "@/server/auth/require-user";
 import { enabledOAuthProviders } from "@/server/auth/sign-in-methods";
 import { env } from "@/server/config/env";
@@ -28,6 +28,10 @@ export default async function SettingsPage(props: PageProps) {
     where: { id: sessionUser.userId },
     select: {
       email: true,
+      firstName: true,
+      lastName: true,
+      avatarUrl: true,
+      phoneNumber: true,
       emailVerifiedAt: true,
       passwordHash: true,
       oauthAccounts: {
@@ -80,6 +84,13 @@ export default async function SettingsPage(props: PageProps) {
       <div style={{ marginTop: 16, display: "grid", gap: 16 }}>
         <section style={card}>
           <h2 style={h2}>Profile</h2>
+          <ProfileForm
+            initialFirstName={user?.firstName ?? null}
+            initialLastName={user?.lastName ?? null}
+            initialAvatarUrl={user?.avatarUrl ?? null}
+            initialPhoneNumber={user?.phoneNumber ?? null}
+            accountEmail={user?.email ?? ""}
+          />
           <ProfileEmailForm
             currentEmail={user?.email ?? ""}
             emailVerified={Boolean(user?.emailVerifiedAt)}

@@ -1,4 +1,4 @@
-import { SignupForm } from "@/features/auth/ui";
+import { SignupForm } from "@/features/auth/signup";
 import { AuthCard } from "@/shared/components/auth/auth-card";
 import { routes } from "@/shared/constants/routes";
 

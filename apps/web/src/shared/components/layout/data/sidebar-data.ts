@@ -49,6 +49,62 @@ export const sidebarData: SidebarData = {
   ],
   navGroups: [
     {
+      title: "SaaS Core",
+      items: [
+        {
+          title: "Workspace",
+          icon: LayoutDashboard,
+          items: [
+            {
+              title: "Dashboard",
+              url: "/dashboard",
+              icon: LayoutDashboard,
+            },
+            {
+              title: "Team",
+              url: "/dashboard/team",
+              icon: Users,
+            },
+            {
+              title: "Users",
+              url: "/dashboard/users",
+              icon: Users,
+            },
+            {
+              title: "Roles",
+              url: "/dashboard/roles",
+              icon: ShieldCheck,
+            },
+            {
+              title: "Organizations",
+              url: "/dashboard/organizations",
+              icon: Package,
+            },
+            {
+              title: "Billing",
+              url: "/dashboard/billing",
+              icon: Settings,
+            },
+            {
+              title: "Subscriptions",
+              url: "/dashboard/subscriptions",
+              icon: Settings,
+            },
+            {
+              title: "Sessions",
+              url: "/dashboard/sessions",
+              icon: Monitor,
+            },
+            {
+              title: "Settings",
+              url: "/dashboard/settings",
+              icon: Settings,
+            },
+          ],
+        },
+      ],
+    },
+    {
       title: "General",
       items: [
         {
@@ -76,23 +132,6 @@ export const sidebarData: SidebarData = {
           title: "Users",
           url: "/users",
           icon: Users,
-        },
-        {
-          title: "Secured by Clerk",
-          items: [
-            {
-              title: "Sign In",
-              url: "/clerk/sign-in",
-            },
-            {
-              title: "Sign Up",
-              url: "/clerk/sign-up",
-            },
-            {
-              title: "User Management",
-              url: "/clerk/user-management",
-            },
-          ],
         },
       ],
     },

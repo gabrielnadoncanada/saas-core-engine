@@ -1,3 +1,4 @@
+import "./load-env";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { hashPassword } from "../../auth-core/src/index";
@@ -26,11 +27,20 @@ async function main() {
       email: "demo@saastemplate.dev",
       passwordHash,
       emailVerifiedAt: new Date(),
+      firstName: "Demo",
+      lastName: "User",
+      phoneNumber: "+33123456789",
     },
   });
 
   const member = await prisma.user.create({
-    data: { email: "teammate@saastemplate.dev", passwordHash },
+    data: {
+      email: "teammate@saastemplate.dev",
+      passwordHash,
+      firstName: "Alice",
+      lastName: "Teammate",
+      phoneNumber: "+33987654321",
+    },
   });
 
   const primaryOrg = await prisma.organization.create({
