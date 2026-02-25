@@ -5,8 +5,8 @@ import { useSearchParams } from "next/navigation";
 
 import {
   resetPasswordAction,
-  resetPasswordInitialState,
 } from "@/features/auth/reset-password/api/reset-password.action";
+import { resetPasswordInitialState } from "@/features/auth/reset-password/model/reset-password.form-state";
 import { Button } from "@/shared/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";

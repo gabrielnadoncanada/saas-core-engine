@@ -9,7 +9,7 @@ export function AuthCard(props: {
   children: React.ReactNode;
 }) {
   return (
-    <Card className="rounded-2xl">
+    <Card className='gap-4'>
       <CardHeader className="space-y-2">
         <CardTitle className="text-xl font-extrabold">{props.title}</CardTitle>
         <p className="text-sm text-muted-foreground">{props.subtitle}</p>

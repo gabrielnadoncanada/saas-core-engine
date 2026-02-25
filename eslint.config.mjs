@@ -108,6 +108,53 @@ export default [
       "@typescript-eslint/no-unsafe-return": "off",
     },
   },
+  {
+    files: ["apps/web/src/**/*.action.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "ExportNamedDeclaration[declaration.type='VariableDeclaration']",
+          message:
+            "Server Action files must export only async function declarations. Move constants/state/types to model files.",
+        },
+        {
+          selector: "ExportNamedDeclaration[declaration.type='FunctionDeclaration'][declaration.async=false]",
+          message: "Server Action exports must be async functions.",
+        },
+        {
+          selector: "ExportNamedDeclaration[declaration.type='TSTypeAliasDeclaration']",
+          message:
+            "Do not export types from Server Action files. Export from model/*.form-state.ts or model/*.schema.ts.",
+        },
+        {
+          selector: "ExportNamedDeclaration[declaration.type='TSInterfaceDeclaration']",
+          message:
+            "Do not export types from Server Action files. Export from model/*.form-state.ts or model/*.schema.ts.",
+        },
+        {
+          selector: "ExportNamedDeclaration[declaration.type='ClassDeclaration']",
+          message: "Server Action files must export only async functions.",
+        },
+        {
+          selector: "ExportNamedDeclaration[declaration.type='TSEnumDeclaration']",
+          message: "Server Action files must export only async functions.",
+        },
+        {
+          selector: "ExportNamedDeclaration[source]",
+          message: "Re-exports are forbidden in Server Action files.",
+        },
+        {
+          selector: "ExportNamedDeclaration[specifiers.length>0]",
+          message: "Named export lists are forbidden in Server Action files.",
+        },
+        {
+          selector: "ExportDefaultDeclaration",
+          message: "Default exports are forbidden in Server Action files.",
+        },
+      ],
+    },
+  },
 
   {
     files: [

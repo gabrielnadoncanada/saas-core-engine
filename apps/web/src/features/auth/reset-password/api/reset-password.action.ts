@@ -12,6 +12,10 @@ import { env } from "@/server/config/env";
 
 import { buildActionRequest } from "@/server/http/build-server-action-request";
 import { getDashboardRedirectPath } from "@/features/auth/lib/auth-redirect.guard";
+import {
+  resetPasswordInitialState,
+  type ResetPasswordFormState,
+} from "@/features/auth/reset-password/model/reset-password.form-state";
 import { resetPasswordFormSchema } from "@/features/auth/reset-password/model/reset-password.schema";
 
 const RESET_PASSWORD_ACTION_PATH = "/reset-password";
@@ -19,14 +23,6 @@ const MISSING_TOKEN_MESSAGE = "Missing token.";
 const INVALID_INPUT_MESSAGE = "Invalid input";
 const INVALID_OR_EXPIRED_TOKEN_MESSAGE = "This link is invalid or has expired.";
 const RESET_FAILED_MESSAGE = "Reset failed.";
-
-export type ResetPasswordFormState = {
-  error: string | null;
-};
-
-export const resetPasswordInitialState: ResetPasswordFormState = {
-  error: null,
-};
 
 export async function resetPasswordAction(
   _prevState: ResetPasswordFormState,

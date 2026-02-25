@@ -10,6 +10,7 @@ import { env } from "@/server/config/env";
 
 import { buildActionRequest } from "@/server/http/build-server-action-request";
 import { getDashboardRedirectPath } from "@/features/auth/lib/auth-redirect.guard";
+import type { LoginFormState } from "@/features/auth/sign-in/model/sign-in.form-state";
 import { loginFormSchema } from "@/features/auth/sign-in/model/sign-in.schema";
 
 const LOGIN_ACTION_PATH = "/login";
@@ -17,12 +18,6 @@ const LOGIN_RATE_LIMIT_KEY = "login" as const;
 const INVALID_INPUT_MESSAGE = "Invalid input";
 const INVALID_CREDENTIALS_MESSAGE = "Invalid email or password.";
 const LOGIN_FAILED_MESSAGE = "Login failed.";
-
-export type LoginFormState = {
-  error: string | null;
-};
-
-export const loginInitialState: LoginFormState = { error: null };
 
 export async function loginAction(
   _prevState: LoginFormState,
@@ -33,7 +28,11 @@ export async function loginAction(
     password: String(formData.get("password") ?? ""),
   });
   if (!validated.success) {
-    return { error: validated.error.errors[0]?.message ?? INVALID_INPUT_MESSAGE };
+    const flattened = validated.error.flatten();
+    return {
+      error: validated.error.errors[0]?.message ?? INVALID_INPUT_MESSAGE,
+      fieldErrors: flattened.fieldErrors,
+    };
   }
 
   const redirectPath = getDashboardRedirectPath(String(formData.get("redirect") ?? ""));

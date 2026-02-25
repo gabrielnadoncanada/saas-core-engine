@@ -1,6 +1,8 @@
 import { SignupForm } from "@/features/auth";
 import { AuthCard } from "@/shared/components/auth/auth-card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/shared/components/ui/card";
 import { routes } from "@/shared/constants/routes";
+import Link from "next/link";
 
 export default async function SignupPage(props: {
   searchParams?: Promise<{ redirect?: string | string[] }>;
@@ -14,23 +16,45 @@ export default async function SignupPage(props: {
     : routes.auth.login;
 
   return (
-    <AuthCard
-      title="Create your account"
-      subtitle="Create a workspace and start building."
-      footer={<Footer loginHref={loginHref} />}
-    >
-      <SignupForm />
-    </AuthCard>
+    <Card className='gap-4'>
+      <CardHeader>
+        <CardTitle className='text-lg tracking-tight'>
+          Create an account
+        </CardTitle>
+        <CardDescription>
+          Enter your email and password to create an account. <br />
+          Already have an account?{' '}
+          <Link
+            href={loginHref}
+            className='underline underline-offset-4 hover:text-primary'
+          >
+            Sign In
+          </Link>
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <SignupForm />
+      </CardContent>
+      <CardFooter>
+        <p className='px-8 text-center text-sm text-muted-foreground'>
+          By creating an account, you agree to our{' '}
+          <a
+            href='/terms'
+            className='underline underline-offset-4 hover:text-primary'
+          >
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a
+            href='/privacy'
+            className='underline underline-offset-4 hover:text-primary'
+          >
+            Privacy Policy
+          </a>
+          .
+        </p>
+      </CardFooter>
+    </Card>
   );
 }
 
-function Footer(props: { loginHref: string }) {
-  return (
-    <div className="text-sm text-muted-foreground">
-      Already have an account?{" "}
-      <a className="underline" href={props.loginHref}>
-        Sign in
-      </a>
-    </div>
-  );
-}

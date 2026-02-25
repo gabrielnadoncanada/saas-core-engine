@@ -6,6 +6,7 @@ import { getEmailService } from "@/server/services/email.service";
 import { absoluteUrl } from "@/server/services/url.service";
 
 import { buildActionRequest } from "@/server/http/build-server-action-request";
+import type { ForgotPasswordFormState } from "@/features/auth/forgot-password/model/forgot-password.form-state";
 import { forgotPasswordFormSchema } from "@/features/auth/forgot-password/model/forgot-password.schema";
 
 const FORGOT_PASSWORD_ACTION_PATH = "/forgot-password";
@@ -13,16 +14,6 @@ const FORGOT_PASSWORD_RATE_LIMIT_KEY = "password_forgot" as const;
 const PASSWORD_RESET_TTL_MINUTES = 15;
 const INVALID_INPUT_MESSAGE = "Invalid input";
 const FORGOT_PASSWORD_SUCCESS_MESSAGE = "If the email exists, a reset link was sent.";
-
-export type ForgotPasswordFormState = {
-  error: string | null;
-  success: string | null;
-};
-
-export const forgotPasswordInitialState: ForgotPasswordFormState = {
-  error: null,
-  success: null,
-};
 
 export async function forgotPasswordAction(
   _prevState: ForgotPasswordFormState,

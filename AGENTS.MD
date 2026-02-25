@@ -5,3 +5,8 @@ Prefer breaking changes over compatibility layers. If a refactor introduces brea
 Delete legacy code aggressively. Remove dead code, deprecated branches, unused helpers, old DTOs/interfaces, legacy endpoints, and compatibility shims. If unsure whether something is used, search references; if still unclear, remove and rely on tests/CI.
 
 Single source of truth. Do not keep multiple implementations of the same logic. Consolidate to one canonical path.
+
+## Next.js Server Actions (hard rule)
+In files containing `"use server"` (especially `*.action.ts`), export only `async function`.
+Never export constants, initial states, types/interfaces/enums, or re-export lists from Server Action files.
+Keep form state contracts in `model/*.form-state.ts` and import them where needed.

@@ -5,7 +5,8 @@ export const loginFormSchema = z.object({
     .string()
     .trim()
     .email("Email format is invalid")
-    .max(320, "Email must be at most 320 characters."),
+    .max(320, "Email must be at most 320 characters.")
+    .transform((value) => value.toLowerCase()),
   password: z
     .string()
     .min(1, "Password is required")

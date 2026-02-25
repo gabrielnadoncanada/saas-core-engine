@@ -66,6 +66,9 @@ Apply this skill to structure Next.js App Router projects with pragmatic FSD.
 - Use `verify-email.action.ts` as the canonical `Command Action` reference.
 - For `Command Action`, keep this sequence: validate input, enforce rate-limit when needed, require auth when needed, execute domain flow, map errors once (`authErrorMessage`), return `ok/fail`.
 - Keep action constants explicit (`ACTION_PATH`, `RATE_LIMIT_KEY`) and avoid magic strings.
+- Next.js 16 enforcement: any `"use server"` file must export only `async function`.
+- Do not export values or types from `*.action.ts` (`const`, `type`, `interface`, `enum`, re-export list).
+- Form state contracts (`XxxFormState`, `xxxInitialState`) belong in `model/*.form-state.ts`.
 
 ## 7) Standardize public API
 

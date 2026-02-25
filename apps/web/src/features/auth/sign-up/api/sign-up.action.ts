@@ -7,8 +7,8 @@ import { redirect } from "next/navigation";
 import {
   inviteSignupSchema,
   signupFormSchema,
-  type SignupFormState,
 } from "@/features/auth/sign-up/model/sign-up.schema";
+import { type SignupFormState } from "@/features/auth/sign-up/model/sign-up.form-state";
 import { getLoginRedirectFromSignup } from "@/features/auth/sign-up/lib/sign-up-redirect.guard";
 import {
   InviteSignupError,
@@ -101,8 +101,6 @@ async function completeInvitedSignup(params: {
   });
 }
 
-const INITIAL_STATE: SignupFormState = { error: null };
-
 export async function signupAction(
   _prevState: SignupFormState,
   formData: FormData,
@@ -114,6 +112,7 @@ export async function signupAction(
     orgName: formData.get("orgName"),
     email: formData.get("email"),
     password: formData.get("password"),
+    passwordConfirm: formData.get("passwordConfirm"),
   };
 
   try {
@@ -124,8 +123,9 @@ export async function signupAction(
     if (inviteToken) {
       const inviteValidated = inviteSignupSchema.safeParse(rawInput);
       if (!inviteValidated.success) {
+        const flattened = inviteValidated.error.flatten();
         const message = inviteValidated.error.errors[0]?.message ?? INVALID_INPUT_MESSAGE;
-        return { error: message };
+        return { error: message, fieldErrors: flattened.fieldErrors };
       }
 
       const invitedSignup = await completeInvitedSignup({
@@ -149,8 +149,9 @@ export async function signupAction(
     // Regular signup path
     const validated = signupFormSchema.safeParse(rawInput);
     if (!validated.success) {
+      const flattened = validated.error.flatten();
       const message = validated.error.errors[0]?.message ?? INVALID_INPUT_MESSAGE;
-      return { error: message };
+      return { error: message, fieldErrors: flattened.fieldErrors };
     }
 
     const signup = createSignupFlow();
@@ -198,6 +199,3 @@ export async function signupAction(
     return { error: authErrorMessage(error, SIGNUP_FAILED_MESSAGE) };
   }
 }
-
-export const signupInitialState = INITIAL_STATE;
-export type { SignupFormState };

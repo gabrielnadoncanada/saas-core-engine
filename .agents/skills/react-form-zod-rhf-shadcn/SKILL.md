@@ -52,6 +52,9 @@ export type { LoginFormState } from "./login.types";
 - Server-side zod validation in the action.
 - Return structured form state for errors; use `redirect()` for success navigation.
 - Keep server actions pure: no client-only imports and no UI concerns in `*.action.ts`.
+- Next.js 16 hard rule: in files with `"use server"`, export only `async function`.
+- Never export `const` initial states, types, interfaces, enums, or re-exports from `*.action.ts`.
+- Place form state types/defaults in `model/*.form-state.ts` and import them in both UI and action.
 
 ## 4.1) Action profile split (mandatory)
 
