@@ -42,6 +42,17 @@ Apply this skill to structure Next.js App Router projects with pragmatic FSD.
 - `pages/*`: route-level assembly.
 - `app/*`: bootstrapping, providers, routing, global policies.
 
+## 4.1) Feature internal structure (mandatory)
+
+- A feature may contain multiple slices (example: `sign-in`, `sign-up`, `forgot-password`).
+- If a feature has multiple slices, shared internals must live in `features/<feature>/shared/*`.
+- In multi-slice features, do not keep `model/`, `api/`, `lib/`, `ui/` directly at `features/<feature>/`.
+- Root of a multi-slice feature is limited to:
+  - slice folders,
+  - one `shared/` folder for intra-feature reuse,
+  - feature `index.ts` public API.
+- Single-slice feature can keep `model/api/lib/ui` directly at feature root.
+
 ## 5) Keep strict boundary per slice
 
 - `model`: schema, types, state contracts, validation.
@@ -49,14 +60,16 @@ Apply this skill to structure Next.js App Router projects with pragmatic FSD.
 - `lib`: pure domain rules, mappers, payload builders, error normalization.
 - `ui`: presentation and interaction binding only.
 - Place feature hooks in `model` by default (`model/useXxx.ts`), not `ui/hooks`.
+- For multi-slice features, put reusable code used by several slices under `features/<feature>/shared/{model,api,lib,ui}`.
 
 ## 6) Place Server Actions and hooks correctly
 
-- Server Actions (`"use server"`) go to `features/*/api/{actionName}.action.ts` for user intent.
+- Server Actions (`"use server"`) go to slice-level `features/<feature>/<slice>/api/{actionName}.action.ts` for user intent.
 - Entity data primitives (repo/query) go to `entities/*/api`.
-- Feature UI orchestration hooks (`useForm`, optimistic UI, pending state) go to `features/*/model/useXxx.ts`.
+- Feature UI orchestration hooks (`useForm`, optimistic UI, pending state) go to `features/<feature>/<slice>/model/useXxx.ts`.
 - Generic hooks with no domain knowledge go to `shared/hooks`.
 - Avoid "god hooks" bundling unrelated actions.
+- Hooks/helpers reused by several slices of the same feature go to `features/<feature>/shared/*`.
 
 ## 6.1) Server Action contract (mandatory)
 
@@ -69,6 +82,17 @@ Apply this skill to structure Next.js App Router projects with pragmatic FSD.
 - Next.js 16 enforcement: any `"use server"` file must export only `async function`.
 - Do not export values or types from `*.action.ts` (`const`, `type`, `interface`, `enum`, re-export list).
 - Form state contracts (`XxxFormState`, `xxxInitialState`) belong in `model/*.form-state.ts`.
+- Default form validation/error standard (mandatory unless explicitly overridden):
+- Action validates inputs with zod `safeParse`.
+- On validation failure, return a typed form state with:
+  - global `error` (first validation message or fallback),
+  - structured `fieldErrors` from zod flatten.
+- UI consumes `state.fieldErrors ?? {}` and wires:
+  - `data-invalid` on `Field`,
+  - `aria-invalid` on input control,
+  - `FieldError` with first field message (`?.[0]`).
+- Global success/error feedback for forms must use toast (`sonner`), not inline JSX messages.
+- Use `features/auth/sign-in/ui/LoginForm.tsx` as canonical rendering reference.
 
 ## 7) Standardize public API
 
@@ -117,6 +141,7 @@ export type { LoginFormState } from "./login.types";
 - Putting feature hooks under `ui/hooks` by default.
 - `window.location.href` for internal app navigation in App Router flows; use `router.push()` (client) or `redirect()` (server action).
 - Segment-level `index.ts` barrels inside a slice without a concrete, documented reason.
+- In a multi-slice feature, root-level `features/<feature>/{api,model,lib,ui}` folders.
 
 ## 11) `shared/api/` - HTTP primitives used across layers
 

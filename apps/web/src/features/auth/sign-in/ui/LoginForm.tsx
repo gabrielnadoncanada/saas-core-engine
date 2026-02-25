@@ -9,7 +9,7 @@ import { DEMO_CREDENTIALS } from "@/features/auth/sign-in/model/sign-in.schema";
 import { Button } from "@/shared/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
-import { getOAuthStartUrl } from "@/features/auth/lib/auth-redirect.guard";
+import { getOAuthStartUrl } from "@/features/auth/shared/lib/auth-redirect.guard";
 import Link from "next/link";
 import { IconGithub, IconGmail } from "@/assets/brand-icons";
 import { Loader2, LogIn } from "lucide-react";

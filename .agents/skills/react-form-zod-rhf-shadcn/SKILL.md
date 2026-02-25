@@ -39,11 +39,14 @@ export type { LoginFormState } from "./login.types";
 
 ## 3) Layer ownership
 
-- `features/*/model`: schema, types, defaults, field constraints.
-- `features/*/api`: server actions, queries, mutations, transport contracts.
-- `features/*/lib`: payload builders, error mappers, domain rules (pure).
-- `features/*/ui`: rendering and interaction only.
-- `features/*/model/useXxx.ts`: orchestration hooks for async form flows.
+- Slice-level by default:
+- `features/<feature>/<slice>/model`: schema, types, defaults, field constraints.
+- `features/<feature>/<slice>/api`: server actions, queries, mutations, transport contracts.
+- `features/<feature>/<slice>/lib`: payload builders, error mappers, domain rules (pure).
+- `features/<feature>/<slice>/ui`: rendering and interaction only.
+- `features/<feature>/<slice>/model/useXxx.ts`: orchestration hooks for async form flows.
+- For multi-slice features, anything reused across slices goes in `features/<feature>/shared/*`.
+- Do not keep root-level `features/<feature>/{model,api,lib,ui}` in multi-slice features.
 
 ## 4) Submission strategy (default)
 
@@ -88,6 +91,20 @@ export type { LoginFormState } from "./login.types";
 - Domain/transport errors: map once in `lib` and return user-facing message.
 - Avoid duplicating message strings across UI files.
 - Command actions map server errors once with `authErrorMessage`; client hooks use `toMessage` only for unexpected failures.
+- Canonical form-error contract (mandatory):
+- `model/*.form-state.ts` defines `XxxFormState` with `error: string | null` and typed `fieldErrors`.
+- Server action validates with zod `safeParse`, then returns:
+  - `error`: first zod message (or fallback) for global feedback.
+  - `fieldErrors`: from `validated.error.flatten().fieldErrors`.
+- UI reads `const fieldErrors = state.fieldErrors ?? {}`.
+- Each field must wire both invalid markers:
+  - `<Field data-invalid={fieldErrors.fieldName?.length ? true : undefined}>`
+  - input `aria-invalid={fieldErrors.fieldName?.length ? true : undefined}`
+- Field message rendering must use first error only:
+  - `<FieldError>{fieldErrors.fieldName?.[0]}</FieldError>`
+- Global success/error feedback must use toast notifications (`sonner`) and not inline JSX blocks.
+- Only field-level validation remains inline via `FieldError`.
+- Do not invent per-form error shapes when this contract fits; this is the default standard.
 
 ## 8) Forbidden patterns
 
@@ -104,6 +121,7 @@ export type { LoginFormState } from "./login.types";
 - UI contains no domain rules and no transport parsing.
 - Validation and domain errors are both covered.
 - Loading/disabled/pending states are wired.
+- Validation/error wiring matches canonical `LoginForm` contract (`fieldErrors`, `FieldError`, `aria-invalid`) and uses toast for global feedback.
 
 ## References
 

@@ -11,9 +11,8 @@ import { authErrorMessage } from "@/server/auth/auth-error-message";
 import { env } from "@/server/config/env";
 
 import { buildActionRequest } from "@/server/http/build-server-action-request";
-import { getDashboardRedirectPath } from "@/features/auth/lib/auth-redirect.guard";
+import { getDashboardRedirectPath } from "@/features/auth/shared/lib/auth-redirect.guard";
 import {
-  resetPasswordInitialState,
   type ResetPasswordFormState,
 } from "@/features/auth/reset-password/model/reset-password.form-state";
 import { resetPasswordFormSchema } from "@/features/auth/reset-password/model/reset-password.schema";
@@ -34,10 +33,15 @@ export async function resetPasswordAction(
   }
 
   const validated = resetPasswordFormSchema.safeParse({
-    password: formData.get("password"),
+    password: String(formData.get("password") ?? ""),
+    confirmPassword: String(formData.get("confirmPassword") ?? ""),
   });
   if (!validated.success) {
-    return { error: validated.error.errors[0]?.message ?? INVALID_INPUT_MESSAGE };
+    const flattened = validated.error.flatten();
+    return {
+      error: validated.error.errors[0]?.message ?? INVALID_INPUT_MESSAGE,
+      fieldErrors: flattened.fieldErrors,
+    };
   }
 
   try {
@@ -64,5 +68,4 @@ export async function resetPasswordAction(
   }
 
   redirect(getDashboardRedirectPath());
-  return resetPasswordInitialState;
 }

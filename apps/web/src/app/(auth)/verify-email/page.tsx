@@ -1,9 +1,8 @@
 import { prisma } from "@db";
 import { redirect } from "next/navigation";
 
-import { VerifyEmailGate } from "@/features/auth";
+import { AuthCard, VerifyEmailGate } from "@/features/auth";
 import { requireUser } from "@/server/auth/require-user";
-import { AuthCard } from "@/shared/components/auth/auth-card";
 import { routes } from "@/shared/constants/routes";
 
 export default async function VerifyEmailPage() {
@@ -24,7 +23,12 @@ export default async function VerifyEmailPage() {
   return (
     <AuthCard
       title="Verify your email"
-      subtitle="You need to verify your email before accessing the dashboard."
+      description="You need to verify your email before accessing the dashboard."
+      footer={(
+        <p className="mx-auto px-8 text-center text-sm text-balance text-muted-foreground">
+          If you do not receive the email, check your spam folder and try again.
+        </p>
+      )}
     >
       <VerifyEmailGate email={user.email} />
     </AuthCard>

@@ -9,7 +9,7 @@ import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
 import { env } from "@/server/config/env";
 
 import { buildActionRequest } from "@/server/http/build-server-action-request";
-import { getDashboardRedirectPath } from "@/features/auth/lib/auth-redirect.guard";
+import { getDashboardRedirectPath } from "@/features/auth/shared/lib/auth-redirect.guard";
 import type { LoginFormState } from "@/features/auth/sign-in/model/sign-in.form-state";
 import { loginFormSchema } from "@/features/auth/sign-in/model/sign-in.schema";
 

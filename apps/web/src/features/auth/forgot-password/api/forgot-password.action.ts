@@ -24,9 +24,11 @@ export async function forgotPasswordAction(
   });
 
   if (!validated.success) {
+    const flattened = validated.error.flatten();
     return {
       error: validated.error.errors[0]?.message ?? INVALID_INPUT_MESSAGE,
       success: null,
+      fieldErrors: flattened.fieldErrors,
     };
   }
 
@@ -62,5 +64,6 @@ export async function forgotPasswordAction(
   return {
     error: null,
     success: FORGOT_PASSWORD_SUCCESS_MESSAGE,
+    fieldErrors: {},
   };
 }

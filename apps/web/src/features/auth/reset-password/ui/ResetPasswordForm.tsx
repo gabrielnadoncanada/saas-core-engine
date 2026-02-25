@@ -8,8 +8,12 @@ import {
 } from "@/features/auth/reset-password/api/reset-password.action";
 import { resetPasswordInitialState } from "@/features/auth/reset-password/model/reset-password.form-state";
 import { Button } from "@/shared/components/ui/button";
-import { Field, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
-import { Input } from "@/shared/components/ui/input";
+import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
+import { useToastMessage } from "@/shared/hooks/use-toast-message";
+import { PasswordInput } from "@/shared/components/password-input";
+import { Loader2 } from "lucide-react";
+
+const MISSING_TOKEN_MESSAGE = "Missing token. Use the link from your email.";
 
 export function ResetPasswordForm() {
   const params = useSearchParams();
@@ -18,34 +22,45 @@ export function ResetPasswordForm() {
     resetPasswordAction,
     resetPasswordInitialState,
   );
+  const fieldErrors = state.fieldErrors ?? {};
+  const hasFieldErrors = Boolean(fieldErrors.password?.length || fieldErrors.confirmPassword?.length);
+
+  useToastMessage(!token ? MISSING_TOKEN_MESSAGE : null, { kind: "error" });
+  useToastMessage(state.error, { kind: "error", skip: hasFieldErrors });
 
   return (
     <form action={formAction} className="grid gap-3">
       <input type="hidden" name="token" value={token} />
 
-      <FieldGroup>
-        <Field>
-          <FieldLabel htmlFor="reset-password-input">New password</FieldLabel>
-          <Input
-            id="reset-password-input"
-            name="password"
-            placeholder="Minimum 8 characters"
-            type="password"
-            autoComplete="new-password"
-            required
-          />
-        </Field>
-      </FieldGroup>
+      <Field data-invalid={fieldErrors.password?.length ? true : undefined}>
+        <FieldLabel htmlFor="reset-password-password-input">New password</FieldLabel>
+        <PasswordInput
+          id="reset-password-password-input"
+          name="password"
+          placeholder="Minimum 8 characters"
+          autoComplete="new-password"
+          aria-invalid={fieldErrors.password?.length ? true : undefined}
+          required
+        />
+        <FieldError>{fieldErrors.password?.[0]}</FieldError>
+      </Field>
 
-      {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+      <Field data-invalid={fieldErrors.confirmPassword?.length ? true : undefined}>
+        <FieldLabel htmlFor="reset-password-confirm-password-input">Confirm new password</FieldLabel>
+        <PasswordInput
+          id="reset-password-confirm-password-input"
+          name="confirmPassword"
+          placeholder="Repeat your new password"
+          autoComplete="new-password"
+          aria-invalid={fieldErrors.confirmPassword?.length ? true : undefined}
+          required
+        />
+        <FieldError>{fieldErrors.confirmPassword?.[0]}</FieldError>
+      </Field>
 
-      <Button className="rounded-xl" disabled={pending || !token}>
-        {pending ? "Updating..." : "Update password"}
+      <Button disabled={pending || !token}>
+        {pending ? <Loader2 className='animate-spin' /> : "Update password"}
       </Button>
-
-      {!token ? (
-        <div className="text-xs text-destructive">Missing token. Use the link from your email.</div>
-      ) : null}
     </form>
   );
 }

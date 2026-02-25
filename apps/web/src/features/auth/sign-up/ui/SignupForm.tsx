@@ -11,7 +11,7 @@ import { signupAction } from "@/features/auth/sign-up/api/sign-up.action";
 import { signupInitialState } from "@/features/auth/sign-up/model/sign-up.form-state";
 import { useSignupInvite } from "@/features/auth/sign-up/model/useSignUpInvite";
 import { PasswordInput } from "@/shared/components/password-input";
-import { getOAuthStartUrl } from "@/features/auth/lib/auth-redirect.guard";
+import { getOAuthStartUrl } from "@/features/auth/shared/lib/auth-redirect.guard";
 import { IconGithub, IconGmail } from "@/assets/brand-icons";
 
 export function SignupForm() {
@@ -82,12 +82,12 @@ export function SignupForm() {
           name="password"
           placeholder="********"
           autoComplete="new-password"
-          minLength={12}
+          minLength={8}
           aria-invalid={fieldErrors.password?.length ? true : undefined}
           required
         />
         <p className="text-xs text-muted-foreground">
-          Use 12+ characters with uppercase, lowercase, number, and special character.
+          Use 8+ characters with uppercase, lowercase, number, and special character.
         </p>
         <FieldError>{fieldErrors.password?.[0]}</FieldError>
       </Field>
@@ -99,7 +99,7 @@ export function SignupForm() {
           name="passwordConfirm"
           placeholder="********"
           autoComplete="confirm-password"
-          minLength={12}
+          minLength={8}
           aria-invalid={fieldErrors.passwordConfirm?.length ? true : undefined}
           required
         />

@@ -27,6 +27,7 @@
     },
     "test": {
       "dependsOn": ["^test"],
+      "env": ["DATABASE_URL"],
       "outputs": []
     },
     "clean": {

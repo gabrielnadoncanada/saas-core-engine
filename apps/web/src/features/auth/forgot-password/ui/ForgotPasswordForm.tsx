@@ -7,7 +7,8 @@ import {
 } from "@/features/auth/forgot-password/api/forgot-password.action";
 import { forgotPasswordInitialState } from "@/features/auth/forgot-password/model/forgot-password.form-state";
 import { Button } from "@/shared/components/ui/button";
-import { Field, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
+import { useToastMessage } from "@/shared/hooks/use-toast-message";
 import { Input } from "@/shared/components/ui/input";
 import { Loader2, MailOpen } from "lucide-react";
 
@@ -16,25 +17,27 @@ export function ForgotPasswordForm() {
     forgotPasswordAction,
     forgotPasswordInitialState,
   );
+  const fieldErrors = state.fieldErrors ?? {};
+  const hasFieldErrors = Boolean(fieldErrors.email?.length);
+
+  useToastMessage(state.error, { kind: "error", skip: hasFieldErrors });
+  useToastMessage(state.success, { kind: "success" });
 
   return (
     <form action={formAction} className="grid gap-3">
-      <FieldGroup>
-        <Field>
-          <FieldLabel htmlFor="forgot-password-email">Email</FieldLabel>
-          <Input
-            id="forgot-password-email"
-            name="email"
-            type="email"
-            placeholder="you@company.com"
-            autoComplete="email"
-            required
-          />
-        </Field>
-      </FieldGroup>
-
-      {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
-      {state.success ? <p className="text-sm text-emerald-600">{state.success}</p> : null}
+      <Field data-invalid={fieldErrors.email?.length ? true : undefined}>
+        <FieldLabel htmlFor="forgot-password-email">Email</FieldLabel>
+        <Input
+          id="forgot-password-email"
+          name="email"
+          type="email"
+          placeholder="you@company.com"
+          autoComplete="email"
+          aria-invalid={fieldErrors.email?.length ? true : undefined}
+          required
+        />
+        <FieldError>{fieldErrors.email?.[0]}</FieldError>
+      </Field>
 
       <Button disabled={pending}>
         {pending ? <Loader2 className='animate-spin' /> : <MailOpen />}
