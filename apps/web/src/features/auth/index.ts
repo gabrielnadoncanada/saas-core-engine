@@ -6,4 +6,10 @@ export { DEMO_CREDENTIALS, forgotPasswordFormSchema, loginFormSchema, resetPassw
 export { getDashboardRedirectPath, getOAuthStartUrl } from "./model/auth-redirect";
 export { loginWithPassword, resetUserPassword, sendPasswordResetLink } from "./model/auth-flows";
 export type { ForgotPasswordValues, LoginFormValues, ResetPasswordValues } from "./model/auth-schemas";
-export { SignupForm } from "./signup";
+export { SignupForm } from "./ui/signup-form";
+export { signupWithWorkspace } from "./api/signup-api";
+export { getInviteEmailByToken } from "./api/signup-invite-api";
+export { buildSignupPayload, isInvitedSignup } from "./lib/signup-payload";
+export { getSignupRedirect } from "./lib/signup-redirect";
+export { signupDefaultValues, signupFormSchema, INVITED_WORKSPACE_NAME, type InviteLookupState, type SignupFormValues } from "./model/signup-schema";
+export { useSignupInvite } from "./model/use-signup-invite";
