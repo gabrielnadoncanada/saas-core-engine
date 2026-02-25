@@ -6,11 +6,11 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import {
-  getDashboardRedirectPath,
   resetPasswordFormSchema,
-  resetUserPassword,
   type ResetPasswordValues,
-} from "@/features/auth/model";
+} from "../model/auth-schemas";
+import { getDashboardRedirectPath } from "../model/auth-redirect";
+import { resetUserPassword } from "../model/auth-flows";
 import { Button } from "@/shared/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";

@@ -8,12 +8,11 @@ import { useSearchParams } from "next/navigation";
 
 import {
   DEMO_CREDENTIALS,
-  getDashboardRedirectPath,
-  getOAuthStartUrl,
   loginFormSchema,
-  loginWithPassword,
   type LoginFormValues,
-} from "@/features/auth/model";
+} from "../model/auth-schemas";
+import { getDashboardRedirectPath, getOAuthStartUrl } from "../model/auth-redirect";
+import { loginWithPassword } from "../model/auth-flows";
 import { Button } from "@/shared/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";

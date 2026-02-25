@@ -60,20 +60,34 @@ Apply this contract for every feature form.
 
 ## 8) Forbidden patterns
 
-- `fetch` calls inside form JSX component when feature `api` action exists.
+- `fetch` calls inside any `ui` component — including non-form UI like gates, dialogs, or banners — when a `lib` or `api` function can be imported instead.
 - Inline payload transformation in `submit`.
 - Inline domain constants/messages duplicated per view.
 - Controller-by-default for all inputs.
 - Mixed responsibilities across `ui` and `lib`.
 - Feature hooks under `ui/hooks` by default.
+- Intra-slice imports using absolute aliases (`@/features/x/model/y`) — use relative paths (`../model/y`) inside the same slice.
 
-## 9) PR Definition of Done
+## 9) Intra-slice import discipline
+
+- Within a slice (e.g. `features/auth/signup/`), always use **relative imports** between segments:
+  - `signup/ui/signup-form.tsx` imports `../model/signup-schema` (not `@/features/auth/signup/model/signup-schema`).
+  - `signup/model/use-signup-invite.ts` imports `../api/signup-invite-api` and `./signup-schema`.
+  - `signup/api/signup-api.ts` imports `../../lib` when calling the parent slice's HTTP client.
+- This enforces clear slice isolation and makes the dependency graph easy to lint.
+- Do not add `index.ts` barrels inside slice segments (`ui/index.ts`, `model/index.ts`, `lib/index.ts`, `api/index.ts`) by default.
+- Keep a single public API at slice root (`features/*/index.ts`); internal modules import concrete files with relative paths.
+
+## 10) PR Definition of Done
 
 - UI file contains no domain rules and no transport parsing.
 - `model/api/lib/ui` boundaries are respected.
 - Field errors + submit errors are both covered.
 - Loading/disabled states are wired.
 - At least one test exists for domain helper or hook with branching logic.
+- No inline `fetch` in any UI component.
+- Intra-slice imports are relative.
+- No segment-level `index.ts` barrels inside the slice unless explicitly justified.
 
 ## References
 

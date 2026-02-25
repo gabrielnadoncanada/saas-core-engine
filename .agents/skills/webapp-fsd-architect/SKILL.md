@@ -63,6 +63,9 @@ Apply this skill to structure Next.js App Router projects with pragmatic FSD.
 - Expose slice surface via `index.ts`.
 - Import from public API, not deep internal paths.
 - Keep internals private by default.
+- Every app page imports from `@/features/auth` (slice root), never from `@/features/auth/ui` or `@/features/auth/model`.
+- Do not create segment-level barrels by default (`ui/index.ts`, `model/index.ts`, `lib/index.ts`, `api/index.ts`) inside a slice.
+- Prefer one `index.ts` at slice root as the only public API, and direct relative file imports for internals.
 
 ## 8) Apply SRP/DRY/KISS by policy
 
@@ -82,14 +85,29 @@ Apply this skill to structure Next.js App Router projects with pragmatic FSD.
 
 ## 10) Forbidden patterns
 
-- Direct `fetch` in `ui` when `api` module exists.
+- Direct `fetch` in `ui` when `api`/`lib` module exists - even for non-form components like gates or dialogs.
 - Domain branching in JSX render blocks.
 - Parsing backend error contracts in components.
 - Shared layer importing feature/entity code.
 - Cross-slice deep imports bypassing `index.ts`.
 - Putting feature hooks under `ui/hooks` by default.
+- `window.location.href` as redirect value - use `pathname + search + hash` to stay within safe redirect guards.
+- Segment-level `index.ts` barrels inside a slice without a concrete, documented reason.
 
-## 11) Migration strategy for legacy modules
+## 11) `shared/api/` - HTTP primitives used across layers
+
+- When a UI component in `shared/` needs to call an HTTP endpoint that belongs to a feature domain (e.g. `logout`), do not import from `features/`.
+- Instead, place a minimal HTTP function in `shared/api/<domain>.ts`.
+- `shared/api/auth.ts` is a valid location for `logout()` called by shared dialogs.
+- This keeps `shared` self-contained while avoiding the Shared -> Features violation.
+
+## 12) Import locality rules
+
+- Intra-slice imports (within the same slice, e.g. `features/auth/signup/`) must use relative paths (`../api/signup-api`, `./signup-schema`).
+- Inter-slice imports (from another feature or `shared`) must use absolute alias paths (`@/features/auth`, `@/shared/constants/routes`).
+- This makes slice boundaries visible at a glance and prevents accidental cross-slice coupling.
+
+## 13) Migration strategy for legacy modules
 
 - Pick one vertical flow (example: auth signup).
 - Create target slice with `model/api/lib/ui`.
@@ -97,14 +115,17 @@ Apply this skill to structure Next.js App Router projects with pragmatic FSD.
 - Keep compatibility adapters during transition.
 - Remove old paths after usages are migrated.
 
-## 12) Definition of Done (architecture PR)
+## 14) Definition of Done (architecture PR)
 
 - Layer dependencies follow FSD direction.
-- Slice has clear public API.
+- Slice has clear public API (`index.ts` at slice root).
 - UI files are view-focused only.
 - Domain/transport concerns are isolated.
 - Server actions and hooks are placed at correct layer.
 - No duplicate rules/mappers across slices.
+- Intra-slice imports are relative; inter-slice imports go through public API.
+- Slice uses one root `index.ts` public API; segment-level barrels are avoided by default.
+- `shared/**` imports nothing from `features/**` or `entities/**`.
 - Review checklist is fully passed.
 
 ## References

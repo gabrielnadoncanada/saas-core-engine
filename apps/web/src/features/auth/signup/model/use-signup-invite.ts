@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 
-import { getInviteEmailByToken } from "@/features/auth/signup/api/signup-invite-api";
+import { getInviteEmailByToken } from "../api/signup-invite-api";
 import {
   INVITED_WORKSPACE_NAME,
   type InviteLookupState,
   type SignupFormValues,
-} from "@/features/auth/signup/model/signup-schema";
+} from "./signup-schema";
 
 type UseSignupInviteParams = {
   inviteToken: string | null;

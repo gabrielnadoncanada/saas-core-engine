@@ -2,7 +2,7 @@ import {
   login,
   requestPasswordReset,
   resetPassword,
-} from "@/features/auth/lib";
+} from "../lib/auth-client";
 
 export async function loginWithPassword(params: { email: string; password: string }) {
   return login(params.email, params.password);

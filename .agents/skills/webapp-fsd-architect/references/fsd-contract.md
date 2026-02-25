@@ -30,6 +30,18 @@ Do not force `entities/widgets/pages` before they solve a real reuse/coupling is
 - Every slice exports from `index.ts`.
 - All external imports target that `index.ts`.
 - Internal files are not imported across slices.
+- Pages import from `@/features/auth`, never from `@/features/auth/ui` or `@/features/auth/model`.
+
+## Import locality rule
+
+- **Intra-slice**: use relative paths (`../api/foo`, `./bar`).
+- **Inter-slice / cross-layer**: use absolute alias paths (`@/features/x`, `@/shared/y`).
+
+## shared/api/ rule
+
+- `shared/` never imports from `features/` or `entities/`.
+- When a shared component needs domain HTTP (e.g. `logout` in a shared dialog), place a thin HTTP wrapper in `shared/api/<domain>.ts`.
+- Example: `shared/api/auth.ts` exports `logout()` for use by `shared/components/sign-out-dialog.tsx`.
 
 ## Naming conventions
 

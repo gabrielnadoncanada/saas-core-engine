@@ -1,7 +1,7 @@
 import { prisma } from "@db";
 import { redirect } from "next/navigation";
 
-import { VerifyEmailGate } from "@/features/auth/ui";
+import { VerifyEmailGate } from "@/features/auth";
 import { requireUser } from "@/server/auth/require-user";
 import { AuthCard } from "@/shared/components/auth/auth-card";
 import { routes } from "@/shared/constants/routes";

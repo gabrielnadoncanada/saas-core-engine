@@ -1,4 +1,4 @@
-import { INVITED_WORKSPACE_NAME, type SignupFormValues } from "@/features/auth/signup/model/signup-schema";
+import { INVITED_WORKSPACE_NAME, type SignupFormValues } from "../model/signup-schema";
 
 type BuildSignupPayloadParams = {
   values: SignupFormValues;

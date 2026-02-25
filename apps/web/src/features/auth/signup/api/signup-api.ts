@@ -1,4 +1,4 @@
-import { signup } from "@/features/auth/lib";
+import { signup } from "../../lib";
 
 export async function signupWithWorkspace(params: {
   orgName: string;

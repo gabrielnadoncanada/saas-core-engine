@@ -9,4 +9,4 @@ export { buildSignupPayload, isInvitedSignup } from "./lib/signup-payload";
 export { getSignupRedirect } from "./lib/signup-redirect";
 export { useSignupInvite } from "./model/use-signup-invite";
 export { signupWithWorkspace } from "./api/signup-api";
-export { SignupForm } from "./ui";
+export { SignupForm } from "./ui/signup-form";

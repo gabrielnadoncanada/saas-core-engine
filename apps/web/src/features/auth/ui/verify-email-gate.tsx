@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { logout, requestEmailVerification } from "../lib/auth-client";
 import { Button } from "@/shared/components/ui/button";
 import { routes } from "@/shared/constants/routes";
 
@@ -13,9 +14,7 @@ export function VerifyEmailGate(props: { email: string }) {
   async function onResend() {
     setSending(true);
     try {
-      const res = await fetch("/api/auth/verify-email/request", { method: "POST" });
-      const json = (await res.json()) as { ok?: boolean; error?: string };
-      if (!res.ok) throw new Error(json.error ?? "Failed to send verification email");
+      await requestEmailVerification();
       toast.success("Verification email sent.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to send verification email.");
@@ -27,7 +26,7 @@ export function VerifyEmailGate(props: { email: string }) {
   async function onLogout() {
     setLoggingOut(true);
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await logout();
       window.location.href = routes.auth.login;
     } catch {
       window.location.href = routes.auth.login;

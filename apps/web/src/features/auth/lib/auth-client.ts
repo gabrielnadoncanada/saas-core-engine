@@ -51,3 +51,10 @@ export async function resetPassword(token: string, newPassword: string) {
 export async function logout() {
   await fetch("/api/auth/logout", { method: "POST" });
 }
+
+export async function requestEmailVerification() {
+  const res = await fetch("/api/auth/verify-email/request", { method: "POST" });
+  const json = (await res.json()) as { ok?: boolean; error?: string };
+  if (!res.ok) throw new Error(json.error ?? "Failed to send verification email");
+  return json;
+}

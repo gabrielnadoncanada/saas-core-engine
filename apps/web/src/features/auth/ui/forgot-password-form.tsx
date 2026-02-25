@@ -6,9 +6,9 @@ import { toast } from "sonner";
 
 import {
   forgotPasswordFormSchema,
-  sendPasswordResetLink,
   type ForgotPasswordValues,
-} from "@/features/auth/model";
+} from "../model/auth-schemas";
+import { sendPasswordResetLink } from "../model/auth-flows";
 import { Button } from "@/shared/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";

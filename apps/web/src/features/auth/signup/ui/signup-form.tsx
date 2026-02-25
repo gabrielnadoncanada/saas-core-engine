@@ -5,19 +5,20 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import {
-  signupDefaultValues,
-  signupFormSchema,
-  type SignupFormValues,
-} from "@/features/auth/signup/model/signup-schema";
-import { useSignupInvite } from "@/features/auth/signup/model/use-signup-invite";
-import { buildSignupPayload } from "@/features/auth/signup/lib/signup-payload";
-import { getSignupRedirect } from "@/features/auth/signup/lib/signup-redirect";
-import { signupWithWorkspace } from "@/features/auth/signup/api/signup-api";
 import { routes } from "@/shared/constants/routes";
 import { Button } from "@/shared/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
+
+import { signupWithWorkspace } from "../api/signup-api";
+import { buildSignupPayload } from "../lib/signup-payload";
+import { getSignupRedirect } from "../lib/signup-redirect";
+import {
+  signupDefaultValues,
+  signupFormSchema,
+  type SignupFormValues,
+} from "../model/signup-schema";
+import { useSignupInvite } from "../model/use-signup-invite";
 
 export function SignupForm() {
   const router = useRouter();

@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-import { logout } from '@/features/auth/lib/auth-client'
+import { logout } from '@/shared/api/auth'
 import { ConfirmDialog } from '@/shared/components/confirm-dialog'
 import { routes } from '@/shared/constants/routes'
 
@@ -24,7 +24,7 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
       setIsLoading(false)
       onOpenChange(false)
       // Preserve current location for redirect after sign-in.
-      const currentPath = window.location.href
+      const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`
       router.push(
         `${routes.auth.login}?redirect=${encodeURIComponent(currentPath)}`
       )
