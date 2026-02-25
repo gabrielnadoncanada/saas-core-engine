@@ -20,9 +20,9 @@ Do not force `entities/widgets/pages` before they solve a real reuse/coupling is
 
 ## Hooks and actions rule
 
-- Feature hooks go to `features/*/model/use*.ts`.
+- Feature hooks go to `features/*/model/useXxx.ts`.
 - Generic reusable hooks go to `shared/hooks`.
-- Intent actions go to `features/*/api/*.action.ts`.
+- Intent actions go to `features/*/api/{actionName}.action.ts`.
 - Entity repos/queries go to `entities/*/api/*`.
 
 ## Public API rule
@@ -46,5 +46,9 @@ Do not force `entities/widgets/pages` before they solve a real reuse/coupling is
 ## Naming conventions
 
 - Slice names are use-case/domain explicit: `signup`, `invite-accept`, `profile-edit`.
-- File names are intent-first: `build-signup-payload.ts`, `map-signup-error.ts`.
+- UI components are `PascalCase.tsx` and should map 1:1 with exported component symbol.
+- Hooks are `useXxx.ts` (consistent style across repo).
+- API/actions/services are kebab-case or camelCase, but style must be uniform repo-wide (recommended: kebab-case).
+- Actions/queries/schemas/types examples: `sign-up.action.ts`, `invite-email.query.ts`, `auth.schema.ts`, `auth.types.ts`.
+- Mappers/builders/guards examples: `signup.mapper.ts`, `signup.builder.ts`, `auth.guard.ts`.
 - Avoid generic names like `utils.ts`, `helpers.ts`.

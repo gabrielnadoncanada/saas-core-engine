@@ -52,11 +52,20 @@ Apply this skill to structure Next.js App Router projects with pragmatic FSD.
 
 ## 6) Place Server Actions and hooks correctly
 
-- Server Actions (`"use server"`) go to `features/*/api/*.action.ts` for user intent.
+- Server Actions (`"use server"`) go to `features/*/api/{actionName}.action.ts` for user intent.
 - Entity data primitives (repo/query) go to `entities/*/api`.
-- Feature UI orchestration hooks (`useForm`, optimistic UI, pending state) go to `features/*/model/use*.ts`.
+- Feature UI orchestration hooks (`useForm`, optimistic UI, pending state) go to `features/*/model/useXxx.ts`.
 - Generic hooks with no domain knowledge go to `shared/hooks`.
 - Avoid "god hooks" bundling unrelated actions.
+
+## 6.1) Server Action contract (mandatory)
+
+- Standardize around two explicit action profiles:
+- `Form Action` for `<form action={...}>` + `useActionState`: return a typed form state (`{ error: string | null, ... }`) and use `redirect()` on success when navigation is required.
+- `Command Action` for client orchestration hooks (`useXxx`): return `ActionResult<T>` from `@/shared/types` using `ok()` / `fail()`.
+- Use `verify-email.action.ts` as the canonical `Command Action` reference.
+- For `Command Action`, keep this sequence: validate input, enforce rate-limit when needed, require auth when needed, execute domain flow, map errors once (`authErrorMessage`), return `ok/fail`.
+- Keep action constants explicit (`ACTION_PATH`, `RATE_LIMIT_KEY`) and avoid magic strings.
 
 ## 7) Standardize public API
 
@@ -66,6 +75,18 @@ Apply this skill to structure Next.js App Router projects with pragmatic FSD.
 - Every app page imports from `@/features/auth` (slice root), never from `@/features/auth/ui` or `@/features/auth/model`.
 - Do not create segment-level barrels by default (`ui/index.ts`, `model/index.ts`, `lib/index.ts`, `api/index.ts`) inside a slice.
 - Prefer one `index.ts` at slice root as the only public API, and direct relative file imports for internals.
+
+### Golden rule
+
+- Keep each slice public API stable through its `index.ts`.
+- Re-export UI, actions, and types from this single file, so consumers do not depend on internal file layout.
+- Example:
+```ts
+// src/features/auth/login/index.ts
+export { LoginForm } from "./LoginForm";
+export { loginAction } from "./login.action";
+export type { LoginFormState } from "./login.types";
+```
 
 ## 8) Apply SRP/DRY/KISS by policy
 
@@ -91,7 +112,7 @@ Apply this skill to structure Next.js App Router projects with pragmatic FSD.
 - Shared layer importing feature/entity code.
 - Cross-slice deep imports bypassing `index.ts`.
 - Putting feature hooks under `ui/hooks` by default.
-- `window.location.href` as redirect value - use `pathname + search + hash` to stay within safe redirect guards.
+- `window.location.href` for internal app navigation in App Router flows; use `router.push()` (client) or `redirect()` (server action).
 - Segment-level `index.ts` barrels inside a slice without a concrete, documented reason.
 
 ## 11) `shared/api/` - HTTP primitives used across layers
@@ -103,17 +124,39 @@ Apply this skill to structure Next.js App Router projects with pragmatic FSD.
 
 ## 12) Import locality rules
 
-- Intra-slice imports (within the same slice, e.g. `features/auth/signup/`) must use relative paths (`../api/signup-api`, `./signup-schema`).
+- Intra-slice imports (within the same slice, e.g. `features/auth/signup/`) must use relative paths (`../api/sign-up.action`, `./sign-up.schema`).
 - Inter-slice imports (from another feature or `shared`) must use absolute alias paths (`@/features/auth`, `@/shared/constants/routes`).
 - This makes slice boundaries visible at a glance and prevents accidental cross-slice coupling.
+
+## 12.1) File naming conventions (mandatory)
+
+- UI components use PascalCase and map 1:1 with exported component name.
+- Examples: `LoginForm.tsx`, `InvoiceUpdateDialog.tsx`, `Sidebar.tsx`, `InvoiceCard.tsx`.
+- Hooks use `use` + PascalCase stem (`useXxx.ts`) and must be consistent repo-wide.
+- Examples: `useLogin.ts`, `useUpdateInvoice.ts`.
+- API/actions/services use kebab-case or camelCase, but one style must be used consistently in the repo.
+- Recommended default: kebab-case for tree readability.
+- API actions: `{actionName}.action.ts`.
+- API queries: `{queryName}.query.ts`.
+- API mutations (non-Server Action): `{mutationName}.mutation.ts`.
+- API transport clients/adapters: `{domain}.api.ts`.
+- Model schemas: `{domain}.schema.ts`.
+- Model types: `{domain}.types.ts`.
+- Model constants/defaults: `{domain}.constants.ts`.
+- Lib mappers: `{domain}.mapper.ts`.
+- Lib builders: `{domain}.builder.ts`.
+- Lib normalizers: `{domain}.normalizer.ts`.
+- Lib guards: `{domain}.guard.ts`.
+- Models follow kebab-case by default (example: `login.schema.ts`, `invoice.types.ts`, `invoice.constants.ts`).
+- Avoid `index.tsx` as a component file.
 
 ## 13) Migration strategy for legacy modules
 
 - Pick one vertical flow (example: auth signup).
 - Create target slice with `model/api/lib/ui`.
 - Move logic from UI to `lib` and `api`.
-- Keep compatibility adapters during transition.
-- Remove old paths after usages are migrated.
+- Apply clean breaking changes; do not keep compatibility adapters, dual paths, or legacy aliases unless explicitly requested.
+- Remove old paths immediately once usages are migrated.
 
 ## 14) Definition of Done (architecture PR)
 

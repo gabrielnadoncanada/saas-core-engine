@@ -14,5 +14,8 @@ Use this checklist in every architecture-sensitive PR.
 10. Tests cover at least one branch in extracted business logic.
 11. `shared/**` imports nothing from `features/**` or `entities/**`.
 12. Intra-slice imports are relative; inter-slice imports use absolute alias via public API.
-13. No inline `fetch` in any UI component — moved to `lib` or `api` segment.
-14. `window.location.href` is never passed as a redirect value — use `pathname + search + hash`.
+13. No inline `fetch` in any UI component; move it to `lib` or `api`.
+14. Internal navigation does not use `window.location.href`; use `router.push()` in client or `redirect()` in server actions.
+15. File naming follows conventions: UI in `PascalCase.tsx`, hooks in `useXxx.ts`, API/model in consistent kebab-case or camelCase (recommended kebab-case with `*.action.ts`, `*.types.ts`, `*.schema.ts`, `*.query.ts`, `*.mutation.ts`).
+16. Action profile is explicit per use case: `Form Action` (`useActionState` + form state) or `Command Action` (`ActionResult<T>` + `ok/fail`), no mixed contract.
+17. Command actions centralize server error mapping (`authErrorMessage`) and avoid raw backend contract parsing in client UI.

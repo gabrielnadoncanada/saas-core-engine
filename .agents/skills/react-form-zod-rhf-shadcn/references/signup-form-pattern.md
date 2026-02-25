@@ -1,108 +1,125 @@
-# Signup Form Pattern (from `apps/web/src/features/auth/ui/signup-form.tsx`)
+# Signup Form Pattern (Next.js 16 aligned)
 
-Use this as the baseline when creating a new form.
+Use this as baseline for auth/profile/settings forms.
 
-Principle: use `register` for simple inputs, `Controller` for controlled/custom inputs only.
+Primary pattern: Server Action form (`action={...}` + `useActionState`).
+RHF is optional for complex client-side form behavior.
 
 ## Target feature structure
 
 ```txt
-features/auth/signup/
-  model/
-    signup-schema.ts
-    use-signup-flow.ts
-  api/
-    signup.api.ts
-    signup-invite.action.ts
-  lib/
-    signup-payload.ts
-    signup-error.ts
-    signup-redirect.ts
-  ui/
-    signup-form.tsx
+features/auth/sign-in/
   index.ts
+  LoginForm.tsx
+  useLogin.ts
+  sign-in.action.ts
+  sign-in.schema.ts
+  sign-in.types.ts
 ```
+
+## Stable slice API (`index.ts`)
+
+```ts
+export { LoginForm } from "./LoginForm";
+export { loginAction } from "./sign-in.action";
+export type { LoginFormState } from "./sign-in.action";
+export { loginFormSchema } from "./sign-in.schema";
+export { useLogin } from "./useLogin";
+```
+
+## Server Action form example
 
 ```tsx
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
-import { toast } from "sonner";
+import { useActionState } from "react";
 
-import { myFormSchema, type MyFormValues } from "@/features/x";
+import { loginAction, loginInitialState } from "./sign-in.action";
 import { Button } from "@/shared/components/ui/button";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 
-export function MyForm() {
-  const defaultValues: MyFormValues = {
-    email: "",
-    password: "",
-    phoneNumber: "",
-  };
-
-  const form = useForm<MyFormValues>({
-    resolver: zodResolver(myFormSchema),
-    defaultValues,
-  });
-
-  async function submit(values: MyFormValues) {
-    try {
-      await save(values);
-      toast.success("Saved");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Save failed");
-    }
-  }
+export function LoginForm() {
+  const [state, formAction, pending] = useActionState(loginAction, loginInitialState);
 
   return (
-    <form
-      onSubmit={(e) => {
-        void form.handleSubmit(submit)(e);
-      }}
-      className="grid gap-3"
-    >
+    <form action={formAction} className="grid gap-3">
       <FieldGroup>
-        <Field data-invalid={Boolean(form.formState.errors.email)}>
-          <FieldLabel htmlFor="my-email">Email</FieldLabel>
-          <Input
-            id="my-email"
-            type="email"
-            autoComplete="email"
-            aria-invalid={Boolean(form.formState.errors.email)}
-            {...form.register("email")}
-          />
-          {form.formState.errors.email ? <FieldError errors={[form.formState.errors.email]} /> : null}
+        <Field>
+          <FieldLabel htmlFor="login-email">Email</FieldLabel>
+          <Input id="login-email" name="email" type="email" autoComplete="email" required />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="login-password">Password</FieldLabel>
+          <Input id="login-password" name="password" type="password" autoComplete="current-password" required />
         </Field>
       </FieldGroup>
 
-      <Button disabled={form.formState.isSubmitting}>
-        {form.formState.isSubmitting ? "Saving..." : "Save"}
-      </Button>
+      {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+
+      <Button disabled={pending}>{pending ? "Signing in..." : "Sign in"}</Button>
     </form>
   );
 }
 ```
 
-## Controlled custom input example (`PhoneInput`)
+## Action example (server-side validation)
 
-```tsx
-<Controller
-  name="phoneNumber"
-  control={form.control}
-  render={({ field, fieldState }) => (
-    <Field data-invalid={fieldState.invalid}>
-      <FieldLabel htmlFor="profile-phone">Phone number</FieldLabel>
-      <PhoneInput
-        id="profile-phone"
-        value={field.value ?? ""}
-        onChange={field.onChange}
-        onBlur={field.onBlur}
-        aria-invalid={fieldState.invalid}
-      />
-      {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : null}
-    </Field>
-  )}
-/>
+```ts
+"use server";
+
+import { redirect } from "next/navigation";
+import { z } from "zod";
+
+const loginFormSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+export type LoginFormState = { error: string | null };
+export const loginInitialState: LoginFormState = { error: null };
+
+export async function loginAction(
+  _prevState: LoginFormState,
+  formData: FormData,
+): Promise<LoginFormState> {
+  const validated = loginFormSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+
+  if (!validated.success) return { error: "Invalid input" };
+
+  // domain call...
+  // await login(...)
+
+  redirect("/dashboard");
+}
 ```
+
+## Command Action example (non-form interaction)
+
+```ts
+"use server";
+
+import { ActionResult, fail, ok } from "@/shared/types";
+import { authErrorMessage } from "@/server/auth/auth-error-message";
+
+export async function resendVerificationAction(): Promise<ActionResult> {
+  try {
+    // domain flow...
+    return ok();
+  } catch (error) {
+    return fail(authErrorMessage(error, "Request failed."));
+  }
+}
+```
+
+## Optional RHF usage
+
+Use RHF only when the form needs controlled custom inputs or advanced client behavior.
+When using RHF:
+
+- prefer `register` for simple fields.
+- use `Controller` only for controlled components.
+- keep domain logic out of UI.

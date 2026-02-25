@@ -3,93 +3,106 @@ name: react-form-zod-rhf-shadcn
 description: Architect and refactor Next.js forms with Zod + react-hook-form + shadcn Field primitives using strict FSD boundaries and senior-level separation of concerns. Use with webapp-fsd-architect as the base architecture contract when building signup/profile/settings forms, enforcing UI-vs-domain isolation, handling validation/errors, and standardizing form architecture at scale.
 ---
 
-# Pro Architecture Contract (Zod + RHF + shadcn)
+# Form Architecture Contract (Next.js + Zod + shadcn)
 
 Apply this contract for every feature form.
 
 ## 0) Mandatory base skill
 
 - Apply `webapp-fsd-architect` first.
-- If a rule conflicts, `webapp-fsd-architect` wins for layer boundaries and dependency direction.
-- This skill specializes form implementation inside that architecture contract.
+- If a rule conflicts, `webapp-fsd-architect` wins for boundaries and naming.
+- This skill specializes form implementation within that contract.
 
-## 1) Layer ownership (non-negotiable)
+## 1) Naming conventions (mandatory)
 
-- `features/*/model`: zod schema, TS types, default values, field constraints.
-- `features/*/api`: server actions, HTTP calls, and DTO contracts.
-- `features/*/lib`: domain decisions, payload builders, error mapping, pure helpers.
-- `features/*/ui`: rendering, RHF bindings, toasts/navigation, no business branching.
-- `features/*/model/use*.ts`: orchestration hooks for async form flows.
+- UI components: `PascalCase.tsx` and 1:1 with exported symbol.
+- Examples: `LoginForm.tsx`, `InvoiceUpdateDialog.tsx`, `Sidebar.tsx`.
+- Hooks: `useXxx.ts` (consistent style repo-wide).
+- Examples: `useLogin.ts`, `useUpdateInvoice.ts`.
+- API/actions/services: consistent style repo-wide, recommended kebab-case.
+- Examples: `login.action.ts`, `request-password-reset.action.ts`, `invoice.repo.ts`.
+- Model files: kebab-case.
+- Examples: `login.schema.ts`, `invoice.types.ts`, `invoice.constants.ts`.
 
-## 2) Golden data flow
+## 2) Slice public API (golden rule)
 
-- Input -> RHF state -> zod validation (`resolver`) -> `lib` payload builder -> `api` call -> `lib` error mapper -> UI feedback.
-- Keep each arrow as a separate function/module boundary.
+- Keep slice public API stable via `index.ts`.
+- Re-export UI, actions, and exported types from `index.ts`.
+- Do not force consumers to import internal paths.
 
-## 3) RHF strategy (KISS first)
+```ts
+// src/features/auth/login/index.ts
+export { LoginForm } from "./LoginForm";
+export { loginAction } from "./login.action";
+export type { LoginFormState } from "./login.types";
+```
 
-- Use `register` for native/simple inputs.
-- Use `Controller` only for controlled/custom inputs.
-- Use one `defaultValues` object exported from `model`.
-- Use `form.handleSubmit(submit)` and keep `submit` orchestration-only.
+## 3) Layer ownership
 
-## 4) shadcn field strategy (consistency + DRY)
+- `features/*/model`: schema, types, defaults, field constraints.
+- `features/*/api`: server actions, queries, mutations, transport contracts.
+- `features/*/lib`: payload builders, error mappers, domain rules (pure).
+- `features/*/ui`: rendering and interaction only.
+- `features/*/model/useXxx.ts`: orchestration hooks for async form flows.
 
-- Every field uses `Field`, `FieldLabel`, `FieldError`.
-- Keep `aria-invalid` wired to RHF error state.
-- If markup repeats across forms, create `shared/components/form/*` adapters.
+## 4) Submission strategy (default)
 
-## 5) Business logic isolation (SRP)
+- Default to Next.js Server Actions form pattern:
+- `action={serverAction}` + `useActionState`.
+- Server-side zod validation in the action.
+- Return structured form state for errors; use `redirect()` for success navigation.
+- Keep server actions pure: no client-only imports and no UI concerns in `*.action.ts`.
 
-- Put branching like invite flow, role rules, and payload overrides in `lib` or `model/use*.ts`.
-- Keep UI conditions view-centric only (`disabled`, `readonly`, loading text).
-- Never parse backend error shapes directly in JSX/component body.
+## 4.1) Action profile split (mandatory)
 
-## 6) Error architecture
+- For form submissions, use `Form Action` contract:
+- signature `(_prevState, formData) => Promise<FormState>`.
+- return field/global error state for rendering.
+- For non-form commands (resend email, logout, toggle, etc.), use `Command Action` contract:
+- signature `(input?) => Promise<ActionResult<T>>`.
+- return `ok()/fail()` from `@/shared/types`.
+- Current canonical command example: `features/auth/verify-email/verify-email.action.ts`.
+- Do not mix both contracts in a single action.
 
-- Validation errors: field-level via RHF + `FieldError`.
-- Domain/transport errors: map once in `lib/to-user-message.ts` and display from UI.
-- Avoid duplicate message strings across components.
+## 5) RHF usage (optional, not default)
 
-## 7) Complexity rule (when to extract hook)
+- Use RHF only when complexity requires it:
+- controlled/custom inputs, heavy client-side validation UX, dynamic field arrays.
+- If RHF is used:
+- prefer `register` for simple fields.
+- use `Controller` only for controlled/custom components.
+- Do not keep dual form paths (RHF + Server Action) for the same use case unless explicitly requested.
 
-- Extract a dedicated hook when one of these is true:
-- More than one async side effect (`useEffect` + submit + preload).
-- More than two business branches in submit path.
-- More than one external state source (query params + API preload + feature flags).
+## 6) shadcn field consistency
+
+- Use `Field`, `FieldLabel`, and `FieldError` consistently.
+- Keep accessibility wiring (`aria-invalid`, labels, descriptions) correct.
+- If markup repeats, extract shared adapters in `shared/components/form/*`.
+
+## 7) Error architecture
+
+- Field validation errors: schema + field-level rendering.
+- Domain/transport errors: map once in `lib` and return user-facing message.
+- Avoid duplicating message strings across UI files.
+- Command actions map server errors once with `authErrorMessage`; client hooks use `toMessage` only for unexpected failures.
 
 ## 8) Forbidden patterns
 
-- `fetch` calls inside any `ui` component — including non-form UI like gates, dialogs, or banners — when a `lib` or `api` function can be imported instead.
-- Inline payload transformation in `submit`.
-- Inline domain constants/messages duplicated per view.
-- Controller-by-default for all inputs.
-- Mixed responsibilities across `ui` and `lib`.
-- Feature hooks under `ui/hooks` by default.
-- Intra-slice imports using absolute aliases (`@/features/x/model/y`) — use relative paths (`../model/y`) inside the same slice.
+- `fetch` calls inside UI components when `api/lib` module exists.
+- Domain branching in component bodies.
+- Parsing backend contracts directly in JSX.
+- Cross-slice deep imports bypassing `index.ts`.
+- Inline payload transforms inside UI submit handlers.
 
-## 9) Intra-slice import discipline
+## 9) PR Definition of Done
 
-- Within a slice (e.g. `features/auth/signup/`), always use **relative imports** between segments:
-  - `signup/ui/signup-form.tsx` imports `../model/signup-schema` (not `@/features/auth/signup/model/signup-schema`).
-  - `signup/model/use-signup-invite.ts` imports `../api/signup-invite-api` and `./signup-schema`.
-  - `signup/api/signup-api.ts` imports `../../lib` when calling the parent slice's HTTP client.
-- This enforces clear slice isolation and makes the dependency graph easy to lint.
-- Do not add `index.ts` barrels inside slice segments (`ui/index.ts`, `model/index.ts`, `lib/index.ts`, `api/index.ts`) by default.
-- Keep a single public API at slice root (`features/*/index.ts`); internal modules import concrete files with relative paths.
-
-## 10) PR Definition of Done
-
-- UI file contains no domain rules and no transport parsing.
-- `model/api/lib/ui` boundaries are respected.
-- Field errors + submit errors are both covered.
-- Loading/disabled states are wired.
-- At least one test exists for domain helper or hook with branching logic.
-- No inline `fetch` in any UI component.
-- Intra-slice imports are relative.
-- No segment-level `index.ts` barrels inside the slice unless explicitly justified.
+- Naming follows current conventions (PascalCase UI, `useXxx`, kebab-case API/model).
+- Slice public API is stable and complete via `index.ts`.
+- UI contains no domain rules and no transport parsing.
+- Validation and domain errors are both covered.
+- Loading/disabled/pending states are wired.
 
 ## References
 
 - Base architecture: `../webapp-fsd-architect/SKILL.md`
-- For a ready-to-copy scaffold, read [references/signup-form-pattern.md](references/signup-form-pattern.md).
+- Pattern reference: `references/signup-form-pattern.md`
