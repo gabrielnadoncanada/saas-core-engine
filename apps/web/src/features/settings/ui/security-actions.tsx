@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { requestPasswordResetAction } from "@/features/settings/api/request-password-reset.action";
+
 export function SecurityActions(props: { userEmail: string }) {
   const [busy, setBusy] = useState<null | "reset" | "revoke">(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -10,11 +12,7 @@ export function SecurityActions(props: { userEmail: string }) {
     setBusy("reset");
     setMsg(null);
     try {
-      await fetch("/api/auth/password/forgot", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email: props.userEmail }),
-      });
+      await requestPasswordResetAction(props.userEmail);
       setMsg("If the email exists, a reset link has been sent.");
     } catch {
       setMsg("Failed to send reset link.");

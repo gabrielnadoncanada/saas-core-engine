@@ -2,13 +2,9 @@
 
 import { redirect } from "next/navigation";
 
-import { setSessionCookie } from "@/server/adapters/cookies/session-cookie.adapter";
-import {
-  createPasswordResetFlow,
-  createSessionService,
-} from "@/server/adapters/core/auth-core.adapter";
+import { createPasswordResetFlow } from "@/server/adapters/core/auth-core.adapter";
 import { authErrorMessage } from "@/server/auth/auth-error-message";
-import { env } from "@/server/config/env";
+import { createAndSetSession } from "@/server/auth/create-and-set-session";
 
 import { buildActionRequest } from "@/server/http/build-server-action-request";
 import { getDashboardRedirectPath } from "@/features/auth/shared/lib/auth-redirect.guard";
@@ -56,13 +52,7 @@ export async function resetPasswordAction(
     }
 
     const req = await buildActionRequest(RESET_PASSWORD_ACTION_PATH);
-    const sessions = createSessionService();
-    const session = await sessions.createSession({
-      userId: result.userId,
-      ttlDays: env.SESSION_TTL_DAYS,
-      userAgent: req.headers.get("user-agent"),
-    });
-    await setSessionCookie(session);
+    await createAndSetSession({ userId: result.userId, request: req });
   } catch (error) {
     return { error: authErrorMessage(error, RESET_FAILED_MESSAGE) };
   }

@@ -70,12 +70,26 @@ export interface OrganizationSummary {
   createdAt: Date;
 }
 
+export interface OrganizationSummaryWire {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
 export interface MembershipSummary {
   id: string;
   userId: string;
   organizationId: string;
   role: MembershipRole;
   createdAt: Date;
+}
+
+export interface MembershipSummaryWire {
+  id: string;
+  userId: string;
+  organizationId: string;
+  role: MembershipRole;
+  createdAt: string;
 }
 
 export interface InvitationSummary {
@@ -86,4 +100,14 @@ export interface InvitationSummary {
   createdAt: Date;
   expiresAt: Date;
   acceptedAt: Date | null;
+}
+
+export interface InvitationSummaryWire {
+  id: string;
+  organizationId: string;
+  email: string;
+  role: MembershipRole;
+  createdAt: string;
+  expiresAt: string;
+  acceptedAt: string | null;
 }

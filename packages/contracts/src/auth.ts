@@ -23,3 +23,14 @@ export interface SessionSummary {
   ip: string | null;
   userAgent: string | null;
 }
+
+export interface SessionSummaryWire {
+  id: string;
+  userId: string;
+  createdAt: string;
+  lastSeenAt: string | null;
+  expiresAt: string;
+  revokedAt: string | null;
+  ip: string | null;
+  userAgent: string | null;
+}

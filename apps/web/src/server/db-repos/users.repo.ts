@@ -27,10 +27,25 @@ export class UsersRepo {
     });
   }
 
-  async markEmailVerified(userId: string, tx?: DbTx): Promise<void> {
+  async markEmailVerified(
+    userId: string,
+    params?: { verifiedEmail?: string | null },
+    tx?: DbTx,
+  ): Promise<void> {
+    const verifiedEmail = params?.verifiedEmail?.toLowerCase().trim();
+
     await db(tx).user.updateMany({
       where: { id: userId, deletedAt: null },
-      data: { emailVerifiedAt: new Date() },
+      data: {
+        emailVerifiedAt: new Date(),
+        ...(verifiedEmail
+          ? {
+              email: verifiedEmail,
+              pendingEmail: null,
+              pendingEmailRequestedAt: null,
+            }
+          : {}),
+      },
     });
   }
 

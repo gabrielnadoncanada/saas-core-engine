@@ -2,11 +2,10 @@
 
 import { redirect } from "next/navigation";
 
-import { setSessionCookie } from "@/server/adapters/cookies/session-cookie.adapter";
-import { createLoginFlow, createSessionService } from "@/server/adapters/core/auth-core.adapter";
+import { createLoginFlow } from "@/server/adapters/core/auth-core.adapter";
 import { authErrorMessage } from "@/server/auth/auth-error-message";
 import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
-import { env } from "@/server/config/env";
+import { createAndSetSession } from "@/server/auth/create-and-set-session";
 
 import { buildActionRequest } from "@/server/http/build-server-action-request";
 import { getDashboardRedirectPath } from "@/features/auth/shared/lib/auth-redirect.guard";
@@ -51,15 +50,7 @@ export async function loginAction(
       return { error: INVALID_CREDENTIALS_MESSAGE };
     }
 
-    const sessions = createSessionService();
-    const session = await sessions.createSession({
-      userId: result.userId,
-      ttlDays: env.SESSION_TTL_DAYS,
-      ip: null,
-      userAgent: req.headers.get("user-agent"),
-    });
-
-    await setSessionCookie(session);
+    await createAndSetSession({ userId: result.userId, request: req });
   } catch (error) {
     return { error: authErrorMessage(error, LOGIN_FAILED_MESSAGE) };
   }

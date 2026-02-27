@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createSessionService } from "@/server/adapters/core/auth-core.adapter";
 import { authErrorResponse } from "@/server/auth/auth-error-response";
 import { requireUser } from "@/server/auth/require-user";
+import { sessionToWire } from "@/server/mappers/auth.mapper";
 
 export async function GET() {
   try {
@@ -13,15 +14,7 @@ export async function GET() {
 
     return NextResponse.json({
       ok: true,
-      sessions: list.map((s) => ({
-        id: s.id,
-        createdAt: s.createdAt.toISOString(),
-        lastSeenAt: s.lastSeenAt ? s.lastSeenAt.toISOString() : null,
-        expiresAt: s.expiresAt.toISOString(),
-        revokedAt: s.revokedAt ? s.revokedAt.toISOString() : null,
-        userAgent: s.userAgent,
-        ip: s.ip,
-      })),
+      sessions: list.map(sessionToWire),
     });
   } catch (error) {
     return authErrorResponse(error);

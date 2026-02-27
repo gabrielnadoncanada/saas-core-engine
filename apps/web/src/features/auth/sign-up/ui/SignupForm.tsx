@@ -10,7 +10,7 @@ import { Input } from "@/shared/components/ui/input";
 import { signupAction } from "@/features/auth/sign-up/api/sign-up.action";
 import { signupInitialState } from "@/features/auth/sign-up/model/sign-up.form-state";
 import { useSignupInvite } from "@/features/auth/sign-up/model/useSignUpInvite";
-import { PasswordInput } from "@/shared/components/password-input";
+import { PasswordInput } from "@/shared/components/forms/password-input";
 import { getOAuthStartUrl } from "@/features/auth/shared/lib/auth-redirect.guard";
 import { IconGithub, IconGmail } from "@/assets/brand-icons";
 

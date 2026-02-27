@@ -166,6 +166,31 @@ export default [
     },
   },
 
+  // ✅ Conversion budget guardrails — ban unsafe casts outside mappers/repos/tests
+  {
+    files: [
+      "apps/web/src/app/**/*.{ts,tsx}",
+      "apps/web/src/features/**/*.{ts,tsx}",
+      "apps/web/src/shared/**/*.{ts,tsx}",
+    ],
+    ignores: [
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "**/mappers/**",
+      "**/mapper.*",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector: "TSAsExpression > TSUnknownKeyword",
+          message:
+            "Avoid `as unknown as X` outside mappers. Use a mapper function or fix the type at the source.",
+        },
+      ],
+    },
+  },
+
   // ✅ Architecture boundaries (anti-spaghetti)
   // 1) contracts ne dépend de rien (enforced by restricting imports)
   {

@@ -38,3 +38,12 @@ export interface OrganizationSubscription {
   providerSubscriptionId: string | null;
   currentPeriodEnd: Date | null;
 }
+
+export interface OrganizationSubscriptionWire {
+  organizationId: string;
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  providerCustomerId: string | null;
+  providerSubscriptionId: string | null;
+  currentPeriodEnd: string | null;
+}

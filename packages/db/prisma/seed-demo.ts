@@ -25,6 +25,7 @@ async function main() {
   const owner = await prisma.user.create({
     data: {
       email: "demo@saastemplate.dev",
+      username: "demo",
       passwordHash,
       emailVerifiedAt: new Date(),
       firstName: "Demo",
@@ -36,6 +37,7 @@ async function main() {
   const member = await prisma.user.create({
     data: {
       email: "teammate@saastemplate.dev",
+      username: "alice",
       passwordHash,
       firstName: "Alice",
       lastName: "Teammate",

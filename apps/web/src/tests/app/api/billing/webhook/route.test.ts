@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const constructEvent = vi.fn();
-const createReceived = vi.fn();
-const markStatus = vi.fn();
-const processBillingWebhookEventById = vi.fn();
+const orchestratorBegin = vi.fn();
+const orchestratorComplete = vi.fn();
+const orchestratorFail = vi.fn();
+const processStripeEvent = vi.fn();
 
 vi.mock("@/server/services/stripe.service", () => ({
   stripe: () => ({
@@ -19,15 +20,16 @@ vi.mock("@/server/config/env", () => ({
   },
 }));
 
-vi.mock("@/server/db-repos/billing-webhook-events.repo", () => ({
-  BillingWebhookEventsRepo: class {
-    createReceived = createReceived;
-    markStatus = markStatus;
-  },
+vi.mock("@/server/adapters/core/billing-core.adapter", () => ({
+  createBillingWebhookOrchestrator: () => ({
+    begin: orchestratorBegin,
+    complete: orchestratorComplete,
+    fail: orchestratorFail,
+  }),
 }));
 
 vi.mock("@/server/billing/process-billing-webhook-event", () => ({
-  processBillingWebhookEventById,
+  processStripeEvent,
 }));
 
 vi.mock("@/server/telemetry/otel", () => ({
@@ -35,22 +37,25 @@ vi.mock("@/server/telemetry/otel", () => ({
     handler(),
 }));
 
+const fakeEvent = {
+  id: "evt_1",
+  type: "invoice.payment_succeeded",
+  created: 1_700_000_000,
+  data: { object: {} },
+};
+
 describe("POST /api/billing/webhook", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    createReceived.mockResolvedValue("created");
-    markStatus.mockResolvedValue(undefined);
-    processBillingWebhookEventById.mockResolvedValue("processed");
-    constructEvent.mockReturnValue({
-      id: "evt_1",
-      type: "invoice.payment_succeeded",
-      created: 1_700_000_000,
-      data: { object: {} },
-    });
+    orchestratorBegin.mockResolvedValue("process");
+    orchestratorComplete.mockResolvedValue(undefined);
+    orchestratorFail.mockResolvedValue(undefined);
+    processStripeEvent.mockResolvedValue(undefined);
+    constructEvent.mockReturnValue(fakeEvent);
   });
 
-  it("returns duplicate=true when event already exists", async () => {
-    createReceived.mockResolvedValueOnce("duplicate");
+  it("returns duplicate=true when orchestrator detects duplicate", async () => {
+    orchestratorBegin.mockResolvedValueOnce("duplicate");
 
     const { POST } = await import("../../../../../app/api/billing/webhook/route");
     const res = await POST(
@@ -65,7 +70,7 @@ describe("POST /api/billing/webhook", () => {
     expect(res.status).toBe(200);
     expect(json.received).toBe(true);
     expect(json.duplicate).toBe(true);
-    expect(processBillingWebhookEventById).not.toHaveBeenCalled();
+    expect(processStripeEvent).not.toHaveBeenCalled();
   });
 
   it("returns 400 when stripe signature header is missing", async () => {
@@ -79,7 +84,7 @@ describe("POST /api/billing/webhook", () => {
 
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ ok: false });
-    expect(processBillingWebhookEventById).not.toHaveBeenCalled();
+    expect(processStripeEvent).not.toHaveBeenCalled();
   });
 
   it("returns 400 when signature verification fails", async () => {
@@ -98,10 +103,10 @@ describe("POST /api/billing/webhook", () => {
 
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ ok: false });
-    expect(processBillingWebhookEventById).not.toHaveBeenCalled();
+    expect(processStripeEvent).not.toHaveBeenCalled();
   });
 
-  it("processes event synchronously", async () => {
+  it("processes event via orchestrator", async () => {
     const { POST } = await import("../../../../../app/api/billing/webhook/route");
     const res = await POST(
       new Request("http://localhost/api/billing/webhook", {
@@ -115,11 +120,12 @@ describe("POST /api/billing/webhook", () => {
     expect(res.status).toBe(200);
     expect(json.received).toBe(true);
     expect(json.processed).toBe(true);
-    expect(processBillingWebhookEventById).toHaveBeenCalledWith("evt_1");
+    expect(processStripeEvent).toHaveBeenCalledWith(fakeEvent);
+    expect(orchestratorComplete).toHaveBeenCalled();
   });
 
-  it("marks event as failed when processing throws", async () => {
-    processBillingWebhookEventById.mockRejectedValueOnce(new Error("boom"));
+  it("calls orchestrator.fail when processing throws", async () => {
+    processStripeEvent.mockRejectedValueOnce(new Error("boom"));
 
     const { POST } = await import("../../../../../app/api/billing/webhook/route");
     const res = await POST(
@@ -132,10 +138,25 @@ describe("POST /api/billing/webhook", () => {
 
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({ ok: false });
-    expect(markStatus).toHaveBeenCalledWith({
-      eventId: "evt_1",
-      status: "failed",
-      errorMessage: "boom",
-    });
+    expect(orchestratorFail).toHaveBeenCalledWith("evt_1", "boom");
+  });
+
+  it("returns ignored=true when orchestrator detects out-of-order", async () => {
+    orchestratorBegin.mockResolvedValueOnce("ignored");
+
+    const { POST } = await import("../../../../../app/api/billing/webhook/route");
+    const res = await POST(
+      new Request("http://localhost/api/billing/webhook", {
+        method: "POST",
+        headers: { "stripe-signature": "sig" },
+        body: "{}",
+      }),
+    );
+    const json = (await res.json()) as { ignored?: boolean; received?: boolean };
+
+    expect(res.status).toBe(200);
+    expect(json.received).toBe(true);
+    expect(json.ignored).toBe(true);
+    expect(processStripeEvent).not.toHaveBeenCalled();
   });
 });

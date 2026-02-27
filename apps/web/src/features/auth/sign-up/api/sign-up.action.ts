@@ -15,15 +15,14 @@ import {
   inviteSignupErrorMessage,
 } from "@/features/auth/sign-up/model/invite-signup.error";
 
-import { setSessionCookie } from "@/server/adapters/cookies/session-cookie.adapter";
 import {
-  createSessionService,
   createSignupFlow,
   createVerifyEmailFlow,
 } from "@/server/adapters/core/auth-core.adapter";
 import { createInviteService } from "@/server/adapters/core/org-core.adapter";
 import { authErrorMessage } from "@/server/auth/auth-error-message";
 import { enforceAuthRateLimit } from "@/server/auth/auth-rate-limit";
+import { createAndSetSession } from "@/server/auth/create-and-set-session";
 import { env } from "@/server/config/env";
 import { InvitationsRepo } from "@/server/db-repos/invitations.repo";
 import { MembershipsRepo } from "@/server/db-repos/memberships.repo";
@@ -95,7 +94,7 @@ async function completeInvitedSignup(params: {
     if (!accepted) throw new InviteSignupError("invite_already_accepted");
 
     await users.setActiveOrganization(user.id, invite.organizationId, tx);
-    await users.markEmailVerified(user.id, tx);
+    await users.markEmailVerified(user.id, undefined, tx);
 
     return { userId: user.id };
   });
@@ -134,15 +133,7 @@ export async function signupAction(
         inviteToken,
       });
 
-      const sessions = createSessionService();
-      const session = await sessions.createSession({
-        userId: invitedSignup.userId,
-        ttlDays: env.SESSION_TTL_DAYS,
-        ip: null,
-        userAgent: req.headers.get("user-agent"),
-      });
-
-      await setSessionCookie(session);
+      await createAndSetSession({ userId: invitedSignup.userId, request: req });
       redirect(routes.app.dashboard);
     }
 

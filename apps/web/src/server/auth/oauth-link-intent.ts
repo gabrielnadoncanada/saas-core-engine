@@ -1,4 +1,5 @@
 import type { OAuthProvider } from "@contracts";
+import { routes } from "@/shared/constants/routes";
 
 const LINK_INTENT = "link";
 
@@ -14,5 +15,5 @@ export function isOAuthLinkIntent(
 }
 
 export function oauthLinkRedirectPath(provider: OAuthProvider): string {
-  return `/dashboard/settings?oauth_intent=${LINK_INTENT}&oauth_provider=${provider}`;
+  return `${routes.app.settingsAuthentication}?oauth_intent=${LINK_INTENT}&oauth_provider=${provider}`;
 }

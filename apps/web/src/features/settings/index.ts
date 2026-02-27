@@ -1,7 +1,12 @@
-export { ProfileEmailForm } from "./ui/profile-email-form";
-export { ProfileForm } from "./ui/profile-form";
+export { ProfileForm } from "./profile";
+export { ProfileEmailForm } from "./profile";
+export { getProfileFormData } from "./profile";
+export { updateProfileAction } from "./profile";
+export { updateProfileEmailAction } from "./profile";
+export { DisplaySettingsPanel } from "./display";
 export { SecurityActions } from "./ui/security-actions";
-export { SecurityForm } from "./ui/security-form";
-export { SignInMethods } from "./ui/sign-in-methods";
+export { ChangePasswordForm } from "./security";
+export { changePasswordAction } from "./security";
+export { SignInMethods } from "./authentication";
 export { SettingsPageContent } from "./shared/ui/SettingsPageContent";
 export type { SettingsSearchParams } from "./model/get-settings-page-data.query";

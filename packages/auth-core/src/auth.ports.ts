@@ -53,7 +53,11 @@ export interface UsersRepo {
     params: { email: string; passwordHash?: string | null },
     tx?: any,
   ): Promise<UserRecord>;
-  markEmailVerified(userId: string, tx?: any): Promise<void>;
+  markEmailVerified(
+    userId: string,
+    params?: { verifiedEmail?: string | null },
+    tx?: any,
+  ): Promise<void>;
   setPasswordHash(userId: string, passwordHash: string, tx?: any): Promise<void>;
   touchLastLogin(userId: string, tx?: any): Promise<void>;
   setActiveOrganization(

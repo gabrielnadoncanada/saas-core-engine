@@ -1,57 +1,21 @@
-import {
-  billingEventCreatedAt,
-  extractBillingSubscriptionId,
-  extractOrganizationId,
-  shouldIgnoreOutOfOrderEvent,
-} from "@billing-core";
+import "server-only";
+
 import { prisma } from "@db";
 
 import type Stripe from "stripe";
 
-import {
-  createBillingWebhookEventsRepo,
-  createBillingSubscriptionCursorsRepo,
-  createSubscriptionSyncService,
-} from "@/server/adapters/core/billing-core.adapter";
+import { createSubscriptionSyncService } from "@/server/adapters/core/billing-core.adapter";
 import { mapStripeSubscriptionToSnapshot } from "@/server/adapters/stripe/stripe-webhook.adapter";
 import { env } from "@/server/config/env";
-import { BillingWebhookEventsRepo } from "@/server/db-repos/billing-webhook-events.repo";
 import { stripe } from "@/server/services/stripe.service";
 
-
-export async function processBillingWebhookEventById(eventId: string): Promise<"processed" | "ignored"> {
-  const eventsRepo = new BillingWebhookEventsRepo();
-  const payload = await eventsRepo.getPayloadByEventId(eventId);
-  if (!payload) throw new Error(`Missing payload for webhook event ${eventId}`);
-
-  const event = payload as unknown as Stripe.Event;
+/**
+ * Processes a verified Stripe event directly (no DB round-trip).
+ * Idempotency and ordering are handled by the orchestrator in the route.
+ */
+export async function processStripeEvent(event: Stripe.Event): Promise<void> {
   const sync = createSubscriptionSyncService();
-  const cursorsRepo = createBillingSubscriptionCursorsRepo();
-  const webhookEventsRepo = createBillingWebhookEventsRepo();
   const s = stripe();
-
-  const providerSubscriptionId = extractBillingSubscriptionId(event);
-  const organizationId = extractOrganizationId(event);
-  const createdAt = billingEventCreatedAt(event);
-
-  if (providerSubscriptionId) {
-    const cursor = await cursorsRepo.findByProviderSubscriptionId(
-      providerSubscriptionId,
-    );
-    if (
-      shouldIgnoreOutOfOrderEvent(cursor, {
-        id: event.id,
-        type: event.type,
-        createdAt,
-      })
-    ) {
-      await webhookEventsRepo.markStatus({
-        eventId: event.id,
-        status: "ignored_out_of_order",
-      });
-      return "ignored";
-    }
-  }
 
   switch (event.type) {
     case "checkout.session.completed": {
@@ -109,20 +73,4 @@ export async function processBillingWebhookEventById(eventId: string): Promise<"
     default:
       break;
   }
-
-  if (providerSubscriptionId) {
-    await cursorsRepo.upsert({
-      providerSubscriptionId,
-      lastEventCreatedAt: createdAt,
-      lastEventId: event.id,
-      lastEventType: event.type,
-    });
-  }
-
-  await webhookEventsRepo.markStatus({
-    eventId: event.id,
-    status: "processed",
-  });
-
-  return "processed";
 }

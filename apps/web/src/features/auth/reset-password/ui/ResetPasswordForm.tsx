@@ -10,7 +10,7 @@ import { resetPasswordInitialState } from "@/features/auth/reset-password/model/
 import { Button } from "@/shared/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
 import { useToastMessage } from "@/shared/hooks/use-toast-message";
-import { PasswordInput } from "@/shared/components/password-input";
+import { PasswordInput } from "@/shared/components/forms/password-input";
 import { Loader2 } from "lucide-react";
 
 const MISSING_TOKEN_MESSAGE = "Missing token. Use the link from your email.";

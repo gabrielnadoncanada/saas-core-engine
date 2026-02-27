@@ -42,7 +42,15 @@ export class VerifyEmailFlow {
       if (consumed.type !== "verify_email") return failResult();
       if (!consumed.userId) return failResult();
 
-      await this.users.markEmailVerified(consumed.userId, tx);
+      try {
+        await this.users.markEmailVerified(
+          consumed.userId,
+          { verifiedEmail: consumed.email },
+          tx,
+        );
+      } catch {
+        return failResult();
+      }
 
       return okResult({ userId: consumed.userId });
     };

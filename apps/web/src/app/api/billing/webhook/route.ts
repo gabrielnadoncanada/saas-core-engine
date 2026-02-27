@@ -7,9 +7,9 @@ import { NextResponse } from "next/server";
 
 import type Stripe from "stripe";
 
+import { createBillingWebhookOrchestrator } from "@/server/adapters/core/billing-core.adapter";
+import { processStripeEvent } from "@/server/billing/process-billing-webhook-event";
 import { env } from "@/server/config/env";
-import { processBillingWebhookEventById } from "@/server/billing/process-billing-webhook-event";
-import { BillingWebhookEventsRepo } from "@/server/db-repos/billing-webhook-events.repo";
 import { stripe } from "@/server/services/stripe.service";
 import { withApiTelemetry } from "@/server/telemetry/otel";
 
@@ -38,35 +38,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false }, { status: 400 });
     }
 
-    const eventsRepo = new BillingWebhookEventsRepo();
-    const providerSubscriptionId = extractBillingSubscriptionId(event);
-    const organizationId = extractOrganizationId(event);
-    const createdAt = billingEventCreatedAt(event);
+    const orchestrator = createBillingWebhookOrchestrator();
 
-    const created = await eventsRepo.createReceived(
-      {
-        id: event.id,
-        type: event.type,
-        createdAt,
-        organizationId,
-        providerSubscriptionId,
-      },
-      event as unknown as Record<string, unknown>,
-    );
+    const envelope = {
+      id: event.id,
+      type: event.type,
+      createdAt: billingEventCreatedAt(event),
+      organizationId: extractOrganizationId(event),
+      providerSubscriptionId: extractBillingSubscriptionId(event),
+    };
 
-    if (created === "duplicate") {
-      return NextResponse.json({ received: true, duplicate: true });
+    const rawPayload = JSON.parse(body) as Record<string, unknown>;
+    const decision = await orchestrator.begin(envelope, rawPayload);
+    if (decision !== "process") {
+      return NextResponse.json({ received: true, [decision]: true });
     }
 
     try {
-      const result = await processBillingWebhookEventById(event.id);
-      return NextResponse.json({ received: true, processed: result === "processed" });
+      await processStripeEvent(event);
+      await orchestrator.complete(envelope);
+      return NextResponse.json({ received: true, processed: true });
     } catch (error) {
-      await eventsRepo.markStatus({
-        eventId: event.id,
-        status: "failed",
-        errorMessage: error instanceof Error ? error.message : "webhook_processing_failed",
-      });
+      await orchestrator.fail(
+        event.id,
+        error instanceof Error ? error.message : "webhook_processing_failed",
+      );
       return NextResponse.json({ ok: false }, { status: 500 });
     }
   });

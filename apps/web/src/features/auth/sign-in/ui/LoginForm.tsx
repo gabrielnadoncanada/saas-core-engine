@@ -13,7 +13,7 @@ import { getOAuthStartUrl } from "@/features/auth/shared/lib/auth-redirect.guard
 import Link from "next/link";
 import { IconGithub, IconGmail } from "@/assets/brand-icons";
 import { Loader2, LogIn } from "lucide-react";
-import { PasswordInput } from "@/shared/components/password-input";
+import { PasswordInput } from "@/shared/components/forms/password-input";
 
 type LoginFormProps = {
   demoMode?: boolean;

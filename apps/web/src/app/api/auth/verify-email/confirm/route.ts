@@ -5,6 +5,21 @@ import { createVerifyEmailFlow } from "@/server/adapters/core/auth-core.adapter"
 import { getSessionUser } from "@/server/auth/require-user";
 import { logError, logInfo, logWarn } from "@/server/logging/logger";
 import { absoluteUrl } from "@/server/services/url.service";
+import { routes } from "@/shared/constants/routes";
+
+function dashboardErrorUrl(error: string) {
+  return absoluteUrl(`/dashboard?error=${encodeURIComponent(error)}`);
+}
+
+function dashboardVerifiedUrl() {
+  return absoluteUrl("/dashboard?verified=true");
+}
+
+function settingsEmailChangeUrl(status: "verified" | "expired" | "missing_token") {
+  return absoluteUrl(
+    `${routes.app.settingsProfile}?email_change=${encodeURIComponent(status)}`,
+  );
+}
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -17,8 +32,9 @@ export async function GET(req: Request) {
   try {
     if (!token) {
       logWarn("auth.verify_email.confirm.missing_token", { requestId });
+      const session = await getSessionUser();
       return NextResponse.redirect(
-        absoluteUrl("/dashboard?error=missing_verification_token"),
+        session ? settingsEmailChangeUrl("missing_token") : dashboardErrorUrl("missing_verification_token"),
       );
     }
 
@@ -40,7 +56,13 @@ export async function GET(req: Request) {
             userId: session.userId,
             ...tokenMeta,
           });
-          return NextResponse.redirect(absoluteUrl("/dashboard?verified=true"));
+          const pending = await prisma.user.findUnique({
+            where: { id: session.userId },
+            select: { pendingEmail: true },
+          });
+          return NextResponse.redirect(
+            pending?.pendingEmail ? settingsEmailChangeUrl("verified") : dashboardVerifiedUrl(),
+          );
         }
       }
 
@@ -48,8 +70,9 @@ export async function GET(req: Request) {
         requestId,
         ...tokenMeta,
       });
+      const retrySession = await getSessionUser();
       return NextResponse.redirect(
-        absoluteUrl("/dashboard?error=expired_verification_link"),
+        retrySession ? settingsEmailChangeUrl("expired") : dashboardErrorUrl("expired_verification_link"),
       );
     }
 
@@ -58,7 +81,10 @@ export async function GET(req: Request) {
       userId: result.userId,
       ...tokenMeta,
     });
-    return NextResponse.redirect(absoluteUrl("/dashboard?verified=true"));
+    const session = await getSessionUser();
+    return NextResponse.redirect(
+      session ? settingsEmailChangeUrl("verified") : dashboardVerifiedUrl(),
+    );
   } catch (error) {
     logError("auth.verify_email.confirm.failed", {
       requestId,
@@ -66,7 +92,7 @@ export async function GET(req: Request) {
       error: error instanceof Error ? error.message : "unknown_error",
     });
     return NextResponse.redirect(
-      absoluteUrl("/dashboard?error=expired_verification_link"),
+      dashboardErrorUrl("expired_verification_link"),
     );
   }
 }

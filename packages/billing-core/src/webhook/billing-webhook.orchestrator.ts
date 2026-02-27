@@ -82,8 +82,9 @@ export class BillingWebhookOrchestrator {
 
   async begin(
     event: BillingWebhookEnvelope,
+    payload?: Record<string, unknown>,
   ): Promise<"process" | "duplicate" | "ignored"> {
-    const created = await this.events.createReceived(event);
+    const created = await this.events.createReceived(event, payload);
     if (created === "duplicate") return "duplicate";
 
     if (event.providerSubscriptionId) {

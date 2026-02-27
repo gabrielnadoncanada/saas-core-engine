@@ -3,34 +3,28 @@ import "server-only";
 import { prisma } from "@db";
 
 import { requireUser } from "@/server/auth/require-user";
-import { enabledOAuthProviders } from "@/server/auth/sign-in-methods";
-import { env } from "@/server/config/env";
+import { buildSignInMethods, type SignInMethod } from "@/server/auth/sign-in-methods";
 
 export type SettingsSearchParams = {
   signin_error?: string | string[];
   signin_success?: string | string[];
 };
 
-export type SignInMethodItem = {
-  provider: "email" | "google" | "github";
-  label: string;
-  connected: boolean;
-  linkedIdentifier?: string;
-  lastUsedAt?: string;
-  action: "connect" | "manage" | "disconnect";
-  canDisconnect: boolean;
-};
+export type { SignInMethod as SignInMethodItem };
 
 export type SettingsPageData = {
   user: {
     email: string;
+    pendingEmail: string | null;
+    pendingEmailRequestedAt: Date | null;
+    username: string | null;
     firstName: string | null;
     lastName: string | null;
     avatarUrl: string | null;
     phoneNumber: string | null;
     emailVerifiedAt: Date | null;
   };
-  initialMethods: SignInMethodItem[];
+  initialMethods: SignInMethod[];
   flash: {
     signinError?: string;
     signinSuccess?: string;
@@ -53,6 +47,9 @@ export async function getSettingsPageData(
     where: { id: sessionUser.userId },
     select: {
       email: true,
+      pendingEmail: true,
+      pendingEmailRequestedAt: true,
+      username: true,
       firstName: true,
       lastName: true,
       avatarUrl: true,
@@ -71,39 +68,17 @@ export async function getSettingsPageData(
   });
 
   const email = user?.email ?? "";
-  const connectedCount = (user?.passwordHash ? 1 : 0) + (user?.oauthAccounts.length ?? 0);
 
-  const initialMethods: SignInMethodItem[] = [
-    ...(env.AUTH_SIGNIN_EMAIL_ENABLED
-      ? [
-          {
-            provider: "email" as const,
-            label: "Email",
-            connected: Boolean(user?.passwordHash),
-            linkedIdentifier: email || undefined,
-            action: "manage" as const,
-            canDisconnect: connectedCount > 1,
-          },
-        ]
-      : []),
-    ...enabledOAuthProviders().map((provider) => {
-      const account = user?.oauthAccounts.find((row) => row.provider === provider);
-      return {
-        provider,
-        label: provider === "google" ? "Google" : "GitHub",
-        connected: Boolean(account),
-        linkedIdentifier:
-          account?.email ?? (account ? `${provider}:${account.providerAccountId}` : undefined),
-        lastUsedAt: account?.lastUsedAt?.toISOString(),
-        action: account ? ("disconnect" as const) : ("connect" as const),
-        canDisconnect: account ? connectedCount > 1 : false,
-      };
-    }),
-  ];
+  const initialMethods = user
+    ? buildSignInMethods(user)
+    : [];
 
   return {
     user: {
       email,
+      pendingEmail: user?.pendingEmail ?? null,
+      pendingEmailRequestedAt: user?.pendingEmailRequestedAt ?? null,
+      username: user?.username ?? null,
       firstName: user?.firstName ?? null,
       lastName: user?.lastName ?? null,
       avatarUrl: user?.avatarUrl ?? null,

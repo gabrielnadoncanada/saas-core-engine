@@ -9,9 +9,14 @@ import { LayoutProvider } from "@/shared/context/layout-provider";
 import { SidebarInset, SidebarProvider } from "@/shared/components/ui/sidebar";
 import { TooltipProvider } from "@/shared/components/ui/tooltip";
 import { getCookie } from "@/shared/lib/cookies";
-import { SkipToMain } from "@/shared/components/skip-to-main";
-import { AppSidebar } from "@/shared/components/layout/app-sidebar";
+import { SkipToMain } from "@/shared/components/a11y/skip-to-main";
+import { AppSidebar } from "@/shared/components/layout/shell/app-sidebar";
 import { cn } from "@/shared/lib/utils";
+import { Header } from "@/shared/components/layout/shell/header";
+import { Search } from "@/shared/components/layout/navigation/search";
+import { ThemeSwitch } from "@/shared/components/layout/preferences/theme-switch";
+import { ProfileDropdown } from "@/shared/components/layout/user/profile-dropdown";
+
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
@@ -50,6 +55,13 @@ export default async function DashboardLayout({ children }: AuthenticatedLayoutP
                 'peer-data-[variant=inset]:has-data-[layout=fixed]:h-[calc(100svh-(var(--spacing)*4))]'
               )}
             >
+              <Header>
+                <Search />
+                <div className="ms-auto flex items-center space-x-4">
+                  <ThemeSwitch />
+                  <ProfileDropdown />
+                </div>
+              </Header>
               {children}
             </SidebarInset>
           </SidebarProvider>

@@ -1,3 +1,1 @@
-export async function logout() {
-  await fetch("/api/auth/logout", { method: "POST" });
-}
+export { logoutAction as logout } from "@/features/auth/verify-email";
