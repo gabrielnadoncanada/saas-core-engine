@@ -3,21 +3,10 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
-type BillingApiResponse = {
-  url?: string;
-  error?: string;
-};
-
-async function readJsonSafely(res: Response): Promise<BillingApiResponse> {
-  const text = await res.text();
-  if (!text) return {};
-
-  try {
-    return JSON.parse(text) as BillingApiResponse;
-  } catch {
-    return {};
-  }
-}
+import {
+  createCheckoutAction,
+  createPortalAction,
+} from "@/features/billing/api/billing.action";
 
 export function BillingActions(props: { isPro: boolean; hasCustomer: boolean }) {
   const [loading, setLoading] = useState<null | "checkout" | "portal">(null);
@@ -25,14 +14,9 @@ export function BillingActions(props: { isPro: boolean; hasCustomer: boolean }) 
   async function goCheckout() {
     setLoading("checkout");
     try {
-      const res = await fetch("/api/billing/checkout", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan: "pro" }),
-      });
-      const json = await readJsonSafely(res);
-      if (!res.ok || !json.url) throw new Error(json.error ?? "Checkout failed");
-      window.location.href = json.url;
+      const result = await createCheckoutAction();
+      if (!result.ok) throw new Error(result.error);
+      window.location.href = result.data.url;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Checkout failed");
     } finally {
@@ -43,10 +27,9 @@ export function BillingActions(props: { isPro: boolean; hasCustomer: boolean }) 
   async function goPortal() {
     setLoading("portal");
     try {
-      const res = await fetch("/api/billing/portal", { method: "POST" });
-      const json = await readJsonSafely(res);
-      if (!res.ok || !json.url) throw new Error(json.error ?? "Portal failed");
-      window.location.href = json.url;
+      const result = await createPortalAction();
+      if (!result.ok) throw new Error(result.error);
+      window.location.href = result.data.url;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Portal failed");
     } finally {

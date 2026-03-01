@@ -1,8 +1,15 @@
 "use client";
 
-import type { MembershipRole } from "@contracts";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+
+import type { MembershipRole } from "@contracts";
+
+import {
+  createRoleAction,
+  setMemberRolesAction,
+  setRolePermissionsAction,
+} from "@/features/rbac/api/rbac.action";
 
 type Role = {
   id: string;
@@ -149,16 +156,12 @@ export function RolesPermissionsPanel(props: {
     setError(null);
     setBusy("create-role");
     try {
-      const res = await fetch("/api/org/rbac/roles", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          name: newRoleName,
-          description: newRoleDescription || undefined,
-        }),
+      const result = await createRoleAction({
+        name: newRoleName,
+        description: newRoleDescription || undefined,
       });
-      if (!res.ok) {
-        setError("role_create_failed");
+      if (!result.ok) {
+        setError(result.error);
         return;
       }
       setNewRoleName("");
@@ -189,13 +192,9 @@ export function RolesPermissionsPanel(props: {
         .map((key) => parsePermissionKey(key))
         .filter(Boolean) as Array<{ action: string; resource: string }>;
 
-      const res = await fetch(`/api/org/rbac/roles/${roleId}/permissions`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ permissions }),
-      });
-      if (!res.ok) {
-        setError("role_permissions_save_failed");
+      const result = await setRolePermissionsAction({ roleId, permissions });
+      if (!result.ok) {
+        setError(result.error);
         return;
       }
       router.refresh();
@@ -215,13 +214,9 @@ export function RolesPermissionsPanel(props: {
     setError(null);
     setBusy(`member:${membershipId}`);
     try {
-      const res = await fetch(`/api/org/rbac/memberships/${membershipId}/roles`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ roleIds: nextRoleIds }),
-      });
-      if (!res.ok) {
-        setError("member_roles_save_failed");
+      const result = await setMemberRolesAction({ membershipId, roleIds: nextRoleIds });
+      if (!result.ok) {
+        setError(result.error);
         return;
       }
       router.refresh();

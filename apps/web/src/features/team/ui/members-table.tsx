@@ -1,8 +1,15 @@
 "use client";
 
-import type { MembershipRole } from "@contracts";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+
+import type { MembershipRole } from "@contracts";
+
+import {
+  changeMemberRoleAction,
+  removeMemberAction,
+  transferOwnershipAction,
+} from "@/features/team/api/members.action";
 
 type Member = {
   id: string;
@@ -29,26 +36,45 @@ export function TeamMembersTable(props: {
   const current = props.members.find((member) => member.userId === props.currentUserId) ?? null;
   const actorRole = current?.role;
 
-  async function callApi(
-    membershipId: string,
-    endpoint: "/api/org/members/role" | "/api/org/members/remove" | "/api/org/members/transfer-ownership",
-    payload: Record<string, unknown>,
-  ) {
+  async function handleRemove(membershipId: string) {
     setBusyId(membershipId);
     setError(null);
     try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const json = (await res.json().catch(() => ({}))) as { error?: string };
-        setError(json.error ?? "action_failed");
+      const result = await removeMemberAction({ membershipId });
+      if (!result.ok) {
+        setError(result.error);
         return;
       }
+      router.refresh();
+    } finally {
+      setBusyId(null);
+    }
+  }
 
+  async function handleChangeRole(membershipId: string, role: MembershipRole) {
+    setBusyId(membershipId);
+    setError(null);
+    try {
+      const result = await changeMemberRoleAction({ membershipId, role });
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      router.refresh();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleTransferOwnership(membershipId: string) {
+    setBusyId(membershipId);
+    setError(null);
+    try {
+      const result = await transferOwnershipAction({ membershipId });
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
       router.refresh();
     } finally {
       setBusyId(null);
@@ -93,10 +119,7 @@ export function TeamMembersTable(props: {
                           disabled={busyId === m.id}
                           onClick={() => {
                             const nextRole = m.role === "member" ? "admin" : "member";
-                            void callApi(m.id, "/api/org/members/role", {
-                              membershipId: m.id,
-                              role: nextRole,
-                            });
+                            void handleChangeRole(m.id, nextRole);
                           }}
                         >
                           {m.role === "member" ? "Promote admin" : "Demote member"}
@@ -109,9 +132,7 @@ export function TeamMembersTable(props: {
                         style={btnGhost}
                         disabled={busyId === m.id}
                         onClick={() => {
-                          void callApi(m.id, "/api/org/members/transfer-ownership", {
-                            membershipId: m.id,
-                          });
+                          void handleTransferOwnership(m.id);
                         }}
                       >
                         Transfer owner
@@ -123,9 +144,7 @@ export function TeamMembersTable(props: {
                         style={btnDanger}
                         disabled={busyId === m.id}
                         onClick={() => {
-                          void callApi(m.id, "/api/org/members/remove", {
-                            membershipId: m.id,
-                          });
+                          void handleRemove(m.id);
                         }}
                       >
                         Remove

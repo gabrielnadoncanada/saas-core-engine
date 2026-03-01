@@ -83,16 +83,7 @@ function checkTelemetryCoverage(): CheckResult {
     "apps/web/src/app/api/auth/password/reset/route.ts",
     "apps/web/src/app/api/auth/oauth/google/start/route.ts",
     "apps/web/src/app/api/auth/oauth/google/callback/route.ts",
-    "apps/web/src/app/api/org/create/route.ts",
-    "apps/web/src/app/api/org/list/route.ts",
-    "apps/web/src/app/api/org/switch/route.ts",
-    "apps/web/src/app/api/org/invite/route.ts",
     "apps/web/src/app/api/org/invite/accept/route.ts",
-    "apps/web/src/app/api/org/members/role/route.ts",
-    "apps/web/src/app/api/org/members/remove/route.ts",
-    "apps/web/src/app/api/org/members/transfer-ownership/route.ts",
-    "apps/web/src/app/api/billing/checkout/route.ts",
-    "apps/web/src/app/api/billing/portal/route.ts",
     "apps/web/src/app/api/billing/webhook/route.ts",
     "apps/web/src/app/api/health/route.ts",
     "apps/web/src/app/api/ready/route.ts",
@@ -116,23 +107,22 @@ function checkTelemetryCoverage(): CheckResult {
 }
 
 function checkOrgScopeEnforcement(): CheckResult {
-  const scopedRoutes = [
-    "apps/web/src/app/api/org/invite/route.ts",
-    "apps/web/src/app/api/org/switch/route.ts",
-    "apps/web/src/app/api/org/members/role/route.ts",
-    "apps/web/src/app/api/org/members/remove/route.ts",
-    "apps/web/src/app/api/org/members/transfer-ownership/route.ts",
+  const scopedFiles = [
+    "apps/web/src/features/team/api/invites.action.ts",
+    "apps/web/src/features/team/api/org.action.ts",
+    "apps/web/src/features/team/api/members.action.ts",
+    "apps/web/src/features/rbac/api/rbac.action.ts",
   ];
 
   const missing: string[] = [];
-  for (const rel of scopedRoutes) {
+  for (const rel of scopedFiles) {
     if (!fileExists(rel) || !read(rel).includes("withRequiredOrgScope(")) {
       missing.push(rel);
     }
   }
 
   return {
-    name: "Org scope is centrally enforced on sensitive org routes",
+    name: "Org scope is centrally enforced on sensitive org actions",
     ok: missing.length === 0,
     details:
       missing.length === 0
@@ -166,14 +156,20 @@ function run(): number {
       "model MembershipRoleAssignment {",
       "V2 membership_roles model exists",
     ),
-    checkFile("apps/web/src/app/api/org/rbac/roles/route.ts", "RBAC admin roles endpoint exists"),
-    checkFile(
-      "apps/web/src/app/api/org/rbac/roles/[roleId]/permissions/route.ts",
-      "RBAC role permissions endpoint exists",
+    checkContains(
+      "apps/web/src/features/rbac/api/rbac.action.ts",
+      "listRolesAction",
+      "RBAC roles action exists",
     ),
-    checkFile(
-      "apps/web/src/app/api/org/rbac/memberships/[membershipId]/roles/route.ts",
-      "RBAC membership role assignment endpoint exists",
+    checkContains(
+      "apps/web/src/features/rbac/api/rbac.action.ts",
+      "setRolePermissionsAction",
+      "RBAC role permissions action exists",
+    ),
+    checkContains(
+      "apps/web/src/features/rbac/api/rbac.action.ts",
+      "setMemberRolesAction",
+      "RBAC membership role assignment action exists",
     ),
     checkFile("docs/operations/runbook-rbac-v2.md", "RBAC V2 runbook exists"),
     checkFile("apps/web/src/app/api/health/route.ts", "Health endpoint exists"),

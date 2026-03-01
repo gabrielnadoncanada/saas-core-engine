@@ -1,8 +1,10 @@
 'use client'
 
-import * as React from 'react'
 import { ChevronsUpDown } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import * as React from 'react'
+
+import { listOrgsAction, switchOrgAction } from '@/shared/api/org'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,12 +24,6 @@ type OrgOption = {
   name: string
 }
 
-type OrgListResponse = {
-  ok: boolean
-  activeOrganizationId?: string
-  organizations?: OrgOption[]
-}
-
 export function TeamSwitcher() {
   const router = useRouter()
   const { isMobile } = useSidebar()
@@ -39,13 +35,13 @@ export function TeamSwitcher() {
   React.useEffect(() => {
     void (async () => {
       try {
-        const res = await fetch('/api/org/list', { cache: 'no-store' })
-        const json = (await res.json()) as OrgListResponse
-        const organizations = json.organizations ?? []
+        const result = await listOrgsAction()
+        if (!result.ok) return
+        const organizations = result.data.organizations
 
         setOrgs(organizations)
         const selectedId =
-          json.activeOrganizationId ?? organizations[0]?.organizationId ?? ''
+          result.data.activeOrganizationId ?? organizations[0]?.organizationId ?? ''
         setActiveOrgId(selectedId)
       } finally {
         setIsLoading(false)
@@ -58,13 +54,8 @@ export function TeamSwitcher() {
 
     setIsSwitching(true)
     try {
-      const res = await fetch('/api/org/switch', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ organizationId: nextOrgId }),
-      })
-
-      if (!res.ok) return
+      const result = await switchOrgAction({ organizationId: nextOrgId })
+      if (!result.ok) return
 
       setActiveOrgId(nextOrgId)
       router.refresh()

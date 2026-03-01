@@ -2,6 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import {
+  listSessionsAction,
+  revokeAllSessionsAction,
+  revokeSessionAction,
+} from "@/features/sessions/api/sessions.action";
+
 type SessionRow = {
   id: string;
   createdAt: string;
@@ -20,9 +26,8 @@ export function SessionsPanel() {
   async function refresh() {
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/sessions/list");
-      const json = (await res.json()) as { sessions?: SessionRow[] };
-      setSessions(json.sessions ?? []);
+      const result = await listSessionsAction();
+      setSessions(result.ok ? result.data : []);
     } finally {
       setLoading(false);
     }
@@ -39,11 +44,7 @@ export function SessionsPanel() {
   async function revoke(sessionId: string) {
     setBusy(sessionId);
     try {
-      await fetch("/api/auth/sessions/revoke", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ sessionId }),
-      });
+      await revokeSessionAction({ sessionId });
       await refresh();
     } finally {
       setBusy(null);
@@ -53,7 +54,7 @@ export function SessionsPanel() {
   async function revokeAll() {
     setBusy("ALL");
     try {
-      await fetch("/api/auth/sessions/revoke-all", { method: "POST" });
+      await revokeAllSessionsAction();
       await refresh();
     } finally {
       setBusy(null);

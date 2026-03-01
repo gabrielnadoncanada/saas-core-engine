@@ -1,8 +1,11 @@
 "use client";
 
-import type { MembershipRole } from "@contracts";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+
+import type { MembershipRole } from "@contracts";
+
+import { revokeInviteAction } from "@/features/team/api/invites.action";
 
 type PendingInvite = {
   id: string;
@@ -30,18 +33,11 @@ export function PendingInvitesList(props: {
     setBusyId(invitationId);
     setError(null);
     try {
-      const res = await fetch("/api/org/invite/revoke", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ invitationId }),
-      });
-
-      if (!res.ok) {
-        const json = (await res.json().catch(() => ({}))) as { error?: string };
-        setError(json.error ?? "revoke_failed");
+      const result = await revokeInviteAction({ invitationId });
+      if (!result.ok) {
+        setError(result.error);
         return;
       }
-
       router.refresh();
     } finally {
       setBusyId(null);

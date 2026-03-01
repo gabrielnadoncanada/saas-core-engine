@@ -1,7 +1,10 @@
 "use client";
 
-import type { InviteRole } from "@contracts";
 import { useState } from "react";
+
+import type { InviteRole } from "@contracts";
+
+import { inviteMemberAction } from "@/features/team/api/invites.action";
 
 function parseRole(value: string): InviteRole {
   if (value === "admin") return "admin";
@@ -27,22 +30,8 @@ export function InviteMemberForm() {
     setStatus("loading");
 
     try {
-      const res = await fetch("/api/org/invite", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email: trimmedEmail, role }),
-      });
-
-      const text = await res.text();
-      let errorFromApi: string | undefined;
-      if (text) {
-        try {
-          errorFromApi = (JSON.parse(text) as { error?: string }).error;
-        } catch {
-          // Ignore non-JSON responses and fall back to a generic message.
-        }
-      }
-      if (!res.ok) throw new Error(errorFromApi ?? "Invite failed");
+      const result = await inviteMemberAction({ email: trimmedEmail, role });
+      if (!result.ok) throw new Error(result.error);
 
       setEmail("");
       setRole("member");
