@@ -49,11 +49,11 @@ Copy `.env.example` → `.env` and fill required vars:
 - `APP_URL`
 - `TOKEN_PEPPER`
 
-Optional (recommended):
+Optional:
 
 - Resend (email)
 - Google/GitHub OAuth
-- Stripe
+- Stripe (enable with `BILLING_ENABLED=true`)
 
 ### 2) Run setup
 
@@ -87,7 +87,7 @@ If `DEMO_MODE=true`, you can log in with:
 - `RESEND_API_KEY`
 - `EMAIL_FROM`
 
-If missing, the app logs email links to server console (dev fallback).
+In production, `RESEND_API_KEY` is required.
 
 ### Google OAuth
 
@@ -104,6 +104,8 @@ If missing, the app logs email links to server console (dev fallback).
 - `GITHUB_OAUTH_SCOPES="read:user user:email"`
 
 ### Stripe
+
+Set `BILLING_ENABLED=true` to enable billing.
 
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
@@ -142,8 +144,7 @@ The Next.js app (`apps/web`) is an adapter layer:
 
 ## License
 
-See `/license` for the license draft.
-Replace it with your finalized commercial license before selling.
+See `/license` for commercial license terms.
 
 ---
 

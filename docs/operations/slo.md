@@ -2,7 +2,7 @@
 
 ## Scope
 
-- API routes: `auth/*`, `org/*`, `billing/*`, `health`, `ready`
+- API routes: `auth/*`, `org/*`, `billing/*`, `health`, `ready`, `metrics`
 - Window: rolling 28 days
 
 ## SLI Definitions
@@ -43,6 +43,15 @@
 
 - `http_server_requests_total{http_route,http_status_code}`
 - `http_server_duration_ms{http_route,http_status_code}`
+- `auth_rate_limited_total`
+- `billing_webhook_processed_total`
+- `billing_webhook_failed_total`
+- `billing_webhook_ignored_total`
+- `billing_webhook_duplicate_total`
+- `billing_reconcile_manual_total`
+- `billing_reconcile_failure_total`
+- `ready_ok_total`
+- `ready_not_ready_total`
 
 ## Review Cadence
 

@@ -26,24 +26,27 @@ SESSION_COOKIE_SECURE=false`}</CodeBlock>
 
       <h2>Email (Resend)</h2>
       <p>
-        If <code>RESEND_API_KEY</code> is missing, emails are logged to the server console (dev fallback).
+        <code>RESEND_API_KEY</code> is mandatory in production.
       </p>
       <CodeBlock>{`RESEND_API_KEY="re_..."
 EMAIL_FROM="SaaS Template <noreply@yourdomain.com>"`}</CodeBlock>
 
       <h2>Google OAuth</h2>
+      <CodeBlock>{`AUTH_SIGNIN_GOOGLE_ENABLED=false`}</CodeBlock>
       <CodeBlock>{`GOOGLE_OAUTH_CLIENT_ID="..."
 GOOGLE_OAUTH_CLIENT_SECRET="..."
 GOOGLE_OAUTH_REDIRECT_URI="http://localhost:3000/api/auth/oauth/google/callback"
 GOOGLE_OAUTH_SCOPES="openid email profile"`}</CodeBlock>
 
       <h2>GitHub OAuth</h2>
+      <CodeBlock>{`AUTH_SIGNIN_GITHUB_ENABLED=false`}</CodeBlock>
       <CodeBlock>{`GITHUB_OAUTH_CLIENT_ID="..."
 GITHUB_OAUTH_CLIENT_SECRET="..."
 GITHUB_OAUTH_REDIRECT_URI="http://localhost:3000/api/auth/oauth/github/callback"
 GITHUB_OAUTH_SCOPES="read:user user:email"`}</CodeBlock>
 
       <h2>Stripe</h2>
+      <CodeBlock>{`BILLING_ENABLED=false`}</CodeBlock>
       <CodeBlock>{`STRIPE_SECRET_KEY="sk_..."
 STRIPE_WEBHOOK_SECRET="whsec_..."
 STRIPE_PRICE_PRO_MONTHLY="price_..."

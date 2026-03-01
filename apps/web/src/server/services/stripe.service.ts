@@ -7,6 +7,12 @@ import type { BillingProvider } from "@billing-core";
 import { env } from "@/server/config/env";
 
 export function stripe() {
+  if (!env.BILLING_ENABLED) {
+    throw new Error("billing_disabled");
+  }
+  if (!env.STRIPE_SECRET_KEY) {
+    throw new Error("stripe_not_configured");
+  }
   return new Stripe(env.STRIPE_SECRET_KEY, {
     apiVersion: "2025-08-27.basil",
     typescript: true,

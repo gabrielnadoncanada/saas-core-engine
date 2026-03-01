@@ -38,7 +38,9 @@ export async function loginAction(
 
   try {
     const req = await buildActionRequest(LOGIN_ACTION_PATH);
-    await enforceAuthRateLimit(req, LOGIN_RATE_LIMIT_KEY);
+    await enforceAuthRateLimit(req, LOGIN_RATE_LIMIT_KEY, {
+      identifier: validated.data.email,
+    });
 
     const login = createLoginFlow();
     const result = await login.execute({

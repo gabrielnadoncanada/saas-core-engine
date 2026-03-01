@@ -31,9 +31,7 @@ export async function getActiveOrgIdForUser(): Promise<string | null> {
 
 export const getDefaultOrgIdForUser = getActiveOrgIdForUser;
 
-export async function requireOrgContext(params?: {
-  organizationId?: string;
-}): Promise<OrgContext> {
+export async function requireOrgContext(params?: { organizationId?: string }): Promise<OrgContext> {
   const user = await requireUser();
   const organizationId = params?.organizationId ?? user.organizationId ?? null;
 

@@ -17,6 +17,9 @@ export class SubscriptionsRepo {
       providerCustomerId?: string | null;
       providerSubscriptionId?: string | null;
       currentPeriodEnd?: Date | null;
+      needsReconcile?: boolean;
+      lastSyncedAt?: Date | null;
+      lastProviderSnapshotAt?: Date | null;
     },
     tx?: DbTx,
   ): Promise<Subscription> {
@@ -29,6 +32,9 @@ export class SubscriptionsRepo {
         providerCustomerId: params.providerCustomerId ?? null,
         providerSubscriptionId: params.providerSubscriptionId ?? null,
         currentPeriodEnd: params.currentPeriodEnd ?? null,
+        needsReconcile: params.needsReconcile ?? false,
+        lastSyncedAt: params.lastSyncedAt ?? null,
+        lastProviderSnapshotAt: params.lastProviderSnapshotAt ?? null,
       },
       update: {
         plan: params.plan,
@@ -36,6 +42,9 @@ export class SubscriptionsRepo {
         providerCustomerId: params.providerCustomerId ?? null,
         providerSubscriptionId: params.providerSubscriptionId ?? null,
         currentPeriodEnd: params.currentPeriodEnd ?? null,
+        needsReconcile: params.needsReconcile ?? false,
+        lastSyncedAt: params.lastSyncedAt ?? null,
+        lastProviderSnapshotAt: params.lastProviderSnapshotAt ?? null,
       },
     });
   }

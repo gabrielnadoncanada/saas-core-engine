@@ -7,5 +7,14 @@ describe("buildAuthRateLimitKey", () => {
       "1.2.3.4:login",
     );
   });
-});
 
+  it("adds identifier hash when provided", () => {
+    expect(
+      buildAuthRateLimitKey({
+        ip: "1.2.3.4",
+        route: "login",
+        identifierHash: "abc123",
+      }),
+    ).toBe("1.2.3.4:login:abc123");
+  });
+});

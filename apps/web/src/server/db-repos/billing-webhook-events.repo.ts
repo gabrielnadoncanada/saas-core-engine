@@ -58,7 +58,7 @@ export class BillingWebhookEventsRepo implements BillingWebhookEventsRepoPort {
         errorMessage: params.errorMessage ?? null,
         processedAt: new Date(),
         lastAttemptAt: new Date(),
-        deliveryAttempts: params.incrementDeliveryAttempts
+        deliveryAttempts: (params.incrementDeliveryAttempts ?? true)
           ? { increment: 1 }
           : undefined,
       },

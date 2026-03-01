@@ -109,7 +109,7 @@ export default function HomePage() {
 
               <ul className="mt-6 grid gap-2 text-sm text-muted-foreground">
                 <li>• App shell + navigation (ShadCN/Tailwind)</li>
-                <li>• Email via Resend (dev fallback logs)</li>
+                <li>• Email via Resend (required in production)</li>
                 <li>• Prisma schema ready for multi-tenant</li>
                 <li>• Works self-hosted or Vercel</li>
               </ul>
@@ -120,7 +120,7 @@ export default function HomePage() {
                 <div className="text-sm font-semibold">Quick start</div>
                 <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
                   <CodeLine>pnpm i</CodeLine>
-                  <CodeLine>pnpm --filter ./packages/db exec prisma db push</CodeLine>
+                  <CodeLine>pnpm --filter ./packages/db exec prisma migrate deploy</CodeLine>
                   <CodeLine>pnpm dev</CodeLine>
                 </div>
                 <div className="mt-6 flex gap-3">

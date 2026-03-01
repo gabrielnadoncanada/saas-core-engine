@@ -36,7 +36,9 @@ export async function forgotPasswordAction(
 
   try {
     const req = await buildActionRequest(FORGOT_PASSWORD_ACTION_PATH);
-    await enforceAuthRateLimit(req, FORGOT_PASSWORD_RATE_LIMIT_KEY);
+    await enforceAuthRateLimit(req, FORGOT_PASSWORD_RATE_LIMIT_KEY, {
+      identifier: validated.data.email,
+    });
 
     const flow = createPasswordResetFlow();
     const result = await flow.request({

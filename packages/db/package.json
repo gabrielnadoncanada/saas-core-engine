@@ -12,7 +12,8 @@
     "prebuild": "prisma generate",
     "build": "tsc -p tsconfig.json",
     "prisma:generate": "prisma generate",
-    "db:push": "prisma db push",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
     "seed": "tsx prisma/seed-demo.ts",
     "seed:demo": "tsx prisma/seed-demo.ts"
   },

@@ -17,7 +17,9 @@ export async function requestPasswordResetAction(
 ): Promise<ActionResult> {
   try {
     const req = await buildActionRequest(PASSWORD_RESET_ACTION_PATH);
-    await enforceAuthRateLimit(req, PASSWORD_RESET_RATE_LIMIT_KEY);
+    await enforceAuthRateLimit(req, PASSWORD_RESET_RATE_LIMIT_KEY, {
+      identifier: email,
+    });
 
     const flow = createPasswordResetFlow();
     const result = await flow.request({

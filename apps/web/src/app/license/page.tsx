@@ -26,7 +26,7 @@ export default function LicensePage() {
       <main className="mx-auto max-w-3xl px-4 py-12">
         <h1 className="text-3xl font-extrabold tracking-tight">License (EULA)</h1>
         <p className="mt-3 text-muted-foreground">
-          This is a template license draft. Replace with your final legal text before selling.
+          Commercial terms for using this template in one SaaS product per license purchase.
         </p>
 
         <Card className="mt-8 rounded-2xl">
@@ -70,9 +70,7 @@ export default function LicensePage() {
 
             <Separator />
 
-            <p className="text-xs">
-              This is not legal advice. Consult a lawyer to finalize licensing for your jurisdiction.
-            </p>
+            <p className="text-xs">Consult legal counsel for jurisdiction-specific compliance.</p>
           </CardContent>
         </Card>
 

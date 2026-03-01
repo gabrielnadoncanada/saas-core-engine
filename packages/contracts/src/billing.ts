@@ -37,6 +37,9 @@ export interface OrganizationSubscription {
   providerCustomerId: string | null;
   providerSubscriptionId: string | null;
   currentPeriodEnd: Date | null;
+  needsReconcile: boolean;
+  lastSyncedAt: Date | null;
+  lastProviderSnapshotAt: Date | null;
 }
 
 export interface OrganizationSubscriptionWire {
@@ -46,4 +49,7 @@ export interface OrganizationSubscriptionWire {
   providerCustomerId: string | null;
   providerSubscriptionId: string | null;
   currentPeriodEnd: string | null;
+  needsReconcile: boolean;
+  lastSyncedAt: string | null;
+  lastProviderSnapshotAt: string | null;
 }

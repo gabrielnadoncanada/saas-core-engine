@@ -14,6 +14,7 @@ import { stripe } from "@/server/services/stripe.service";
  * Idempotency and ordering are handled by the orchestrator in the route.
  */
 export async function processStripeEvent(event: Stripe.Event): Promise<void> {
+  if (!env.STRIPE_PRICE_PRO_MONTHLY) return;
   const sync = createSubscriptionSyncService();
   const s = stripe();
 

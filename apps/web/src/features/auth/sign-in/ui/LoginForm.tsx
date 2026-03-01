@@ -26,7 +26,6 @@ export function LoginForm({ demoMode = false }: LoginFormProps) {
   const [busyAction, setBusyAction] = useState<null | "google" | "github">(null);
   const isBusy = pending || busyAction !== null;
   const signupSuccess = searchParams.get("signup") === "success";
-  const emailInUse = searchParams.get("reason") === "email_in_use";
   const fieldErrors = state.fieldErrors ?? {};
 
   function onOAuth(provider: "google" | "github") {
@@ -80,11 +79,6 @@ export function LoginForm({ demoMode = false }: LoginFormProps) {
         </p>
       )}
 
-      {emailInUse && (
-        <p className="text-sm text-muted-foreground">
-          An account with this email already exists. Please sign in.
-        </p>
-      )}
       {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
 
       <Button disabled={isBusy}>

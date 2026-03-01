@@ -12,5 +12,8 @@ export function subscriptionToWire(s: OrganizationSubscription): OrganizationSub
     providerCustomerId: s.providerCustomerId,
     providerSubscriptionId: s.providerSubscriptionId,
     currentPeriodEnd: toIsoOrNull(s.currentPeriodEnd),
+    needsReconcile: s.needsReconcile,
+    lastSyncedAt: toIsoOrNull(s.lastSyncedAt),
+    lastProviderSnapshotAt: toIsoOrNull(s.lastProviderSnapshotAt),
   };
 }

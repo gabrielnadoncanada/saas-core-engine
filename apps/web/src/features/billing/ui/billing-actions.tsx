@@ -6,10 +6,11 @@ import { toast } from "sonner";
 import {
   createCheckoutAction,
   createPortalAction,
+  reconcileBillingAction,
 } from "@/features/billing/api/billing.action";
 
 export function BillingActions(props: { isPro: boolean; hasCustomer: boolean }) {
-  const [loading, setLoading] = useState<null | "checkout" | "portal">(null);
+  const [loading, setLoading] = useState<null | "checkout" | "portal" | "reconcile">(null);
 
   async function goCheckout() {
     setLoading("checkout");
@@ -32,6 +33,20 @@ export function BillingActions(props: { isPro: boolean; hasCustomer: boolean }) 
       window.location.href = result.data.url;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Portal failed");
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function reconcileNow() {
+    setLoading("reconcile");
+    try {
+      const result = await reconcileBillingAction();
+      if (!result.ok) throw new Error(result.error);
+      toast.success("Billing reconciled.");
+      window.location.reload();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Reconcile failed");
     } finally {
       setLoading(null);
     }
@@ -61,8 +76,18 @@ export function BillingActions(props: { isPro: boolean; hasCustomer: boolean }) 
         </button>
       )}
 
+      <button
+        onClick={() => {
+          void reconcileNow();
+        }}
+        disabled={loading !== null}
+        style={btnSecondary}
+      >
+        {loading === "reconcile" ? "Reconciling..." : "Reconcile now"}
+      </button>
+
       <span style={{ fontSize: 12, color: "#666", alignSelf: "center" }}>
-        Webhooks keep status in sync.
+        Webhooks keep status in sync. Use manual reconcile if drift appears.
       </span>
     </div>
   );
@@ -74,5 +99,14 @@ const btnPrimary: React.CSSProperties = {
   border: "1px solid #111",
   background: "#111",
   color: "#fff",
+  cursor: "pointer",
+};
+
+const btnSecondary: React.CSSProperties = {
+  padding: "10px 14px",
+  borderRadius: 10,
+  border: "1px solid #ccc",
+  background: "#fff",
+  color: "#111",
   cursor: "pointer",
 };

@@ -25,9 +25,6 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const token = url.searchParams.get("token");
   const requestId = req.headers.get("x-request-id") ?? null;
-  const tokenMeta = token
-    ? { tokenLength: token.length, tokenSuffix: token.slice(-6) }
-    : { tokenLength: 0, tokenSuffix: null };
 
   try {
     if (!token) {
@@ -54,7 +51,6 @@ export async function GET(req: Request) {
           logInfo("auth.verify_email.confirm.already_verified_fallback", {
             requestId,
             userId: session.userId,
-            ...tokenMeta,
           });
           const pending = await prisma.user.findUnique({
             where: { id: session.userId },
@@ -68,7 +64,6 @@ export async function GET(req: Request) {
 
       logWarn("auth.verify_email.confirm.invalid_or_expired", {
         requestId,
-        ...tokenMeta,
       });
       const retrySession = await getSessionUser();
       return NextResponse.redirect(
@@ -79,7 +74,6 @@ export async function GET(req: Request) {
     logInfo("auth.verify_email.confirm.succeeded", {
       requestId,
       userId: result.userId,
-      ...tokenMeta,
     });
     const session = await getSessionUser();
     return NextResponse.redirect(
@@ -88,7 +82,6 @@ export async function GET(req: Request) {
   } catch (error) {
     logError("auth.verify_email.confirm.failed", {
       requestId,
-      ...tokenMeta,
       error: error instanceof Error ? error.message : "unknown_error",
     });
     return NextResponse.redirect(

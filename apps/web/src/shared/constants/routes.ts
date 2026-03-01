@@ -15,6 +15,7 @@ export const routes = {
     users: "/dashboard/users",
     organizations: "/dashboard/organizations",
     subscriptions: "/dashboard/subscriptions",
+    audit: "/dashboard/audit",
     billing: "/dashboard/billing",
     team: "/dashboard/team",
     roles: "/dashboard/roles",

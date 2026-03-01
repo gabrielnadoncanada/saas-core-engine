@@ -15,13 +15,13 @@ class ResendProvider implements EmailProvider {
   }
 
   async send(input: SendEmailInput): Promise<void> {
-    // Dev fallback: log email if not configured
     if (!this.client) {
-       
+      if (env.NODE_ENV === "production") {
+        throw new Error("email_provider_not_configured");
+      }
       console.warn("[EMAIL DEV MODE]", {
         to: input.to,
         subject: input.subject,
-        html: input.html,
       });
       return;
     }

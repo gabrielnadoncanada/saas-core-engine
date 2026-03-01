@@ -1,10 +1,13 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
+
 import { authErr, buildAuthRateLimitKey, type AuthRateLimitRoute } from "@auth-core";
 import { prisma } from "@db";
 
 import { env } from "@/server/config/env";
 import { extractClientIp } from "@/server/http/request-ip";
+import { incrementMetric } from "@/server/metrics/metrics";
 
 const RATE_LIMIT_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 let lastRateLimitCleanupAt = 0;
@@ -27,6 +30,7 @@ async function cleanupOldRateLimitBuckets(nowMs: number): Promise<void> {
 export async function enforceAuthRateLimit(
   req: Request,
   route: AuthRateLimitRoute,
+  options?: { identifier?: string | null },
 ): Promise<void> {
   if (!env.RATE_LIMIT_ENABLED) return;
   const nowMs = Date.now();
@@ -38,8 +42,22 @@ export async function enforceAuthRateLimit(
     // Ignore cleanup failures to avoid blocking auth traffic.
   }
 
-  const ip = extractClientIp(req);
-  const key = buildAuthRateLimitKey({ ip, route });
+  const extractedIp = extractClientIp(req);
+  const ip =
+    extractedIp && extractedIp.length > 0
+      ? extractedIp
+      : `missing-ip:${createHash("sha256")
+          .update(req.headers.get("user-agent") || "unknown")
+          .digest("hex")
+          .slice(0, 16)}`;
+  const identifierHash =
+    options?.identifier && options.identifier.trim().length > 0
+      ? createHash("sha256")
+          .update(options.identifier.trim().toLowerCase())
+          .digest("hex")
+          .slice(0, 24)
+      : null;
+  const key = buildAuthRateLimitKey({ ip, route, identifierHash });
   const ws = windowStart(env.RATE_LIMIT_WINDOW_SECONDS, new Date(nowMs));
 
   const bucket = await prisma.authRateLimitBucket.upsert({
@@ -50,6 +68,7 @@ export async function enforceAuthRateLimit(
   });
 
   if (bucket.count > env.RATE_LIMIT_MAX_REQUESTS) {
+    incrementMetric("auth_rate_limited_total");
     throw authErr("rate_limited", "Too many requests. Please try again later.");
   }
 }

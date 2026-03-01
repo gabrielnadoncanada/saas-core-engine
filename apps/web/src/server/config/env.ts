@@ -53,28 +53,27 @@ const envSchema = z
     SMTP_PASS: z.string().optional(),
 
     // OAuth - Google
-    GOOGLE_OAUTH_CLIENT_ID: z.string().min(1),
-    GOOGLE_OAUTH_CLIENT_SECRET: z.string().min(1),
-    GOOGLE_OAUTH_REDIRECT_URI: z.string().url(),
+    GOOGLE_OAUTH_CLIENT_ID: z.string().min(1).optional(),
+    GOOGLE_OAUTH_CLIENT_SECRET: z.string().min(1).optional(),
+    GOOGLE_OAUTH_REDIRECT_URI: z.string().url().optional(),
     GOOGLE_OAUTH_SCOPES: z.string().default("openid email profile"),
     AUTH_SIGNIN_EMAIL_ENABLED: boolFromString.default("true"),
-    AUTH_SIGNIN_GOOGLE_ENABLED: boolFromString.default("true"),
-    AUTH_SIGNIN_GITHUB_ENABLED: boolFromString.default("true"),
+    AUTH_SIGNIN_GOOGLE_ENABLED: boolFromString.default("false"),
+    AUTH_SIGNIN_GITHUB_ENABLED: boolFromString.default("false"),
     GITHUB_OAUTH_CLIENT_ID: z.string().min(1).optional(),
     GITHUB_OAUTH_CLIENT_SECRET: z.string().min(1).optional(),
     GITHUB_OAUTH_REDIRECT_URI: z.string().url().optional(),
     GITHUB_OAUTH_SCOPES: z.string().default("read:user user:email"),
 
     // Stripe
-    STRIPE_SECRET_KEY: z.string().min(1),
-    STRIPE_WEBHOOK_SECRET: z.string().min(1),
-    STRIPE_PUBLISHABLE_KEY: z.string().min(1),
-
-    STRIPE_PRICE_PRO_MONTHLY: z.string().min(1),
+    BILLING_ENABLED: boolFromString.default("false"),
+    STRIPE_SECRET_KEY: z.string().min(1).optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+    STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
+    STRIPE_PRICE_PRO_MONTHLY: z.string().min(1).optional(),
     STRIPE_PRICE_PRO_YEARLY: z.string().optional(),
-
-    STRIPE_SUCCESS_URL: z.string().url(),
-    STRIPE_CANCEL_URL: z.string().url(),
+    STRIPE_SUCCESS_URL: z.string().url().optional(),
+    STRIPE_CANCEL_URL: z.string().url().optional(),
 
     // Rate limiting
     RATE_LIMIT_ENABLED: boolFromString.default("true"),
@@ -101,6 +100,107 @@ const envSchema = z
         path: ["SESSION_COOKIE_SAME_SITE"],
         message: "SESSION_COOKIE_SAME_SITE=none requires SESSION_COOKIE_SECURE=true",
       });
+    }
+
+    if (value.NODE_ENV === "production" && !value.RESEND_API_KEY) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["RESEND_API_KEY"],
+        message: "RESEND_API_KEY is required in production",
+      });
+    }
+
+    if (value.AUTH_SIGNIN_GOOGLE_ENABLED) {
+      if (!value.GOOGLE_OAUTH_CLIENT_ID) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["GOOGLE_OAUTH_CLIENT_ID"],
+          message: "GOOGLE_OAUTH_CLIENT_ID is required when AUTH_SIGNIN_GOOGLE_ENABLED=true",
+        });
+      }
+      if (!value.GOOGLE_OAUTH_CLIENT_SECRET) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["GOOGLE_OAUTH_CLIENT_SECRET"],
+          message: "GOOGLE_OAUTH_CLIENT_SECRET is required when AUTH_SIGNIN_GOOGLE_ENABLED=true",
+        });
+      }
+      if (!value.GOOGLE_OAUTH_REDIRECT_URI) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["GOOGLE_OAUTH_REDIRECT_URI"],
+          message: "GOOGLE_OAUTH_REDIRECT_URI is required when AUTH_SIGNIN_GOOGLE_ENABLED=true",
+        });
+      }
+    }
+
+    if (value.AUTH_SIGNIN_GITHUB_ENABLED) {
+      if (!value.GITHUB_OAUTH_CLIENT_ID) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["GITHUB_OAUTH_CLIENT_ID"],
+          message: "GITHUB_OAUTH_CLIENT_ID is required when AUTH_SIGNIN_GITHUB_ENABLED=true",
+        });
+      }
+      if (!value.GITHUB_OAUTH_CLIENT_SECRET) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["GITHUB_OAUTH_CLIENT_SECRET"],
+          message: "GITHUB_OAUTH_CLIENT_SECRET is required when AUTH_SIGNIN_GITHUB_ENABLED=true",
+        });
+      }
+      if (!value.GITHUB_OAUTH_REDIRECT_URI) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["GITHUB_OAUTH_REDIRECT_URI"],
+          message: "GITHUB_OAUTH_REDIRECT_URI is required when AUTH_SIGNIN_GITHUB_ENABLED=true",
+        });
+      }
+    }
+
+    if (value.BILLING_ENABLED) {
+      if (!value.STRIPE_SECRET_KEY) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["STRIPE_SECRET_KEY"],
+          message: "STRIPE_SECRET_KEY is required when BILLING_ENABLED=true",
+        });
+      }
+      if (!value.STRIPE_WEBHOOK_SECRET) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["STRIPE_WEBHOOK_SECRET"],
+          message: "STRIPE_WEBHOOK_SECRET is required when BILLING_ENABLED=true",
+        });
+      }
+      if (!value.STRIPE_PUBLISHABLE_KEY) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["STRIPE_PUBLISHABLE_KEY"],
+          message: "STRIPE_PUBLISHABLE_KEY is required when BILLING_ENABLED=true",
+        });
+      }
+      if (!value.STRIPE_PRICE_PRO_MONTHLY) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["STRIPE_PRICE_PRO_MONTHLY"],
+          message: "STRIPE_PRICE_PRO_MONTHLY is required when BILLING_ENABLED=true",
+        });
+      }
+      if (!value.STRIPE_SUCCESS_URL) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["STRIPE_SUCCESS_URL"],
+          message: "STRIPE_SUCCESS_URL is required when BILLING_ENABLED=true",
+        });
+      }
+      if (!value.STRIPE_CANCEL_URL) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["STRIPE_CANCEL_URL"],
+          message: "STRIPE_CANCEL_URL is required when BILLING_ENABLED=true",
+        });
+      }
     }
   });
 

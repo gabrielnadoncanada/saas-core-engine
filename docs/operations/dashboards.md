@@ -10,6 +10,7 @@
 Metrics:
 - `http_server_requests_total`
 - `http_server_duration_ms`
+- `/api/metrics` counters `ready_ok_total`, `ready_not_ready_total`
 
 ## Dashboard 2: Auth Health
 
@@ -17,6 +18,9 @@ Metrics:
 - `/api/auth/signup` request rate and 5xx rate
 - OAuth callback failures over time
 - Rate-limit events on auth routes
+
+Metrics:
+- `/api/metrics` counter `auth_rate_limited_total`
 
 ## Dashboard 3: Org Operations
 
@@ -32,6 +36,15 @@ Metrics:
 - Webhook request rate and failure ratio
 - Duplicate/ignored webhook counts
 - Checkout + portal endpoint health
+
+Metrics:
+- `/api/metrics` counters
+  - `billing_webhook_processed_total`
+  - `billing_webhook_failed_total`
+  - `billing_webhook_ignored_total`
+  - `billing_webhook_duplicate_total`
+  - `billing_reconcile_manual_total`
+  - `billing_reconcile_failure_total`
 
 ## Correlation Strategy
 

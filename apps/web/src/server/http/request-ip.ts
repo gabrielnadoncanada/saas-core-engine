@@ -30,6 +30,5 @@ export function extractClientIp(req: Request): string {
     const fromRealIp = validSingleIp(req.headers.get("x-real-ip"));
     if (fromRealIp) return fromRealIp;
   }
-
-  return "127.0.0.1";
+  return "";
 }

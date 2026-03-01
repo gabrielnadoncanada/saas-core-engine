@@ -19,7 +19,13 @@ export type SignInMethod = {
 const OAUTH_PROVIDER_CONFIG: Record<OAuthProvider, { label: string; enabled: () => boolean }> = {
   google: {
     label: "Google",
-    enabled: () => env.AUTH_SIGNIN_GOOGLE_ENABLED,
+    enabled: () =>
+      env.AUTH_SIGNIN_GOOGLE_ENABLED &&
+      Boolean(
+        env.GOOGLE_OAUTH_CLIENT_ID &&
+          env.GOOGLE_OAUTH_CLIENT_SECRET &&
+          env.GOOGLE_OAUTH_REDIRECT_URI,
+      ),
   },
   github: {
     label: "GitHub",

@@ -11,9 +11,11 @@ export default function DeployPage() {
         <li>Set all env vars in Vercel dashboard</li>
         <li>Use Postgres (Neon / Supabase Postgres / RDS)</li>
         <li>Set <code>APP_URL</code> to your Vercel URL</li>
+        <li>Run <code>pnpm --filter ./packages/db exec prisma migrate deploy</code> before serving traffic</li>
       </ul>
 
       <h2>Stripe webhook</h2>
+      <p>Set <code>BILLING_ENABLED=true</code> when using Stripe.</p>
       <p>
         Configure Stripe to send events to:
         <code> /api/billing/webhook</code>
@@ -29,6 +31,10 @@ export default function DeployPage() {
       <h2>Local webhook testing</h2>
       <CodeBlock>{`stripe login
 stripe listen --forward-to localhost:3000/api/billing/webhook`}</CodeBlock>
+      <p>
+        For optional external scheduled reconciliation, see{" "}
+        <code>docs/operations/enterprise-reliability.md</code>.
+      </p>
 
       <h2>Resend</h2>
       <ul>

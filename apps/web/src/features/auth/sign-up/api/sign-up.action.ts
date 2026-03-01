@@ -116,7 +116,9 @@ export async function signupAction(
 
   try {
     const req = await buildActionRequest(SIGNUP_ACTION_PATH);
-    await enforceAuthRateLimit(req, SIGNUP_RATE_LIMIT_KEY);
+    await enforceAuthRateLimit(req, SIGNUP_RATE_LIMIT_KEY, {
+      identifier: String(formData.get("email") ?? ""),
+    });
 
     // Invited signup path
     if (inviteToken) {
@@ -181,9 +183,7 @@ export async function signupAction(
 
     if (error instanceof AuthCoreError && error.code === "email_in_use") {
       const loginUrl = new URL(getLoginRedirectFromSignup(redirectParam || null), absoluteUrl("/"));
-
-      loginUrl.searchParams.set("reason", "email_in_use");
-
+      loginUrl.searchParams.set("signup", "success");
       redirect(loginUrl.toString());
     }
 

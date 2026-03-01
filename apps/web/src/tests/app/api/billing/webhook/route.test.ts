@@ -16,6 +16,7 @@ vi.mock("@/server/services/stripe.service", () => ({
 
 vi.mock("@/server/config/env", () => ({
   env: {
+    BILLING_ENABLED: true,
     STRIPE_WEBHOOK_SECRET: "whsec_test",
   },
 }));

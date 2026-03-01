@@ -23,7 +23,7 @@ describe("extractClientIp", () => {
       },
     });
 
-    expect(extractClientIp(req)).toBe("127.0.0.1");
+    expect(extractClientIp(req)).toBe("");
   });
 
   it("uses cf-connecting-ip when trusted and valid", async () => {
@@ -57,7 +57,6 @@ describe("extractClientIp", () => {
       },
     });
 
-    expect(extractClientIp(req)).toBe("127.0.0.1");
+    expect(extractClientIp(req)).toBe("");
   });
 });
-

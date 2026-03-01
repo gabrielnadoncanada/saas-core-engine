@@ -1,7 +1,6 @@
 "use server";
 
 import { orgInviteBodySchema, orgInviteRevokeBodySchema } from "@contracts";
-import { prisma } from "@db";
 
 import { createInviteService } from "@/server/adapters/core/org-core.adapter";
 import { orgErrorMessage } from "@/server/auth/org-error-message";
@@ -37,24 +36,14 @@ export async function inviteMemberAction(input: {
           `/api/org/invite/accept?token=${encodeURIComponent(issued.token)}`,
         );
 
-        const organization = await prisma.organization.findUnique({
-          where: { id: ctx.organizationId },
-          select: { name: true },
-        });
-
         try {
           const mail = getEmailService();
-          await mail.sendOrgInvite(
-            email,
-            acceptUrl,
-            organization?.name ?? undefined,
-          );
+          await mail.sendOrgInvite(email, acceptUrl);
         } catch (emailError) {
           logWarn("org.invite.email_delivery_failed", {
             organizationId: ctx.organizationId,
             actorUserId: ctx.userId,
             email: email.toLowerCase(),
-            acceptUrl,
             error:
               emailError instanceof Error
                 ? { name: emailError.name, message: emailError.message }
@@ -83,9 +72,7 @@ export async function inviteMemberAction(input: {
   }
 }
 
-export async function revokeInviteAction(input: {
-  invitationId: string;
-}): Promise<ActionResult> {
+export async function revokeInviteAction(input: { invitationId: string }): Promise<ActionResult> {
   const parsed = orgInviteRevokeBodySchema.safeParse(input);
   if (!parsed.success) return fail("Invalid input.");
 

@@ -40,7 +40,9 @@ export async function updateProfileEmailAction(
 
   try {
     const req = await buildActionRequest(REQUEST_PATH);
-    await enforceAuthRateLimit(req, VERIFY_EMAIL_RATE_LIMIT_KEY);
+    await enforceAuthRateLimit(req, VERIFY_EMAIL_RATE_LIMIT_KEY, {
+      identifier: validated.data.email,
+    });
 
     const sessionUser = await requireUser();
     const nextEmail = validated.data.email.toLowerCase();

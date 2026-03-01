@@ -14,7 +14,8 @@
     "simulate:v3:incidents": "tsx tooling/scripts/v3-incident-sim.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:push": "pnpm --filter ./packages/db run db:push",
+    "db:migrate:dev": "pnpm --filter ./packages/db run db:migrate:dev",
+    "db:migrate:deploy": "pnpm --filter ./packages/db run db:migrate:deploy",
     "db:seed": "pnpm --filter ./packages/db run seed"
   },
   "devDependencies": {

@@ -14,6 +14,9 @@ export interface SubscriptionsRepo {
     providerCustomerId?: string | null;
     providerSubscriptionId?: string | null;
     currentPeriodEnd?: Date | null;
+    needsReconcile?: boolean;
+    lastSyncedAt?: Date | null;
+    lastProviderSnapshotAt?: Date | null;
   }): Promise<{ id: string }>;
 
   findByProviderSubscriptionId(
@@ -24,6 +27,9 @@ export interface SubscriptionsRepo {
     providerCustomerId: string | null;
     providerSubscriptionId: string | null;
     currentPeriodEnd: Date | null;
+    needsReconcile: boolean;
+    lastSyncedAt: Date | null;
+    lastProviderSnapshotAt: Date | null;
   } | null>;
 }
 
@@ -70,6 +76,9 @@ export class SubscriptionSyncService {
       providerCustomerId: params.providerCustomerId ?? null,
       providerSubscriptionId: params.subscription.id,
       currentPeriodEnd,
+      needsReconcile: false,
+      lastSyncedAt: new Date(),
+      lastProviderSnapshotAt: new Date(),
     });
   }
 
@@ -86,6 +95,9 @@ export class SubscriptionSyncService {
       providerCustomerId: existing.providerCustomerId ?? null,
       providerSubscriptionId: existing.providerSubscriptionId ?? null,
       currentPeriodEnd: existing.currentPeriodEnd ?? null,
+      needsReconcile: false,
+      lastSyncedAt: new Date(),
+      lastProviderSnapshotAt: new Date(),
     });
   }
 }

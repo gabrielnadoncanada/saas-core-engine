@@ -36,8 +36,8 @@ export async function GET(req: Request) {
       const nonce = oidcNonceFromCodeVerifier(codeVerifier);
 
       const authorize = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-      authorize.searchParams.set("client_id", env.GOOGLE_OAUTH_CLIENT_ID);
-      authorize.searchParams.set("redirect_uri", env.GOOGLE_OAUTH_REDIRECT_URI);
+      authorize.searchParams.set("client_id", env.GOOGLE_OAUTH_CLIENT_ID!);
+      authorize.searchParams.set("redirect_uri", env.GOOGLE_OAUTH_REDIRECT_URI!);
       authorize.searchParams.set("response_type", "code");
       authorize.searchParams.set("scope", env.GOOGLE_OAUTH_SCOPES);
       authorize.searchParams.set("state", state);

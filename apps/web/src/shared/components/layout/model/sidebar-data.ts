@@ -90,6 +90,11 @@ export const sidebarData: SidebarData = {
               icon: Settings,
             },
             {
+              title: "Audit",
+              url: routes.app.audit,
+              icon: ShieldCheck,
+            },
+            {
               title: "Sessions",
               url: "/dashboard/sessions",
               icon: Monitor,

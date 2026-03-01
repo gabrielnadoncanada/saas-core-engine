@@ -95,9 +95,9 @@ async function main() {
       args: ["--filter", "./packages/db", "exec", "prisma", "generate"],
     },
     {
-      name: "Sync database schema (db push)",
+      name: "Apply database migrations",
       cmd: "pnpm",
-      args: ["--filter", "./packages/db", "exec", "prisma", "db", "push"],
+      args: ["--filter", "./packages/db", "exec", "prisma", "migrate", "deploy"],
     },
   ];
 

@@ -150,6 +150,9 @@ model Subscription {
   providerCustomerId     String?   @unique @map("provider_customer_id")
   providerSubscriptionId String?   @unique @map("provider_subscription_id")
   currentPeriodEnd     DateTime? @map("current_period_end")
+  needsReconcile       Boolean   @default(false) @map("needs_reconcile")
+  lastSyncedAt         DateTime? @map("last_synced_at")
+  lastProviderSnapshotAt DateTime? @map("last_provider_snapshot_at")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -157,6 +160,7 @@ model Subscription {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([status])
+  @@index([needsReconcile, updatedAt])
   @@map("subscriptions")
 }
 
@@ -250,6 +254,26 @@ model BillingSubscriptionCursor {
 
   @@index([lastEventCreatedAt])
   @@map("billing_subscription_cursors")
+}
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  actorUserId    String?  @map("actor_user_id")
+  organizationId String?  @map("organization_id")
+  action         String
+  targetType     String?  @map("target_type")
+  targetId       String?  @map("target_id")
+  result         String
+  ip             String?
+  userAgent      String?  @map("user_agent")
+  traceId        String?  @map("trace_id")
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([organizationId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
 }
 
 model EmailToken {

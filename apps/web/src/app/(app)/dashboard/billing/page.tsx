@@ -4,8 +4,24 @@ import { prisma } from "@db";
 
 import { BillingActions } from "@/features/billing/ui";
 import { getDefaultOrgIdForUser } from "@/server/auth/require-org";
+import { reconcileOrganizationSubscription } from "@/server/billing/reconcile-billing-subscription";
+import { env } from "@/server/config/env";
 
-export default async function BillingPage() {
+type BillingPageProps = {
+  searchParams?: Promise<{ from_portal?: string | string[]; reconcile?: string | string[] }>;
+};
+
+export default async function BillingPage({ searchParams }: BillingPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const fromPortal =
+    (Array.isArray(resolvedSearchParams?.from_portal)
+      ? resolvedSearchParams?.from_portal[0]
+      : resolvedSearchParams?.from_portal) === "1";
+  const reconcileRequested =
+    (Array.isArray(resolvedSearchParams?.reconcile)
+      ? resolvedSearchParams?.reconcile[0]
+      : resolvedSearchParams?.reconcile) === "1";
+
   const orgId = await getDefaultOrgIdForUser();
 
   if (!orgId) {
@@ -17,7 +33,15 @@ export default async function BillingPage() {
     );
   }
 
-  const sub = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
+  let sub = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
+  if (env.BILLING_ENABLED && (fromPortal || reconcileRequested || Boolean(sub?.needsReconcile))) {
+    try {
+      await reconcileOrganizationSubscription(orgId);
+      sub = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
+    } catch {
+      // Keep billing page available even when reconcile fails.
+    }
+  }
 
   return (
     <div style={{ padding: 24, maxWidth: 980 }}>
@@ -36,8 +60,12 @@ export default async function BillingPage() {
           <div>
             <div style={{ fontSize: 12, color: "#666" }}>Period end</div>
             <div style={{ fontSize: 16, fontWeight: 600 }}>
-              {sub?.currentPeriodEnd ? sub.currentPeriodEnd.toDateString() : "—"}
+              {sub?.currentPeriodEnd ? sub.currentPeriodEnd.toDateString() : "-"}
             </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 12, color: "#666" }}>Needs reconcile</div>
+            <div style={{ fontSize: 16, fontWeight: 600 }}>{sub?.needsReconcile ? "yes" : "no"}</div>
           </div>
         </div>
 
